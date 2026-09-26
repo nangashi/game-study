@@ -99,6 +99,23 @@ export function buildSet(rng: Rng, study: StudyDef, p: Profile, sel: Selection, 
   return picks.map(x => ({ cat: x.cat, q: x.cat.make(x.card, rng, p) }));
 }
 
+// 定着のようす（勉強をえらぶ画面のメーター）。同じカードが2つのカテゴリにあっても1つと数える
+// learned: 3回つづけて正解（box >= LEARNED_BOX） / started: 始めた問題（learned もふくむ） / due: 復習の日が来た問題
+export const LEARNED_BOX = 3;
+export interface Mastery { total: number; learned: number; started: number; due: number }
+export function mastery(p: Profile, cats: Category[], today: string): Mastery {
+  const cards = new Set(cats.flatMap(c => c.cards()));
+  const m: Mastery = { total: cards.size, learned: 0, started: 0, due: 0 };
+  for (const card of cards) {
+    const s = p.cards[card];
+    if (!s) continue;
+    m.started++;
+    if (s.box >= LEARNED_BOX) m.learned++;
+    if (s.due <= today) m.due++;
+  }
+  return m;
+}
+
 // 1つのカテゴリから1問（ゲームの中のクイズ用）
 export function pickOne(p: Profile, cat: Category, today: string): string {
   return plan(p, [cat], [cat], false, 1, today)[0]?.card ?? cat.cards()[0];
