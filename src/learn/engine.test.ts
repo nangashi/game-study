@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NEW_PER_SET, applyAnswer, buildSet, planSet } from './engine';
+import { NEW_PER_SET, applyAnswer, buildSet, mastery, planSet } from './engine';
 import { knownKanji } from './kokugo';
 import { BUSHU } from '../data/kokugo-bank';
 import { STUDIES, studyDef } from '../studies/registry';
@@ -210,5 +210,17 @@ describe('五十音キー', () => {
     expect(['か', 'が', 'つ', 'づ', 'は', 'ば', 'ぱ'].map(dakuten)).toEqual(['が', 'か', 'づ', 'つ', 'ば', 'は', 'ば']);
     expect(['は', 'ぱ', 'ば', 'ひ'].map(handakuten)).toEqual(['ぱ', 'は', 'ぱ', 'ぴ']);
     expect(['や', 'ゃ', 'つ', 'あ', 'か'].map(smallKana)).toEqual(['ゃ', 'や', 'っ', 'ぁ', 'か']);
+  });
+});
+
+describe('定着のようす', () => {
+  it('3回つづけて正解で「おぼえた」、同じカードは1つと数える', () => {
+    const p = newProfile('t', 'wizard', 1);
+    const cat = KOKUGO.categories.find(c => c.id === 'kata-write')!;
+    const [a, b, c] = cat.cards();
+    p.cards[a] = { box: 3, due: '2026-10-01' };
+    p.cards[b] = { box: 1, due: DAY };
+    p.cards[c] = { box: 5, due: '2026-09-20' };
+    expect(mastery(p, [cat, cat], DAY)).toEqual({ total: cat.cards().length, learned: 2, started: 3, due: 2 });
   });
 });

@@ -1,4 +1,4 @@
-import { planSet, selectedCategories, setLength } from '../../learn/engine';
+import { mastery, planSet, selectedCategories, setLength, type Mastery } from '../../learn/engine';
 import { cardCoins } from '../../learn/srs';
 import { isLowerGrade, questCoins, selectionRate, studyGivesTicket } from '../../state/economy';
 import { store, today } from '../../state/store';
@@ -24,6 +24,14 @@ export function preview(study: StudyDef, p: Profile, sel: Selection) {
   };
 }
 
+// 定着のメーター: おぼえた（緑）/ れんしゅうちゅう（黄）/ まだ（灰）
+function meter(m: Mastery, cls = ''): HTMLElement {
+  const pct = (n: number) => `${m.total ? (n / m.total) * 100 : 0}%`;
+  return h('div', { class: `meter ${cls}` },
+    h('i', { class: 'learned', style: `width:${pct(m.learned)}` }),
+    h('i', { class: 'started', style: `width:${pct(m.started - m.learned)}` }));
+}
+
 // 教科をえらんだあと: 学年 → まぜこぜ / カテゴリ をえらぶ
 export function showStudy(id: string, studyId: string, grade?: Grade): void {
   const p = store.profile(id);
@@ -41,6 +49,9 @@ export function showStudy(id: string, studyId: string, grade?: Grade): void {
   const drill = study.categories.find(c => c.grade === g && c.drill);
   const drillSel: Selection | undefined = drill && { study: study.id, grade: g, category: drill.id, drill: true };
   const best = drill && p.best?.[drill.id];
+  const day = today();
+  const gradeMastery = (x: Grade) => mastery(p, selectedCategories(study, { study: study.id, grade: x }), day);
+  const all = gradeMastery(g);
 
   mount(h('div', { class: 'screen scenic' },
     topbar(p, () => showHome(id)),
@@ -48,8 +59,18 @@ export function showStudy(id: string, studyId: string, grade?: Grade): void {
     h('div', { class: 'grade-tabs', style: `--study:${study.color}` }, ...grades.map(x => h('button', {
       class: `grade-tab${x === g ? ' on' : ''}`,
       onclick: () => showStudy(id, studyId, x),
-    }, x === p.grade ? '★ ' : '', GRADE_NAMES[x]))),
+    }, h('span', {}, x === p.grade ? '★ ' : '', GRADE_NAMES[x]), meter(gradeMastery(x), 'tab-meter')))),
     lower ? h('p', { class: 'note bubble' }, 'したの がくねんは ', ico('coin'), ' が すくないよ') : null,
+    h('div', { class: 'mastery' },
+      h('div', { class: 'mastery-head' },
+        h('span', { class: 'mastery-label' }, ico('star', 28), ' おぼえた'),
+        h('span', { class: 'mastery-num', textContent: String(all.learned) }),
+        h('span', { class: 'mastery-of', textContent: `/ ${all.total}` })),
+      meter(all, 'big'),
+      h('div', { class: 'legend' },
+        h('span', {}, h('i', { class: 'learned' }), `おぼえた ${all.learned}`),
+        h('span', {}, h('i', { class: 'started' }), `れんしゅうちゅう ${all.started - all.learned}`),
+        h('span', {}, h('i', {}), `まだ ${all.total - all.started}`))),
     h('div', { class: 'mix-row' },
       h('button', { class: 'big-btn mix-btn', style: `background:${study.color}`, onclick: () => showQuest(id, mixSel) },
         h('span', { class: 'mix-name' }, ico('star', 48), ' まぜこぜ'),
@@ -61,8 +82,15 @@ export function showStudy(id: string, studyId: string, grade?: Grade): void {
         reward(preview(study, p, drillSel))) : null),
     h('div', { class: 'cat-grid' }, ...selectedCategories(study, mixSel).map(c => {
       const sel: Selection = { study: study.id, grade: g, category: c.id };
-      return h('button', { class: 'cat-btn', style: `--study:${study.color}`, onclick: () => showQuest(id, sel) },
-        h('span', { class: 'cat-name', textContent: c.name }), reward(preview(study, p, sel)));
+      const m = mastery(p, [c], day);
+      const done = m.learned === m.total;
+      return h('button', { class: `cat-btn${done ? ' done' : ''}`, style: `--study:${study.color}`, onclick: () => showQuest(id, sel) },
+        m.due ? h('span', { class: 'due-badge', textContent: `ふくしゅう ${m.due}` }) : null,
+        h('span', { class: 'cat-name' }, c.name, done ? ico('trophy', 26) : null),
+        h('span', { class: 'cat-progress' },
+          meter(m),
+          h('span', { class: 'cat-count' }, ico('star', 20), String(m.learned), h('small', { textContent: ` / ${m.total}` }))),
+        reward(preview(study, p, sel)));
     })),
   ));
 }
