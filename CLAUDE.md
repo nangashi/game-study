@@ -11,6 +11,19 @@
   - ゲームのコインは `finishGame()` で共通に計算する。ゲームの中で独自にコインを配らない。
 - 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。
 
+## ゲーム候補（あそびラボ）
+
+ホームの「あそびラボ」に、正式なゲームにする前の候補を置いている（ゲーム券なし・ごほうびなし）。「◯◯の本格実装をしたい」と頼まれたら、docs/03 に加えて [docs/04-game-candidates.md](docs/04-game-candidates.md) を読む。候補ごとのルール・パラメータ・わかっている問題・正式なゲームにする手順・最初にユーザーに確認することがある。
+
+| 呼び方 | id | ファイル |
+|---|---|---|
+| モンスターまもり（モンスターサバイバル風） | `defense` | `src/lab/DefenseScene.ts` |
+| ひっぱりアタック（モンスト風） | `sling` | `src/lab/SlingScene.ts` |
+| ぱくぱくビッグ（Hole.io 風） | `grow` | `src/lab/GrowScene.ts` |
+
+- 共通部分は `src/lab/common.ts`、画面は `src/ui/screens/lab.ts`
+- バランスを変えたら `scripts/playtest.mjs` の自動プレイで確かめ、結果を docs/04 に書き足す
+
 ## 書き方
 
 - 画面の文言は、子ども向けはひらがな中心、おうちのひと向けはふつうの日本語。

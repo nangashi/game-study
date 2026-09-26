@@ -74,6 +74,7 @@ button:disabled { opacity: 0.45; }
 .sansu { background: var(--sansu); }
 .battle { background: var(--battle); }
 .shop { background: var(--shop); }
+.lab { background: #059669; grid-column: span 2; min-height: 80px; flex-direction: row; gap: 12px; }
 
 .pill-btn {
   padding: 10px 18px; border-radius: 999px; background: #fff; border: 2px solid var(--line);
@@ -156,6 +157,13 @@ button:disabled { opacity: 0.45; }
 .pips i.on { background: var(--shop); }
 .upgrade button { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 2px; padding: 10px 14px; border-radius: 16px; background: var(--shop); color: #fff; font-size: 18px; font-weight: 800; white-space: nowrap; }
 .upgrade > div { min-width: 0; }
+
+/* あそびラボ */
+.lab-list { display: flex; flex-direction: column; gap: 14px; width: min(100%, 640px); }
+.lab-card { background: #fff; border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; gap: 14px; text-align: left; box-shadow: 0 5px 0 rgba(0,0,0,.08); }
+.lab-card:active { transform: translateY(3px); }
+.lab-card .name { font-size: 24px; font-weight: 900; }
+.lab-card small { font-size: 16px; color: var(--muted); font-weight: 700; }
 
 /* バトル */
 .battle-root { position: fixed; inset: 0; background: #bbf7d0; }

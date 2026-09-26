@@ -5,6 +5,7 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
 - ごほうびの仕組みと、ゲームに共通する決まり: [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
+- ゲーム候補（あそびラボ）の引き継ぎ: [docs/04-game-candidates.md](docs/04-game-candidates.md)
 - 手書き判定の検証用プロトタイプ: [prototypes/handwriting/](prototypes/handwriting/)
 
 ## 遊びの流れ
@@ -16,6 +17,8 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 - コインは、はじめての問題・まだ定着していない問題ほど多くもらえる（同じ問題のくり返しは少ない）
 - ゲーム券は「毎日むりょう（初期値0枚）」「教科ごと（初期値1枚）」「1日の上限（初期値3枚）」をおうちのひと画面で変えられる
 - ゲームのコインだけでは先に進めなくなるように作る。くわしくは [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
+
+ホームの「あそびラボ」では、正式なゲームにする前の候補（モンスターまもり・ひっぱりアタック・ぱくぱくビッグ）をためしに遊べる。ゲーム券は使わず、ごほうびも出ない。
 
 ## 学年ごとの内容
 
@@ -47,11 +50,13 @@ src/
   state/          保存データ・報酬と強化
   games/          ゲームの登録簿と共通の決まり（types.ts）
   game/           サバイバー（Phaser）
+  lab/            あそびラボのゲーム候補（Phaser）
   ui/             画面（DOM）
   data/           文字セット・漢字のことば
 scripts/gen-strokes.mjs   KanjiVG から筆順データを作る
 scripts/gen-art.sh        Codex で画像を生成（art/prompts/ → art/raw/）
 scripts/build-art.mjs     生成画像を整えて public/sprites/ に出力
+scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/04）
 ```
 
 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。
