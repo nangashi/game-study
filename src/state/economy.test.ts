@@ -31,6 +31,7 @@ describe('questReward', () => {
     expect(questReward(p, s, { study: 'kokugo', grade: 1 }, 20, '2026-09-26')).toEqual({ coins: 9, tickets: 0 });
     expect(questReward(p, s, { study: 'kokugo', grade: 2, category: 'okuri' }, 20, '2026-09-26')).toEqual({ coins: 21, tickets: 1 });
     expect(questReward(p, s, { study: 'sansu', grade: 3 }, 20, '2026-09-26')).toEqual({ coins: 30, tickets: 1 });
+    expect(questReward(p, s, { study: 'sansu', grade: 2, category: 'drill-2', drill: true }, 40, '2026-09-26').coins).toBe(25);
   });
 
   it('むりょうの券は日付が変わったときにくばる', () => {

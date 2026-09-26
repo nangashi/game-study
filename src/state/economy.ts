@@ -10,11 +10,12 @@ export const QUEST_BONUS = 10;   // さいごまでやったら
 export const GAME_COINS = { play: 3, firstClear: 25, replayClear: 8 };
 
 // 勉強のコインの倍率。まぜこぜがいちばん多く、下の学年はかなり少ない。上の学年は自分の学年と同じ
-export const RATE = { mixed: 1, category: 0.7, lower: 0.3 };
+// ドリルは10問で、1問がすぐ終わるので低め（10問ぜんぶ新しい問題でも、まぜこぜ5問より少なくなる）
+export const RATE = { mixed: 1, category: 0.7, drill: 0.5, lower: 0.3 };
 
 export const isLowerGrade = (p: Profile, sel: Selection) => gradeRank(sel.grade) < gradeRank(p.grade);
 export const selectionRate = (p: Profile, sel: Selection) =>
-  isLowerGrade(p, sel) ? RATE.lower : sel.category ? RATE.category : RATE.mixed;
+  isLowerGrade(p, sel) ? RATE.lower : sel.drill ? RATE.drill : sel.category ? RATE.category : RATE.mixed;
 
 // 1回ぶんのコイン = (完走ボーナス + 問題ごとのコイン) × 倍率（切り上げ）
 export const questCoins = (answerCoins: number, rate: number) => Math.ceil((QUEST_BONUS + answerCoins) * rate - 1e-9);

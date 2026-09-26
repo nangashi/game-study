@@ -10,6 +10,8 @@ export interface Category {
   grade: Grade;
   write?: boolean;   // 手書き（まぜこぜでは1回に出す数をおさえる）
   quiz?: boolean;    // すぐ答えられる3択にできる（ゲームの中のクイズで使う）
+  // ドリル（けいさんりょく）: 時間を計り、遅い問題を先に出す。まぜこぜには入れない
+  drill?: { length: number };
   cards(): readonly string[];  // 問題プール。まだやっていない問題はこの順に出す（やさしい順）
   make(card: string, rng: Rng, p: Profile): Question;
 }
@@ -24,8 +26,8 @@ export interface StudyDef {
   categories: Category[];
 }
 
-// えらんだ勉強。category がないときは、その学年の「まぜこぜ」
-export interface Selection { study: string; grade: Grade; category?: string }
+// えらんだ勉強。category がないときは、その学年の「まぜこぜ」。drill: けいさんりょく（ドリル）のカテゴリ
+export interface Selection { study: string; grade: Grade; category?: string; drill?: boolean }
 
 // くり返し呼ばれるので、問題プールは1回だけ作る
 export function once<T>(f: () => T): () => T {

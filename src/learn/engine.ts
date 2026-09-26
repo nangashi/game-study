@@ -15,22 +15,28 @@ export const NEW_PER_SET = 2;   // 復習がたまっていても、新しい問
 export interface Pick { cat: Category; card: string; review: boolean }
 export interface SetItem { cat: Category; q: Question; retry?: boolean }
 
-// えらんだカテゴリ（まぜこぜなら、その学年のカテゴリぜんぶ）
+// えらんだカテゴリ（まぜこぜなら、その学年のカテゴリぜんぶ。ドリルは入れない）
 export function selectedCategories(study: StudyDef, sel: Selection): Category[] {
-  return study.categories.filter(c => (sel.category ? c.id === sel.category : c.grade === sel.grade));
+  return study.categories.filter(c => (sel.category ? c.id === sel.category : c.grade === sel.grade && !c.drill));
 }
 
-export function planSet(study: StudyDef, p: Profile, sel: Selection, length: number, today: string): Pick[] {
+// 1回の問題数（ドリルはカテゴリで決める）
+export function setLength(study: StudyDef, sel: Selection, questLength: number): number {
+  return study.categories.find(c => c.id === sel.category)?.drill?.length ?? questLength;
+}
+
+// slowMs: ドリルで「遅い」とみなす時間。ドリルでは、復習の日が来た問題のつぎに、前回遅かった問題を出す
+export function planSet(study: StudyDef, p: Profile, sel: Selection, length: number, today: string, slowMs = Infinity): Pick[] {
   const cats = selectedCategories(study, sel);
   const mixed = !sel.category;
   // 自分の学年のまぜこぜには、下の学年の「始めていて、復習の日が来た問題」もまぜる（コインは減らさない）
   const reviewCats = mixed && sel.grade === p.grade
     ? [...cats, ...study.categories.filter(c => gradeRank(c.grade) < gradeRank(p.grade))]
     : cats;
-  return plan(p, cats, reviewCats, mixed, length, today);
+  return plan(p, cats, reviewCats, mixed, length, today, cats.some(c => c.drill) ? slowMs : Infinity);
 }
 
-function plan(p: Profile, cats: Category[], reviewCats: Category[], mixed: boolean, length: number, today: string): Pick[] {
+function plan(p: Profile, cats: Category[], reviewCats: Category[], mixed: boolean, length: number, today: string, slowMs = Infinity): Pick[] {
   const seen = new Set<string>();
   const due: Pick[] = [], ahead: Pick[] = [];
   const fresh: Pick[][] = [];
@@ -53,6 +59,7 @@ function plan(p: Profile, cats: Category[], reviewCats: Category[], mixed: boole
   const byNeed = (a: Pick, b: Pick) => state(a).box - state(b).box || state(a).due.localeCompare(state(b).due);
   due.sort(byNeed);
   ahead.sort(byNeed);
+  const slow = ahead.filter(x => (state(x).ms ?? 0) > slowMs).sort((a, b) => state(b).ms! - state(a).ms!);
   // まぜこぜでは、新しい問題をカテゴリから順番に1つずつとる
   const freshList: Pick[] = [];
   for (let i = 0; fresh.some(f => i < f.length); i++) for (const f of fresh) if (i < f.length) freshList.push(f[i]);
@@ -73,6 +80,7 @@ function plan(p: Profile, cats: Category[], reviewCats: Category[], mixed: boole
   const reserve = Math.min(NEW_PER_SET, freshList.length);
   for (const strict of [true, false]) {
     take(due, length - reserve, strict);
+    take(slow, length - reserve, strict);
     take(freshList, length, strict);
     take(due, length, strict);
     take(ahead, length, strict);
@@ -81,8 +89,8 @@ function plan(p: Profile, cats: Category[], reviewCats: Category[], mixed: boole
 }
 
 // 問題を作る。まぜこぜでは、同じカテゴリが続かないようにならべる
-export function buildSet(rng: Rng, study: StudyDef, p: Profile, sel: Selection, length: number, today: string): SetItem[] {
-  const picks = shuffle(rng, planSet(study, p, sel, length, today));
+export function buildSet(rng: Rng, study: StudyDef, p: Profile, sel: Selection, length: number, today: string, slowMs?: number): SetItem[] {
+  const picks = shuffle(rng, planSet(study, p, sel, length, today, slowMs));
   for (let i = 1; i < picks.length; i++) {
     if (picks[i].cat !== picks[i - 1].cat) continue;
     const j = picks.findIndex((x, k) => k > i && x.cat !== picks[i - 1].cat);
@@ -98,10 +106,13 @@ export function pickOne(p: Profile, cat: Category, today: string): string {
 
 // 答えを記録する。もどり値はこの問題のコイン（倍率をかける前。docs/03-rewards-and-games.md）
 // retry: まちがえた問題を、同じセットの最後にもう一度出したもの（コインなし）
-export function applyAnswer(p: Profile, q: Question, a: Answer, today: string, retry = false): number {
-  const good = a.correct && !a.helped;
-  const coins = retry ? 0 : good ? cardCoins(p.cards[q.card], today) : a.correct ? 1 : 0;
-  updateCard(p, q.card, good, today);
+// slowMs: ドリルのとき。これより遅い正解は「まだ速くない」とみなし、答えた時間も記録する
+export function applyAnswer(p: Profile, q: Question, a: Answer, today: string, opts: { retry?: boolean; slowMs?: number } = {}): number {
+  const drill = opts.slowMs != null;
+  const slow = drill && a.correct && !a.helped && (a.ms ?? 0) > opts.slowMs!;
+  const good = a.correct && !a.helped && !slow;
+  const coins = opts.retry ? 0 : good ? cardCoins(p.cards[q.card], today) : a.correct ? 1 : 0;
+  updateCard(p, q.card, good ? 'good' : slow ? 'slow' : 'bad', today, drill ? a.ms : undefined);
   if (a.correct) p.stats.correct++;
   return coins;
 }

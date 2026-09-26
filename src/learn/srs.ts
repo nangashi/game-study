@@ -5,10 +5,16 @@ import { addDays } from '../state/store';
 const INTERVAL = [0, 1, 2, 4, 7, 14, 30];
 export const MAX_BOX = INTERVAL.length - 1;
 
-export function updateCard(p: Profile, key: string, good: boolean, today: string): void {
+// good: 正解 → 次の段へ / slow: 正解だが遅い（ドリル） → 段はそのままで、次の日にまた出す / bad: まちがい → はじめから
+export type Result = 'good' | 'slow' | 'bad';
+
+export function updateCard(p: Profile, key: string, result: Result, today: string, ms?: number): void {
   const cur = p.cards[key] ?? { box: 0, due: today };
-  const box = good ? Math.min(cur.box + 1, MAX_BOX) : 0;
-  p.cards[key] = { box, due: addDays(today, INTERVAL[box]) };
+  const box = result === 'good' ? Math.min(cur.box + 1, MAX_BOX) : result === 'slow' ? cur.box : 0;
+  const next: CardState = { box, due: addDays(today, result === 'slow' ? 1 : INTERVAL[box]) };
+  const time = ms ?? cur.ms;
+  if (time != null) next.ms = time;
+  p.cards[key] = next;
 }
 
 // 正解したときのコイン（答える前のカードの状態で決める）。定着していない問題ほど多い

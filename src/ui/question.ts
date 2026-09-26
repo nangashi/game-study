@@ -6,8 +6,10 @@ import { writepad } from './widgets/writepad';
 import { kanapad } from './widgets/kanapad';
 import { shuffle } from '../learn/random';
 
-// 1問を表示して、答えが決まったら onAnswer を1回だけ呼ぶ
-export function renderQuestion(q: Question, p: Profile, onAnswer: (a: Answer) => void): HTMLElement {
+// 1問を表示して、答えが決まったら onAnswer を1回だけ呼ぶ（答えるまでの時間 ms もわたす）
+// fast: ドリル用。正解の合図を短くして、テンポよく次へ進む
+export function renderQuestion(q: Question, p: Profile, onAnswer: (a: Answer) => void, opts: { fast?: boolean } = {}): HTMLElement {
+  const start = performance.now();
   const msg = h('div', { class: 'note' });
   const prompt = h('div', { class: 'prompt', html: q.prompt });
   const body = h('div', { class: 'quest-body' });
@@ -15,11 +17,12 @@ export function renderQuestion(q: Question, p: Profile, onAnswer: (a: Answer) =>
   const finish = async (a: Answer) => {
     if (answered) return;
     answered = true;
+    a.ms = Math.round(performance.now() - start);
     flash(a.correct);
     // ひとこと（ことわざの意味など）があれば、読めるように長めに待つ
     const note = q.kind === 'choice' && q.note;
     if (note) msg.textContent = note;
-    await wait((a.correct ? 700 : 1600) + (note ? 1800 : 0));
+    await wait((a.correct ? (opts.fast ? 250 : 700) : 1600) + (note ? 1800 : 0));
     onAnswer(a);
   };
 

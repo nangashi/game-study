@@ -16,4 +16,5 @@ export type Question =
   | { kind: 'order'; card: string; prompt: string; items: string[] };
 
 // helped: おてほんを見た・何度も間違えてヒントが出た（正解でも復習に回す）
-export interface Answer { correct: boolean; helped?: boolean }
+// ms: 問題が出てから答えるまでの時間
+export interface Answer { correct: boolean; helped?: boolean; ms?: number }

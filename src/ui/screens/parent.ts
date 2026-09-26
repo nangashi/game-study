@@ -123,6 +123,7 @@ export function showParent(): void {
       numberField('その日はじめての教科でもらえるゲーム券', s.playsPerSubject, 0, 5, v => { s.playsPerSubject = v; save(); }),
       numberField('勉強でもらえるゲーム券の1日の上限', s.ticketsPerDay, 0, 20, v => { s.ticketsPerDay = v; save(); }),
       numberField('1クエストの問題数', s.questLength, 3, 10, v => { s.questLength = v; save(); }),
+      numberField('けいさんりょく: この秒数より遅い正解は、もう一度練習する', s.drillSlowSec, 2, 15, v => { s.drillSlowSec = v; save(); }),
     ),
     backupSection(),
     h('p', { class: 'muted', html: '筆順データ: <a href="https://kanjivg.tagaini.net/" target="_blank" rel="noopener">KanjiVG</a> (CC BY-SA 3.0, Ulrich Apel)' }),

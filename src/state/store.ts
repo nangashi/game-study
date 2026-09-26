@@ -4,7 +4,7 @@ import { HEROES, isHero, type HeroId } from '../art';
 const KEY = 'manabi-survivor:v1';
 
 export const DEFAULT_SETTINGS: Settings = {
-  freePlaysPerDay: 0, playsPerSubject: 1, ticketsPerDay: 3, questLength: 5,
+  freePlaysPerDay: 0, playsPerSubject: 1, ticketsPerDay: 3, questLength: 5, drillSlowSec: 5,
 };
 
 // 端末のローカル時刻での日付（YYYY-MM-DD）

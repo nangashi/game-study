@@ -271,3 +271,9 @@ button:disabled { opacity: 0.45; }
 .pictograph .g-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .pictograph .g-dots { display: flex; flex-direction: column-reverse; font-size: 22px; line-height: 1; }
 .pictograph .g-name { font-size: 18px; border-top: 2px solid var(--ink); padding-top: 4px; }
+
+/* けいさんりょく（ドリル） */
+.mix-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: min(100%, 760px); }
+.mix-row .mix-btn { flex: 1 1 260px; width: auto; }
+.drill-btn { background: #f59e0b; }
+.progress span.slow { background: var(--hint); }

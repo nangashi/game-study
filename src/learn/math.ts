@@ -145,6 +145,20 @@ export const kake1 = keisanCategory('kake-1', 'かけざん（×1けた）', 3, 
 ])), true);
 export const kake2 = keisanCategory('kake-2', 'かけざん（2けた×2けた）', 3, () => withOp('×', randomPairs('kake-2', 150, [11, 99], () => [11, 99])), true);
 
+// けいさんりょく（ドリル）: 考えずにすぐ答えが出てほしい計算。学年が上がると ふえていく
+// まだやっていない問題は、その学年で新しく出てきた計算と、前の学年の計算を交互に出す
+function drillCategory(grade: 1 | 2 | 3, own: Category[], lower: Category[]): Category {
+  return {
+    id: `drill-${grade}`, name: 'けいさんりょく', grade, drill: { length: 10 },
+    cards: once(() => interleave([own.flatMap(c => c.cards()), lower.flatMap(c => c.cards())].filter(l => l.length))),
+    make: (card, rng, p) => add10.make(card, rng, p),   // どれも 'keisan:' のカードなので同じ作り方
+  };
+}
+const FACTS1 = [add10, sub10, addCarry, subBorrow];
+export const drill1 = drillCategory(1, FACTS1, []);
+export const drill2 = drillCategory(2, [kuku1, kuku2], FACTS1);
+export const drill3 = drillCategory(3, [waru], [kuku1, kuku2, ...FACTS1]);
+
 // あまりのある わりざん（3択）
 export const amari = category('amari', 'あまりの ある わりざん', 3, () => all(range(2, 9), b => all(range(1, 9), () => range(1, b - 1)))
   .map(([b, [q, r]]) => `amari:${b * q + r},${b}`), (card, rng) => {
