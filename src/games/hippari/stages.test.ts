@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HIPPARI_STAGES, enemyPower, stageSpec } from './stages';
-import { recommendedLevel } from '../../state/economy';
+import { HIPPARI_STAGES, enemyPower, stageSpec, recommendedLevel } from './stages';
 
 describe('ひっぱりアタックのステージ', () => {
   it('いつも同じ並びになり、敵どうしが重ならない', () => {

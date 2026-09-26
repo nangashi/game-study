@@ -1,4 +1,5 @@
-import { recommendedLevel } from '../../state/economy';
+import { recommendedLevel as levelFor } from '../../state/economy';
+import { HIPPARI_UPGRADES } from './upgrades';
 import { shuffle, pick, type Rng } from '../../learn/random';
 import type { SHEETS } from './assets.gen';
 
@@ -43,6 +44,7 @@ function seeded(seed: number): Rng {
 }
 
 // 敵の強さの倍率。ステージが1つ進むと、こうげき強化1段階（+25%）ぶん強くなる
+export const recommendedLevel = (stage: number) => levelFor(stage, HIPPARI_UPGRADES);
 export const enemyPower = (stage: number) => 1 + 0.125 * recommendedLevel(stage);
 
 export function stageSpec(stage: number, easy: boolean): StageSpec {

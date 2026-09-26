@@ -1,0 +1,8 @@
+Use your image generation tool to create an ICON SPRITE SHEET and save it as ./icons_sv2.png.
+Layout: a strict 2x2 grid on a square canvas, 4 equal cells. One icon per cell, centered, similar visual size, with clear transparent margin so no icon touches or crosses a cell boundary.
+Icons in reading order (row by row, left to right):
+row1: glowing purple-and-pink magic orb with small sparkles around it (a magic missile ball), green grass tuft with a small yellow flower
+row2: light-blue snowflake crystal, pink-and-white swirl lollipop candy
+Art style: exactly the same as the attached reference image (flat cel-shaded chibi cartoon, thick dark outlines, bright friendly colors) for a kids game (ages 5-8), cute and not scary. Use the reference ONLY for art style; the content is different. No text, no letters, no numbers, no grid lines.
+Background: fully transparent (real PNG alpha).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.

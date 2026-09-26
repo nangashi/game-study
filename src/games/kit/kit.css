@@ -26,3 +26,7 @@
 .lobby-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
 .lobby .bubble { background: rgba(255,255,255,.9); }
 .upgrade-panel { gap: 12px; }
+.upgrade-head { margin: 4px 0 0; font-size: 20px; }
+.upgrade .desc { font-size: 14px; color: #6b7280; font-weight: 700; }
+.upgrade.owned { background: #ecfdf5; }
+.upgrade.owned button { background: #10b981; }

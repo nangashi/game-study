@@ -1,5 +1,7 @@
 import type { GameDef } from '../types';
 import { SHEETS } from './assets.gen';
+import { SURVIVOR_STAGES } from './stages';
+import { SURVIVOR_UPGRADES } from './upgrades';
 
 // 設計: docs/games/survivor.md
 export const SURVIVOR: GameDef = {
@@ -7,12 +9,7 @@ export const SURVIVOR: GameDef = {
   name: 'サバイバー',
   desc: 'てきを たおして いきのころう',
   cover: { sheet: SHEETS.icons, frame: 'swords' },
-  stages: 1, // まだステージがない（3分生きのこればクリア）
-  upgrades: [
-    { id: 'hp',     icon: 'heart',  name: 'たいりょく', max: 10, cost: { base: 25, step: 0 } },
-    { id: 'atk',    icon: 'sword',  name: 'こうげき',   max: 10, cost: { base: 25, step: 0 } },
-    { id: 'speed',  icon: 'shoe',   name: 'すばやさ',   max: 10, cost: { base: 25, step: 0 } },
-    { id: 'magnet', icon: 'magnet', name: 'じしゃく',   max: 10, cost: { base: 25, step: 0 } },
-  ],
+  stages: SURVIVOR_STAGES, // 3つの せかい × 5ステージ（stages.ts）
+  upgrades: SURVIVOR_UPGRADES,
   load: () => import('./main'), // Phaser は遊ぶときだけ読む
 };
