@@ -1,0 +1,6 @@
+Use your image generation tool to create a BACKGROUND ILLUSTRATION and save it as ./home_bg.png.
+Content: a wide landscape of a sunny fantasy meadow: rolling green hills, a small colorful village with a castle far away, a few trees, blue sky with fluffy clouds. No characters, no animals, no text.
+Composition: wide landscape canvas (3:2). Keep the center area calm and low-detail (soft grass and sky) because game buttons will be placed on top of it; put details near the edges and horizon. Soft, slightly pastel colors so UI on top stays readable.
+Art style: same as the attached reference image (flat cel-shaded cartoon, thick dark outlines, bright friendly colors) for a kids game.
+Opaque image (no transparency).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.
