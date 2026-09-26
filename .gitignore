@@ -4,3 +4,4 @@ dev-dist/
 .wrangler/
 *.log
 art/raw/
+playtest-out/

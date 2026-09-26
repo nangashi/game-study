@@ -5,12 +5,15 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
 - 手書き判定の検証用プロトタイプ: [prototypes/handwriting/](prototypes/handwriting/)
+- ゲーム候補（あそびラボ）の引き継ぎ: [docs/03-game-candidates.md](docs/03-game-candidates.md)
 
 ## 遊びの流れ
 
 1. **クエスト**（こくご / さんすう、1回5問）→ 🪙コイン と 🪶ことばの羽（こくご）/ ⭐ひかりの星（さんすう）、🎟️バトル券
 2. **バトル**（ダダサバ風、1回3分）→ レベルアップのたびにクイズ。正解するとスキルが「スーパー」になる
 3. **つよくする** → 🪙と🪶⭐で、たいりょく・こうげき・すばやさ・じしゃくを上げる（両方の教科をやらないと全部は上げられない）
+
+ホームの「あそびラボ」では、バトルとは別のゲーム候補（モンスターまもり・ひっぱりアタック・ぱくぱくビッグ）をためしに遊べる。バトル券は使わず、ごほうびも出ない。
 
 バトル券は1日にもらえる数に上限あり（初期値3枚、おうちのひと画面で変更できる）。上限に達したあともクエストはでき、コインと素材はもらえる。
 
@@ -43,11 +46,13 @@ src/
   learn/          問題の生成・難易度調整・間隔反復・手書き判定
   state/          保存データ・報酬と強化
   game/           バトル（Phaser）
+  lab/            あそびラボのゲーム候補（Phaser）
   ui/             画面（DOM）
   data/           文字セット・漢字のことば
 scripts/gen-strokes.mjs   KanjiVG から筆順データを作る
 scripts/gen-art.sh        Codex で画像を生成（art/prompts/ → art/raw/）
 scripts/build-art.mjs     生成画像を整えて public/sprites/ に出力
+scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/03）
 ```
 
 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。

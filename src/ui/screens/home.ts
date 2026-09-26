@@ -2,6 +2,7 @@ import { rollDaily, save, store, today } from '../../state/store';
 import type { Profile } from '../../state/types';
 import { chip, h, hero, ico, mount } from '../dom';
 import { showBattle } from './battle';
+import { showLab } from './lab';
 import { showProfiles } from './profiles';
 import { showQuest } from './quest';
 import { showUpgrade } from './upgrade';
@@ -41,6 +42,8 @@ export function showHome(id: string): void {
         ico('swords', 72), 'バトル', small(ico('ticket'), ' を 1まい つかう')),
       h('button', { class: 'big-btn shop', onclick: () => showUpgrade(p.id) },
         ico('hammer', 72), 'つよくする', small(ico('coin'), ico('feather'), ico('star'), ' を つかう')),
+      h('button', { class: 'big-btn lab', onclick: () => showLab(p.id) },
+        ico('flame', 48), 'あそびラボ', small('ためしプレイ')),
     ),
     h('p', { class: 'note bubble' }, ...(left > 0
       ? [`きょう あと ${left}かい、べんきょうすると `, ico('ticket'), ' が もらえるよ']
