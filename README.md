@@ -1,7 +1,11 @@
-# まなびサバイバー
+# まなびランド
 
 年長〜小学校低学年向けの「勉強するとゲームが強くなる」学習アプリ（家族用）。
 Android タブレットのブラウザで動く PWA で、Cloudflare の無料プランに置く。
+
+勉強の土台（子ども・問題の記録・コイン・ゲーム券）の上に、複数の **勉強**（こくご・さんすう）と複数の **ゲーム**（サバイバー・ひっぱりアタック）が乗る形。勉強もゲームも登録簿に1つ足せば増やせる（[docs/03-rewards-and-games.md](docs/03-rewards-and-games.md) の「全体の形」）。
+
+（以前の名前は「まなびサバイバー」。保存データのキーと Cloudflare の Worker 名 `manabi-survivor` は、データと URL が変わらないようにそのままにしている）
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
 - ごほうびの仕組みと、ゲームに共通する決まり: [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
@@ -11,14 +15,18 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 ## 遊びの流れ
 
 1. **クエスト**（こくご / さんすう、1回5問）→ 🪙コイン。その日はじめての教科なら 🎟️ゲーム券 も
-2. **ゲーム**（いまは「サバイバー」1つ。ダダサバ風、1回3分）→ 🎟️を1枚使う。クリアでも少し🪙がもらえる
-3. **つよくする**（ゲームごと）→ 🪙で強化する
+2. **ゲーム**（🎟️を1枚使う。クリアでも少し🪙がもらえる）
+   - **サバイバー**: ダダサバ風。1回3分生きのこればクリア
+   - **ひっぱりアタック**: モンスト風。ひっぱって はなし、はねかえりで敵に当てるターン制。20ステージ（5ステージごとにボス）
+3. **つよくする**（ゲームのタイトル画面で、ゲームごとに）→ 🪙で強化する
+
+ゲームをえらぶと、そのゲームのタイトル画面に入る（ステージえらび・つよくする・キャラえらびはゲームの中）。ゲームごとの設計は [docs/games/](docs/games/)。
 
 - コインは、はじめての問題・まだ定着していない問題ほど多くもらえる（同じ問題のくり返しは少ない）
 - ゲーム券は「毎日むりょう（初期値0枚）」「教科ごと（初期値1枚）」「1日の上限（初期値3枚）」をおうちのひと画面で変えられる
 - ゲームのコインだけでは先に進めなくなるように作る。くわしくは [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
 
-ホームの「あそびラボ」では、正式なゲームにする前の候補（モンスターまもり・ひっぱりアタック・ぱくぱくビッグ）をためしに遊べる。ゲーム券は使わず、ごほうびも出ない。
+ホームの「あそびラボ」では、正式なゲームにする前の候補（モンスターまもり・ぱくぱくビッグ）をためしに遊べる。ゲーム券は使わず、ごほうびも出ない。
 
 ## 学年ごとの内容
 
@@ -46,17 +54,24 @@ npm run build
 
 ```
 src/
+  studies/        勉強の登録簿（registry.ts）と各教科（こくご・さんすう）
   learn/          問題の生成・難易度調整・間隔反復・手書き判定
-  state/          保存データ・報酬と強化
-  games/          ゲームの登録簿と共通の決まり（types.ts）
-  game/           サバイバー（Phaser）
+  state/          保存データ・報酬と強化（土台）
+  assets/         画像の共通の扱い（sprite.ts）と土台の画像の対応表（自動生成）
+  games/          ゲームの登録簿（registry.ts）と、土台とゲームの約束（types.ts の Platform）
+    kit/          ゲームの画面で使える部品（コイン・券の表示、つよくする、結果、やめる、Phaser）
+    survivor/     サバイバー（Phaser）
+    hippari/      ひっぱりアタック（Phaser）
   lab/            あそびラボのゲーム候補（Phaser）
-  ui/             画面（DOM）
+  ui/             土台の画面（DOM）。game-host.ts がゲームを開き、Platform を渡す
   data/           文字セット・漢字のことば
 scripts/gen-strokes.mjs   KanjiVG から筆順データを作る
-scripts/gen-art.sh        Codex で画像を生成（art/prompts/ → art/raw/）
-scripts/build-art.mjs     生成画像を整えて public/sprites/ に出力
+scripts/art/gen.sh        Codex で画像を生成（art/<スコープ>/prompts/ → raw/）
+scripts/art/build.mjs     生成画像を切り出して並べ直し、public/assets/<スコープ>/ に出力
 scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/04）
+art/common/               土台の画像（アイコン・アバター・ホームの背景）
+art/games/<id>/           ゲームごとの画像
+art/lab/                  あそびラボの画像
 ```
 
 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。

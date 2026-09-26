@@ -1,5 +1,5 @@
-import type { Profile, Settings, Subject } from './types';
-import type { GameContext, GameDef, GameResult, UpgradeDef } from '../games/types';
+import type { Profile, Settings } from './types';
+import type { GameContext, GameDef, GameResult, GameReward, UpgradeDef } from '../games/types';
 import { gameProgress, rollDaily, touchStreak } from './store';
 
 // ごほうびの決まりは docs/03-rewards-and-games.md
@@ -11,12 +11,12 @@ export interface QuestReward { coins: number; tickets: number }
 
 // クエストのごほうび。answerCoins は問題ごとのコインの合計（applyAnswer のもどり値）
 // ゲーム券は、その日はじめてやった教科のときだけ
-export function questReward(p: Profile, s: Settings, subject: Subject, answerCoins: number, today: string): QuestReward {
+export function questReward(p: Profile, s: Settings, studyId: string, answerCoins: number, today: string): QuestReward {
   rollDaily(p, s, today);
   touchStreak(p, today);
   let tickets = 0;
-  if (!p.daily.subjects.includes(subject)) {
-    p.daily.subjects.push(subject);
+  if (!p.daily.subjects.includes(studyId)) {
+    p.daily.subjects.push(studyId);
     tickets = Math.max(0, Math.min(s.playsPerSubject, s.ticketsPerDay - p.daily.ticketsEarned));
   }
   const r: QuestReward = { coins: QUEST_BONUS + answerCoins, tickets };
@@ -29,8 +29,8 @@ export function questReward(p: Profile, s: Settings, subject: Subject, answerCoi
 }
 
 // きょう、まだゲーム券がもらえる教科か
-export function subjectGivesTicket(p: Profile, s: Settings, subject: Subject): boolean {
-  return !p.daily.subjects.includes(subject) && s.playsPerSubject > 0 && p.daily.ticketsEarned < s.ticketsPerDay;
+export function studyGivesTicket(p: Profile, s: Settings, studyId: string): boolean {
+  return !p.daily.subjects.includes(studyId) && s.playsPerSubject > 0 && p.daily.ticketsEarned < s.ticketsPerDay;
 }
 
 export const upgradeLevel = (p: Profile, game: GameDef, u: UpgradeDef) => gameProgress(p, game.id).upgrades[u.id] ?? 0;
@@ -57,12 +57,10 @@ export function gameContext(p: Profile, game: GameDef): GameContext {
   return {
     avatar: p.avatar,
     easy: p.grade === 'k',
-    stage: g.stage + 1,
+    stage: Math.min(g.stage + 1, game.stages),
     upgrades: Object.fromEntries(game.upgrades.map(u => [u.id, g.upgrades[u.id] ?? 0])),
   };
 }
-
-export interface GameReward { coins: number; firstClear: boolean }
 
 // ゲームのごほうび（全ゲーム共通）。ステージによらず一定なので、1ステージに要る勉強もいつも同じくらいになる
 export function finishGame(p: Profile, gameId: string, r: GameResult): GameReward {
@@ -81,6 +79,3 @@ export function finishGame(p: Profile, gameId: string, r: GameResult): GameRewar
   p.coins += coins;
   return { coins, firstClear };
 }
-
-// サバイバーの1回の結果（BattleScene が返す）
-export interface RunResult { seconds: number; kills: number; cleared: boolean; level: number }

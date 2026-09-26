@@ -1,5 +1,8 @@
 import Phaser from 'phaser';
-import { SPRITE_BASE, iconFrame, type HeroId, type IconName } from '../art';
+import { heroSheet, type HeroId } from '../art';
+import { assetUrl } from '../assets/sprite';
+import { loadSheet } from '../games/kit/phaser';
+import { LAB_IMAGES, LAB_SHEETS, iconFrame, loadLabSheets, type IconName } from './assets';
 
 // あそびラボ（ためしプレイ用のミニゲーム）で共通に使うもの
 
@@ -15,9 +18,9 @@ export interface LabResult {
   stats: { icon: IconName; text: string }[];
 }
 
-export const ICON_PX = 128;
+export const ICON_PX = LAB_SHEETS.icons.cell;
 export const HERO_PX = 160;
-export const ENEMY_PX = 160;
+export const ENEMY_PX = LAB_SHEETS.enemies.cell;
 export const FONT = '"Zen Maru Gothic", sans-serif';
 
 export const textStyle = (size: number, color = '#1f2937', stroke = '#ffffff') =>
@@ -152,11 +155,9 @@ export abstract class LabScene extends Phaser.Scene {
   protected get hud() { return this.scene.get('hud') as HudScene; }
 
   preload() {
-    this.load.image('ground', `${SPRITE_BASE}ground.webp`);
-    this.load.spritesheet('hero', `${SPRITE_BASE}hero_${this.cfg.avatar}.webp`, { frameWidth: HERO_PX, frameHeight: HERO_PX });
-    this.load.spritesheet('enemies', `${SPRITE_BASE}enemies.webp`, { frameWidth: ENEMY_PX, frameHeight: ENEMY_PX });
-    this.load.spritesheet('icons1', `${SPRITE_BASE}icons1.webp`, { frameWidth: ICON_PX, frameHeight: ICON_PX });
-    this.load.spritesheet('icons2', `${SPRITE_BASE}icons2.webp`, { frameWidth: ICON_PX, frameHeight: ICON_PX });
+    this.load.image('ground', assetUrl(LAB_IMAGES.ground));
+    loadSheet(this, 'hero', heroSheet(this.cfg.avatar)); // 主人公は子どものアバター
+    loadLabSheets(this);
   }
 
   create() {

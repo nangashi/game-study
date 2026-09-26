@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ENEMY_FRAME, iconFrame, type IconName } from '../art';
+import { ENEMY_FRAME, iconFrame, type IconName } from './assets';
 import { ENEMY_PX, HERO_PX, ICON_PX, LabScene, sfx, type LabResult } from './common';
 
 // ぱくぱくビッグ: 自分より小さいものに さわると たべて 大きくなる。

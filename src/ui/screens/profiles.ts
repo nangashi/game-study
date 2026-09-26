@@ -6,7 +6,7 @@ import { showParentGate } from './parent';
 export function showProfiles(): void {
   const profiles = store.data.profiles;
   mount(h('div', { class: 'screen scenic' },
-    h('h1', { class: 'title logo' }, ico('swords', 56), ' まなびサバイバー'),
+    h('h1', { class: 'title logo' }, ico('star', 56), ' まなびランド'),
     profiles.length
       ? h('div', { class: 'profiles' }, ...profiles.map(p => h('button', { class: 'profile-card', onclick: () => showHome(p.id) },
           hero(p.avatar, 150, true), p.name)))

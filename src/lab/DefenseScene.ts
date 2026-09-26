@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { ENEMY_FRAME, SPRITE_BASE, type HeroId } from '../art';
+import { heroSheet, type HeroId } from '../art';
+import { loadSheet } from '../games/kit/phaser';
+import { ENEMY_FRAME } from './assets';
 import { ENEMY_PX, HERO_PX, LabScene, sfx, textStyle, type LabResult } from './common';
 
 // モンスターまもり（モンスターサバイバル風）:
@@ -63,7 +65,7 @@ export class DefenseScene extends LabScene {
     super.preload();
     for (const k of KIND_IDS) {
       const id = KINDS[k].hero;
-      this.load.spritesheet(`unit_${id}`, `${SPRITE_BASE}hero_${id}.webp`, { frameWidth: HERO_PX, frameHeight: HERO_PX });
+      loadSheet(this, `unit_${id}`, heroSheet(id));
     }
   }
 

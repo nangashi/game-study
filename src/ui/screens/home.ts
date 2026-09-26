@@ -1,13 +1,12 @@
-import { subjectGivesTicket } from '../../state/economy';
+import { studyGivesTicket } from '../../state/economy';
 import { rollDaily, save, store, today } from '../../state/store';
-import type { Profile, Subject } from '../../state/types';
+import type { Profile } from '../../state/types';
+import { STUDIES } from '../../studies/registry';
 import { chip, h, hero, ico, mount } from '../dom';
 import { showGames } from './games';
 import { showLab } from './lab';
 import { showProfiles } from './profiles';
 import { showQuest } from './quest';
-
-const SUBJECTS: { id: Subject; name: string }[] = [{ id: 'kokugo', name: 'こくご' }, { id: 'sansu', name: 'さんすう' }];
 
 export function wallet(p: Profile): HTMLElement {
   return h('div', { class: 'wallet' },
@@ -32,23 +31,23 @@ export function showHome(id: string): void {
   save();
   const small = (...c: (Node | string)[]) => h('small', {}, ...c);
   // その日はじめての教科なら券とコイン、2回目からはコインだけ
-  const reward = (subject: Subject) => small(...(subjectGivesTicket(p, s, subject) ? [ico('ticket'), ico('coin')] : [ico('coin')]), ' が もらえる');
-  const ticketSubjects = SUBJECTS.filter(x => subjectGivesTicket(p, s, x.id));
+  const reward = (studyId: string) => small(...(studyGivesTicket(p, s, studyId) ? [ico('ticket'), ico('coin')] : [ico('coin')]), ' が もらえる');
+  const ticketStudies = STUDIES.filter(x => studyGivesTicket(p, s, x.id));
 
   mount(h('div', { class: 'screen scenic' },
     topbar(p, showProfiles),
     h('div', { class: 'home-grid' },
-      h('button', { class: 'big-btn kokugo', onclick: () => showQuest(p.id, 'kokugo') },
-        ico('pencil', 72), 'こくご', reward('kokugo')),
-      h('button', { class: 'big-btn sansu', onclick: () => showQuest(p.id, 'sansu') },
-        ico('abacus', 72), 'さんすう', reward('sansu')),
+      // べんきょう（src/studies/registry.ts）
+      ...STUDIES.map(st => h('button', { class: 'big-btn', style: `background:${st.color}`, onclick: () => showQuest(p.id, st.id) },
+        ico(st.icon, 72), st.name, reward(st.id))),
+      // ゲーム（src/games/registry.ts）
       h('button', { class: 'big-btn battle wide', onclick: () => showGames(p.id) },
         ico('swords', 72), 'ゲーム', small(ico('ticket'), ' を 1まい つかう')),
       h('button', { class: 'big-btn lab', onclick: () => showLab(p.id) },
         ico('flame', 48), 'あそびラボ', small('ためしプレイ')),
     ),
-    h('p', { class: 'note bubble' }, ...(ticketSubjects.length
-      ? [`${ticketSubjects.map(x => x.name).join('・')}を やると `, ico('ticket'), ' が もらえるよ']
+    h('p', { class: 'note bubble' }, ...(ticketStudies.length
+      ? [`${ticketStudies.map(x => x.name).join('・')}を やると `, ico('ticket'), ' が もらえるよ']
       : ['きょうの ', ico('ticket'), ' は ぜんぶ もらったよ。また あした！'])),
   ));
 }

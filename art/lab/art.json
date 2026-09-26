@@ -1,0 +1,8 @@
+{
+  "ts": "src/lab/assets.gen.ts",
+  "sheets": {
+    "icons": { "cell": 128, "cols": 8, "frames": ["common/icons1:*", "common/icons2:*"] },
+    "enemies": { "cell": 160, "cols": 3, "frames": ["games/survivor/enemies:*"] }
+  },
+  "images": { "ground": { "width": 512, "from": "games/survivor/ground" } }
+}

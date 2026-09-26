@@ -1,0 +1,9 @@
+Use your image generation tool to create a CHARACTER SPRITE SHEET and save it as ./chars.png.
+Six different playable heroes for a pinball-like "pull and release" game. Each hero is a ROUND BALL-SHAPED baby animal (the body is almost a perfect circle, tiny arms and feet), front view, cheerful determined face.
+Layout: a strict 3 columns x 2 rows grid (6 equal cells) on a landscape canvas. One hero per cell, centered, same visual size, with clear transparent margin so no hero touches a cell boundary.
+Order (row by row, left to right):
+row1: white-and-black panda, yellow chick, blue penguin
+row2: orange hamster, pink piglet, brown bear cub
+Art style: same as the attached reference image (flat cel-shaded chibi cartoon, thick dark outlines, bright friendly colors) for a kids game (ages 5-8), cute and not scary. Use the reference ONLY for art style; the content is different. No text, no letters, no numbers, no grid lines.
+Background: fully transparent (real PNG alpha).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.

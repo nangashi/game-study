@@ -1,0 +1,9 @@
+Use your image generation tool to create an ENEMY SPRITE SHEET and save it as ./enemies.png.
+Six different mischievous TOY monsters from a toy land, front view, full body, cute and funny (never scary).
+Layout: a strict 3 columns x 2 rows grid (6 equal cells) on a landscape canvas. One monster per cell, centered, similar visual size, with clear transparent margin so no monster touches a cell boundary.
+Order (row by row, left to right):
+row1: small blue wind-up tin robot with a key on its back, red spinning top with cheeky eyes, green rubber toy dinosaur
+row2: golem made of stacked colorful building blocks, purple teddy bear with a mischievous grin, big boss: giant toy robot king with a gold crown and red cape
+Art style: same as the attached reference image (flat cel-shaded chibi cartoon, thick dark outlines, bright friendly colors) for a kids game (ages 5-8), cute and not scary. Use the reference ONLY for art style; the content is different. No text, no letters, no numbers, no grid lines.
+Background: fully transparent (real PNG alpha).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.

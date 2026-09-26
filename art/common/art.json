@@ -1,0 +1,28 @@
+{
+  "ts": "src/assets/common.gen.ts",
+  "sources": {
+    "icons1": { "grid": "4x4", "names": ["coin", "feather", "star", "ticket", "bolt", "orbit", "gem", "boom", "heart", "shoe", "magnet", "sword", "pencil", "abacus", "swords", "hammer"] },
+    "icons2": { "grid": "4x4", "names": ["apple", "fish", "car", "frog", "donut", "tulip", "ladybug", "balloon", "flame", "clock", "trophy", "home", "back", "family", "maru", "sweat"] },
+    "hero_wizard": { "grid": "2x2", "names": ["walk0", "walk1", "walk2", "walk3"] },
+    "hero_witch":  { "grid": "2x2", "names": ["walk0", "walk1", "walk2", "walk3"] },
+    "hero_knight": { "grid": "2x2", "names": ["walk0", "walk1", "walk2", "walk3"] },
+    "hero_ninja":  { "grid": "2x2", "names": ["walk0", "walk1", "walk2", "walk3"] },
+    "hero_cat":    { "grid": "2x2", "names": ["walk0", "walk1", "walk2", "walk3"] },
+    "hero_dino":   { "grid": "2x2", "names": ["walk0", "walk1", "walk2", "walk3"] }
+  },
+  "sheets": {
+    "icons": { "cell": 128, "frames": [
+      "icons1:coin", "icons1:ticket", "icons1:star", "icons2:trophy", "icons2:home", "icons2:back",
+      "icons2:family", "icons2:maru", "icons2:sweat", "icons2:flame", "icons1:pencil", "icons1:abacus",
+      "icons1:swords", "icons1:hammer", "icons1:heart", "icons2:clock",
+      "icons2:apple", "icons2:fish", "icons2:car", "icons2:frog", "icons2:donut", "icons2:tulip", "icons2:ladybug", "icons2:balloon"
+    ] },
+    "hero_wizard": { "cell": 160, "mode": "anim", "cols": 2, "frames": ["hero_wizard:*"] },
+    "hero_witch":  { "cell": 160, "mode": "anim", "cols": 2, "frames": ["hero_witch:*"] },
+    "hero_knight": { "cell": 160, "mode": "anim", "cols": 2, "frames": ["hero_knight:*"] },
+    "hero_ninja":  { "cell": 160, "mode": "anim", "cols": 2, "frames": ["hero_ninja:*"] },
+    "hero_cat":    { "cell": 160, "mode": "anim", "cols": 2, "frames": ["hero_cat:*"] },
+    "hero_dino":   { "cell": 160, "mode": "anim", "cols": 2, "frames": ["hero_dino:*"] }
+  },
+  "images": { "home_bg": { "width": 1600 } }
+}

@@ -5,10 +5,9 @@
 //   npm i --no-save playwright && npx playwright install chromium-headless-shell
 // つかいかた:
 //   node scripts/playtest.mjs <game> [strategy] [--seconds=60] [--grade=1|k] [--out=playtest-out]
-//   game: defense | sling | grow
+//   game: defense | grow
 //   strategy:
 //     defense: auto（しょうかん+がったい）/ nomerge（しょうかんだけ）/ idle
-//     sling:   auto（まわりの敵に むけて ひっぱり つづける）/ idle
 //     grow:    auto（ぐるぐる あるく）/ idle
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -20,11 +19,10 @@ const seconds = Number(opt.seconds ?? 60);
 const out = opt.out ?? 'playtest-out';
 mkdirSync(out, { recursive: true });
 
-const NAMES = { defense: 'モンスターまもり', sling: 'ひっぱりアタック', grow: 'ぱくぱくビッグ' };
+const NAMES = { defense: 'モンスターまもり', grow: 'ぱくぱくビッグ' };
 // ゲームごとに ログに出す 値（window.__lab は LabScene）
 const SNAP = {
   defense: s => ({ fence: s.fence, kills: s.kills, coins: s.coins, zombies: s.zombies.length, units: s.units.filter(Boolean).map(u => u.kind[0] + u.lv).join(',') }),
-  sling: s => ({ hp: s.hp, kills: s.kills, wave: s.wave, bestCombo: s.bestCombo, foes: s.foes.length }),
   grow: s => ({ size: Math.round(s.size), eaten: s.eaten, bestChain: s.bestChain, things: s.things.length }),
 };
 
@@ -42,7 +40,7 @@ try {
     daily: { date: '2000-01-01', quests: 0, ticketsEarned: 0, subjects: [] }, streak: { count: 0, last: '' },
     stats: { quests: 0, correct: 0 },
   };
-  await page.addInitScript(p => localStorage.setItem('manabi-survivor:v1', JSON.stringify({ version: 1, profiles: [p], settings: { ticketsPerDay: 3, questLength: 5, runSeconds: 180 } })), profile);
+  await page.addInitScript(p => localStorage.setItem('manabi-survivor:v1', JSON.stringify({ version: 1, profiles: [p], settings: { ticketsPerDay: 3, questLength: 5 } })), profile);
   await page.goto('http://localhost:5199/');
   await page.getByText('テスト').first().click();
   await page.getByText('あそびラボ').first().click();
@@ -71,18 +69,7 @@ try {
   const start = Date.now();
   let shot = 0;
   while ((Date.now() - start) / 1000 < seconds) {
-    if (strategy !== 'idle' && game === 'sling') {
-      // いちばん近い敵の はんたいがわに ひっぱる
-      const aim = await page.evaluate(() => {
-        const s = window.__lab, h = s.hero, f = s.foes[0];
-        return f ? { x: h.x - f.obj.x, y: h.y - f.obj.y } : { x: Math.random() - 0.5, y: Math.random() - 0.5 };
-      });
-      const len = Math.hypot(aim.x, aim.y) || 1;
-      await m.move(500, 400); await m.down();
-      await m.move(500 + aim.x / len * 160, 400 + aim.y / len * 160, { steps: 4 });
-      await m.up();
-      await page.waitForTimeout(1200);
-    } else if (strategy !== 'idle' && game === 'grow') {
+    if (strategy !== 'idle' && game === 'grow') {
       const a = (Date.now() / 1500) % (Math.PI * 2);
       await m.move(500, 400); await m.down();
       await m.move(500 + Math.cos(a) * 60, 400 + Math.sin(a) * 60, { steps: 2 });
