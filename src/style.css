@@ -204,3 +204,76 @@ button:disabled { opacity: 0.45; }
 .game-card:active { transform: translateY(3px); }
 .game-card .name { font-size: 24px; font-weight: 800; }
 .game-card > div { min-width: 0; }
+
+/* 問題の新しい形（国語の文・絵・入力・ならべかえ） */
+.prompt .stack { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 760px; }
+.prompt .passage { background: #fff; border-radius: 16px; padding: 12px 16px; font-size: 22px; font-weight: 700; line-height: 1.9; text-align: left; }
+.prompt .sentence { font-size: 28px; line-height: 1.7; }
+.prompt .blank { display: inline-block; min-width: 1.6em; border-bottom: 4px solid var(--kokugo); color: var(--kokugo); }
+.prompt .pic { font-size: 96px; line-height: 1; }
+.prompt .hint { font-size: 18px; color: var(--muted); }
+.prompt .roma { font-family: system-ui, sans-serif; letter-spacing: .1em; }
+.choice.long { font-size: 24px; min-height: 72px; min-width: 150px; }
+.progress span.retry { width: 16px; height: 16px; align-self: center; }
+
+.kanapad { display: flex; flex-direction: column; gap: 8px; width: min(100%, 560px); }
+.kana-box { min-height: 64px; border-radius: 16px; background: #fff; border: 3px solid var(--kokugo); font-size: 36px; font-weight: 800; display: flex; align-items: center; justify-content: center; letter-spacing: .08em; }
+.kana-box.right { border-color: var(--ok); background: #dcfce7; }
+.kana-box.wrong { border-color: var(--ng); background: #fee2e2; }
+.kana-grid { display: grid; grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(5, auto); grid-auto-flow: column; direction: rtl; gap: 4px; }
+.kkey { border-radius: 10px; background: #fff; font-size: 22px; font-weight: 800; min-height: 44px; box-shadow: 0 3px 0 rgba(0,0,0,.1); }
+.kkey:active { transform: translateY(2px); box-shadow: none; }
+.kana-tools { display: grid; grid-template-columns: 1fr 1fr 1fr 1.3fr 1.6fr; gap: 6px; }
+.kana-tools .kkey { min-height: 54px; }
+.kkey.del { background: #f3f4f6; }
+.kkey.ok { background: var(--ok); color: #fff; }
+
+.order-slots { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.order-slots .slot { min-width: 96px; padding: 10px 14px; border-radius: 16px; border: 3px dashed var(--line); background: #fff; font-size: 26px; font-weight: 800; text-align: center; color: var(--muted); }
+.order-slots .slot.filled { border-style: solid; color: var(--ink); }
+.order-slots .slot.right { border-color: var(--ok); background: #dcfce7; }
+.order-slots .slot.wrong { border-color: var(--ng); background: #fee2e2; }
+
+/* 勉強をえらぶ（学年 → まぜこぜ / カテゴリ） */
+.grade-tabs { display: flex; gap: 6px; padding: 6px; border-radius: 999px; background: rgba(255,255,255,.9); flex-wrap: wrap; justify-content: center; }
+.grade-tab { padding: 10px 18px; border-radius: 999px; background: none; font-size: 20px; font-weight: 800; }
+.grade-tab.on { background: var(--study); color: #fff; }
+.mix-btn { width: min(100%, 560px); }
+.mix-btn .mix-name { display: flex; align-items: center; gap: 6px; font-size: 30px; }
+.reward-line { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.mix-btn .reward-line .chip { background: rgba(255,255,255,.92); color: var(--ink); font-size: 18px; }
+.cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; width: min(100%, 760px); }
+.cat-btn { background: #fff; border-radius: var(--radius); padding: 12px 14px; display: flex; flex-direction: column; align-items: center; gap: 8px; border: 3px solid var(--study); box-shadow: 0 5px 0 rgba(0,0,0,.08); }
+.cat-btn:active { transform: translateY(3px); }
+.cat-btn .cat-name { font-size: 20px; font-weight: 800; }
+.cat-btn .reward-line { flex-wrap: nowrap; gap: 6px; }
+.cat-btn .chip { font-size: 16px; padding: 4px 10px; }
+@media (max-width: 480px) {
+  .grade-tab { padding: 8px 11px; font-size: 16px; }
+}
+
+/* 算数の図と式（筆算・分数・●・絵グラフ・図形） */
+.prompt .box { display: inline-block; min-width: 1.4em; border: 4px solid var(--sansu); border-radius: 10px; color: var(--sansu); padding: 0 8px; line-height: 1.2; }
+.prompt .dots { font-size: 34px; letter-spacing: .12em; }
+.prompt .dots .on { color: var(--kokugo); }
+.prompt .dots .off { color: #cbd5e1; }
+.prompt svg.fig { width: min(100%, 440px); height: auto; }
+.prompt svg.fig.small { width: min(50vw, 220px); }
+.prompt .clock + .sentence, .prompt .stack .clock { width: min(200px, 44vw); }
+.hissan { font-size: 56px; font-weight: 900; font-variant-numeric: tabular-nums; border-collapse: collapse; }
+.hissan td { width: 1em; text-align: center; padding: 0 4px; line-height: 1.15; }
+.hissan tr.line td { border-top: 5px solid var(--ink); height: .9em; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; vertical-align: middle; font-variant-numeric: tabular-nums; }
+.frac span:first-child { border-bottom: 3px solid currentColor; padding: 0 4px; }
+.choice .shape { width: 84px; height: 84px; display: block; }
+.choice .things { max-width: 220px; }
+.pictograph { display: flex; gap: 14px; align-items: flex-end; background: #fff; border-radius: 16px; padding: 10px 16px; }
+.pictograph .g-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pictograph .g-dots { display: flex; flex-direction: column-reverse; font-size: 22px; line-height: 1; }
+.pictograph .g-name { font-size: 18px; border-top: 2px solid var(--ink); padding-top: 4px; }
+
+/* けいさんりょく（ドリル） */
+.mix-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; width: min(100%, 760px); }
+.mix-row .mix-btn { flex: 1 1 260px; width: auto; }
+.drill-btn { background: #f59e0b; }
+.progress span.slow { background: var(--hint); }

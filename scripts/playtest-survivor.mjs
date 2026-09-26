@@ -47,7 +47,7 @@ try {
   page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource')) errors.push(m.text()); });
   const profile = {
     id: 'p1', name: 'テスト', avatar: 'cat', grade: opt.grade === 'k' ? 'k' : Number(opt.grade ?? 1), tolerance: 'easy',
-    coins: 0, tickets: 3, tracks: {}, cards: {},
+    coins: 0, tickets: 3, cards: {},
     games: { survivor: { stage: stage - 1, best: 0, plays: 0, clears: 0, upgrades, data: opt.start ? { start: opt.start } : undefined } },
     daily: { date: '2000-01-01', quests: 0, ticketsEarned: 0, subjects: [] }, streak: { count: 0, last: '' },
     stats: { quests: 0, correct: 0 },

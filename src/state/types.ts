@@ -4,16 +4,12 @@ import type { HeroId } from '../art';
 // 'k' = 年長
 export type Grade = 'k' | 1 | 2 | 3;
 
-export type TrackId =
-  | 'hira-write' | 'hira-match'   // 年長〜
-  | 'kazu'                        // 年長: かず
-  | 'kata-write' | 'kanji-write' | 'kanji-read'
-  | 'keisan' | 'tokei';
-
-export interface TrackState { level: number; streak: number; miss: number }
+export const GRADES: Grade[] = ['k', 1, 2, 3];
+export const gradeRank = (g: Grade) => GRADES.indexOf(g);
 
 // 間隔反復（ライトナー方式）。box が上がるほど次に出るまでの日数が伸びる
-export interface CardState { box: number; due: string }
+// ms: けいさんりょく（ドリル）で最後に答えたときの時間。遅い問題を先に出すのに使う
+export interface CardState { box: number; due: string; ms?: number }
 
 // ゲームごとの進みぐあい（docs/03-rewards-and-games.md）
 export interface GameProgress {
@@ -34,11 +30,11 @@ export interface Profile {
   coins: number;
   tickets: number;  // ゲーム券（全ゲーム共通）
   games: Record<string, GameProgress>; // key: ゲームの id
-  tracks: Partial<Record<TrackId, TrackState>>;
   cards: Record<string, CardState>; // key: 'hira:あ' など
   daily: { date: string; quests: number; ticketsEarned: number; subjects: string[] }; // subjects: きょうやった勉強の id
   streak: { count: number; last: string };
   stats: { quests: number; correct: number };
+  best?: Record<string, number>;     // ドリルのベスト記録（カテゴリの id → 10問の合計時間 ms）
 }
 
 export interface Settings {
@@ -46,6 +42,7 @@ export interface Settings {
   playsPerSubject: number;  // その日はじめてやった教科（勉強）ごとにもらえるゲーム券
   ticketsPerDay: number;    // 勉強でもらえるゲーム券の1日の上限
   questLength: number;      // 1クエストの問題数
+  drillSlowSec: number;     // けいさんりょく: これより遅い正解は「まだ速くない」とみなす（秒）
 }
 
 export interface SaveData {

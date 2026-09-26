@@ -5,22 +5,16 @@ import { addDays } from '../state/store';
 const INTERVAL = [0, 1, 2, 4, 7, 14, 30];
 export const MAX_BOX = INTERVAL.length - 1;
 
-// 出す文字を選ぶ: 復習の期限が来たもの → まだ出していない新しい文字 → いちばん苦手なもの
-export function pickCard(p: Profile, prefix: string, pool: string, today: string, exclude: Set<string>): string {
-  const chars = [...pool].filter(c => !exclude.has(c));
-  const card = (c: string): CardState | undefined => p.cards[`${prefix}:${c}`];
-  const due = chars.filter(c => { const s = card(c); return s && s.due <= today; })
-    .sort((a, b) => card(a)!.due.localeCompare(card(b)!.due) || card(a)!.box - card(b)!.box);
-  if (due.length) return due[0];
-  const fresh = chars.find(c => !card(c));
-  if (fresh) return fresh;
-  return chars.sort((a, b) => card(a)!.box - card(b)!.box || card(a)!.due.localeCompare(card(b)!.due))[0] ?? [...pool][0];
-}
+// good: 正解 → 次の段へ / slow: 正解だが遅い（ドリル） → 段はそのままで、次の日にまた出す / bad: まちがい → はじめから
+export type Result = 'good' | 'slow' | 'bad';
 
-export function updateCard(p: Profile, key: string, good: boolean, today: string): void {
+export function updateCard(p: Profile, key: string, result: Result, today: string, ms?: number): void {
   const cur = p.cards[key] ?? { box: 0, due: today };
-  const box = good ? Math.min(cur.box + 1, MAX_BOX) : 0;
-  p.cards[key] = { box, due: addDays(today, INTERVAL[box]) };
+  const box = result === 'good' ? Math.min(cur.box + 1, MAX_BOX) : result === 'slow' ? cur.box : 0;
+  const next: CardState = { box, due: addDays(today, result === 'slow' ? 1 : INTERVAL[box]) };
+  const time = ms ?? cur.ms;
+  if (time != null) next.ms = time;
+  p.cards[key] = next;
 }
 
 // 正解したときのコイン（答える前のカードの状態で決める）。定着していない問題ほど多い
