@@ -32,14 +32,14 @@ describe('Platform', () => {
   it('券がなければ遊べない。強化はコインで買い、ゲームだけのデータを保存できる', () => {
     const p = newProfile('t', 'wizard', 'k');
     p.tickets = 0;
-    p.coins = 30;
+    p.coins = 50;   // ひっぱりアタックの強化は 1段階 40
     const pf = createPlatform(p, HIPPARI, () => {});
     expect(pf.player.easy).toBe(true);
     expect(pf.startRun(1)).toBeNull();
     expect(pf.buyUpgrade('atk')).toBe(true);
     expect(pf.buyUpgrade('atk')).toBe(false);
     expect(pf.upgradeLevel('atk')).toBe(1);
-    expect(p.coins).toBe(5);
+    expect(p.coins).toBe(10);
     pf.saveData({ chara: 'bear' });
     expect(pf.data()).toEqual({ chara: 'bear' });
     expect(p.games.hippari.data).toEqual({ chara: 'bear' });

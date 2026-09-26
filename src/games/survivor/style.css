@@ -6,3 +6,67 @@
   background: #bbf7d0;
 }
 .game-survivor .stage { position: absolute; inset: 0; }
+
+/* せかいと ステージえらび */
+.sv-worlds { display: flex; flex-direction: column; gap: 10px; width: min(640px, 100%); }
+.sv-world {
+  display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 18px;
+  background: var(--ground) center / 160px repeat; box-shadow: inset 0 0 0 3px rgba(31,41,55,.25), 0 4px 0 rgba(0,0,0,.2);
+}
+.sv-world.locked { filter: grayscale(.8) brightness(.8); }
+.sv-world-name {
+  display: flex; flex-direction: column; align-items: center; min-width: 84px;
+  font-weight: 900; font-size: 15px; color: #1f2937; background: rgba(255,255,255,.8); border-radius: 12px; padding: 2px 6px;
+}
+.sv-stage-row { display: flex; gap: 8px; flex: 1; justify-content: space-around; }
+.sv-stage {
+  position: relative; width: 60px; height: 64px; border-radius: 14px; background: #fff; font-size: 24px; font-weight: 900;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 0 rgba(0,0,0,.2);
+}
+.sv-stage:disabled { background: rgba(255,255,255,.6); }
+.sv-stage.on { outline: 4px solid var(--game-accent); transform: scale(1.08); }
+.sv-stage.boss { background: #fef3c7; }
+.sv-stage .sv-badge { position: absolute; top: -12px; right: -8px; }
+.sv-pip { font-size: 11px; color: #f59e0b; letter-spacing: -1px; line-height: 1; }
+.sv-stars { color: #b45309; font-weight: 900; }
+
+/* スキルえらび */
+.skill.new { outline: 4px solid #22c55e; }
+.sv-evo-hint { display: inline-flex; align-items: center; gap: 2px; background: #fef3c7; border-radius: 999px; padding: 2px 8px; font-size: 14px; }
+
+/* ずかん */
+.sv-zukan-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.sv-zukan-world { width: 100%; text-align: left; font-weight: 900; font-size: 15px; }
+.sv-zukan-cell { display: flex; flex-direction: column; align-items: center; width: 72px; font-size: 12px; font-weight: 800; }
+.sv-zukan-cell.unknown .ico { filter: brightness(0) opacity(.25); }
+
+/* さいしょの ぶき */
+.sv-start { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.88); border-radius: 999px; padding: 6px 14px; flex-wrap: wrap; justify-content: center; }
+.sv-start-label { font-weight: 900; font-size: 15px; }
+.sv-start-btn { position: relative; min-width: 52px; height: 52px; border-radius: 14px; background: #fff; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; border: 3px solid #e5e7eb; }
+.sv-start-btn.on { border-color: var(--game-accent); background: #f5f3ff; }
+.sv-start-btn.locked { filter: grayscale(1) opacity(.45); }
+.sv-start-btn .sv-lock { position: absolute; right: -4px; bottom: -4px; }
+
+/* おみせ */
+.sv-shop { max-width: 960px; }
+.sv-wallet { display: flex; align-items: center; gap: 4px; font-size: 26px; }
+.sv-price { display: inline-flex; align-items: center; gap: 2px; background: #fef3c7; border-radius: 999px; padding: 2px 10px; font-size: 18px; font-weight: 900; color: #92400e; }
+.sv-sold { color: #16a34a; }
+.sv-shop .skill { width: 160px; }
+.sv-shop .skill:disabled { opacity: .5; }
+
+/* タイトル画面を 1画面に おさめる */
+.game-survivor .lobby { gap: 10px; }
+.game-survivor .lobby-title { font-size: clamp(34px, 7vw, 56px); margin-top: 0; }
+.game-survivor .sv-stage { height: 56px; }
+.sv-rule { margin: 0; font-size: 14px; padding: 4px 14px; }
+
+/* ぶきの わく・とくちょう */
+.sv-slots { display: flex; align-items: center; gap: 6px; justify-content: center; }
+.sv-slot { position: relative; width: 44px; height: 44px; border-radius: 12px; background: #fff; border: 3px solid #c4b5fd; display: inline-flex; align-items: center; justify-content: center; }
+.sv-slot.empty { border-style: dashed; background: rgba(255,255,255,.5); }
+.sv-slot b { position: absolute; right: -4px; bottom: -6px; font-size: 13px; background: #7c3aed; color: #fff; border-radius: 999px; padding: 0 5px; }
+.sv-tag { font-size: 13px; font-weight: 900; color: #fff; background: #7c3aed; border-radius: 999px; padding: 1px 10px; }
+.sv-trait { font-size: 10px; color: #6b7280; line-height: 1.2; text-align: center; }
+.sv-zukan-cell { width: 84px; }

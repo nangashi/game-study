@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { GAME_COINS, buyUpgrade, finishGame, questReward, recommendedLevel, upgradeLevel } from './economy';
+import { HIPPARI } from '../games/hippari';
+import { GAME_COINS, buyUpgrade, finishGame, questReward, recommendedCoins, recommendedLevel, upgradeLevel } from './economy';
 import { DEFAULT_SETTINGS, newProfile, rollDaily, touchStreak } from './store';
 import { SURVIVOR } from '../games/survivor';
 
@@ -48,11 +49,11 @@ describe('questReward', () => {
 describe('upgrades', () => {
   it('コインで強化し、ゲームごとに記録する', () => {
     const p = newProfile('t', 'wizard', 2);
-    const hp = SURVIVOR.upgrades[0];
-    p.coins = 60;
-    expect(buyUpgrade(p, SURVIVOR, hp)).toBe(true);   // 25
-    expect(buyUpgrade(p, SURVIVOR, hp)).toBe(true);   // 25
-    expect(buyUpgrade(p, SURVIVOR, hp)).toBe(false);
+    const hp = SURVIVOR.upgrades[0];   // 40 + 20 × レベル
+    p.coins = 110;
+    expect(buyUpgrade(p, SURVIVOR, hp)).toBe(true);   // 40
+    expect(buyUpgrade(p, SURVIVOR, hp)).toBe(true);   // 60
+    expect(buyUpgrade(p, SURVIVOR, hp)).toBe(false);  // 80
     expect(upgradeLevel(p, SURVIVOR, hp)).toBe(2);
     expect(p.games.survivor.upgrades).toEqual({ hp: 2 });
     expect(p.coins).toBe(10);
@@ -71,14 +72,19 @@ describe('finishGame', () => {
 });
 
 describe('つりあい', () => {
-  it('ステージ4からは、1ステージにつき「ゲームクリア + 勉強の約22コイン」で足りる', () => {
-    const cost = SURVIVOR.upgrades[0].cost.base;
+  it('ステージ4からは、1ステージにつき「はじめてのクリア + 勉強 約2回ぶん（52コイン）」', () => {
     const clear = GAME_COINS.play + GAME_COINS.firstClear;
-    const perStage = (n: number) => (recommendedLevel(n) - recommendedLevel(n - 1)) * cost - clear;
-    expect([1, 2, 3].map(recommendedLevel)).toEqual([0, 0, 0]);
-    for (let n = 4; n <= 20; n++) expect(perStage(n)).toBe(22);
-    // 全部の強化をMAXにしたら、ステージ20の推奨レベルに届く
-    expect(SURVIVOR.upgrades.reduce((a, u) => a + u.max, 0)).toBeGreaterThanOrEqual(recommendedLevel(20));
+    expect([1, 2, 3].map(recommendedCoins)).toEqual([0, 0, 0]);
+    for (let n = 4; n <= 20; n++) expect(recommendedCoins(n) - recommendedCoins(n - 1) - clear).toBe(52);
+  });
+
+  it('推奨強化レベルは、推奨コインを 数値の強化に 安いものから使ったレベルの合計', () => {
+    const flat = HIPPARI.upgrades;   // 1段階 40コインで一定 → 1ステージ 2段階
+    for (let n = 1; n <= 20; n++) expect(recommendedLevel(n, flat)).toBe(Math.max(0, 2 * (n - 3)));
+    // ねだんが上がっていく強化（サバイバー）は、先のステージほど 1ステージで上がるレベルが へる
+    const sv = (n: number) => recommendedLevel(n, SURVIVOR.upgrades);
+    expect(sv(4)).toBe(2);
+    expect(sv(15) - sv(14)).toBeLessThan(sv(5) - sv(4));
   });
 });
 

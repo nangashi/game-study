@@ -2,9 +2,12 @@ import Phaser from 'phaser';
 import { heroSheet, type HeroId } from '../art';
 import { assetUrl } from '../assets/sprite';
 import { loadSheet } from '../games/kit/phaser';
+import { sfx } from '../games/kit/sfx';
 import { LAB_IMAGES, LAB_SHEETS, iconFrame, loadLabSheets, type IconName } from './assets';
 
 // あそびラボ（ためしプレイ用のミニゲーム）で共通に使うもの
+
+export { sfx }; // こうかおんは ゲームと共通（src/games/kit/sfx.ts）
 
 export interface LabConfig {
   avatar: HeroId;
@@ -25,60 +28,6 @@ export const FONT = '"Zen Maru Gothic", sans-serif';
 
 export const textStyle = (size: number, color = '#1f2937', stroke = '#ffffff') =>
   ({ fontFamily: FONT, fontSize: `${size}px`, fontStyle: 'bold', color, stroke, strokeThickness: Math.max(4, size / 6) });
-
-// ---- こうかおん（WebAudio で合成。音の素材はいらない） ----
-let ctx: AudioContext | null = null;
-const lastPlay: Record<string, number> = {};
-
-function audio(): AudioContext | null {
-  try {
-    ctx ??= new AudioContext();
-    if (ctx.state === 'suspended') void ctx.resume();
-    return ctx;
-  } catch { return null; }
-}
-
-function tone(kind: string, freq: number, dur: number, type: OscillatorType, vol: number, slideTo?: number) {
-  const a = audio();
-  if (!a) return;
-  const now = a.currentTime;
-  if ((lastPlay[kind] ?? -1) > now - 0.03) return; // 同じ音が重なりすぎないように
-  lastPlay[kind] = now;
-  const o = a.createOscillator(), g = a.createGain();
-  o.type = type;
-  o.frequency.setValueAtTime(freq, now);
-  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, now + dur);
-  g.gain.setValueAtTime(vol, now);
-  g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-  o.connect(g).connect(a.destination);
-  o.start(now); o.stop(now + dur);
-}
-
-function noise(kind: string, dur: number, vol: number) {
-  const a = audio();
-  if (!a) return;
-  const now = a.currentTime;
-  if ((lastPlay[kind] ?? -1) > now - 0.05) return;
-  lastPlay[kind] = now;
-  const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2;
-  const src = a.createBufferSource(), g = a.createGain();
-  src.buffer = buf; g.gain.value = vol;
-  src.connect(g).connect(a.destination);
-  src.start(now);
-}
-
-export const sfx = {
-  hit: (combo = 0) => tone('hit', 300 + Math.min(combo, 20) * 45, 0.09, 'square', 0.06, 120),
-  pop: (pitch = 1) => tone('pop', 520 * pitch, 0.08, 'sine', 0.12, 900 * pitch),
-  wall: () => tone('wall', 160, 0.06, 'triangle', 0.1, 90),
-  boom: () => noise('boom', 0.35, 0.25),
-  hurt: () => tone('hurt', 220, 0.25, 'sawtooth', 0.08, 70),
-  shoot: () => tone('shoot', 180, 0.18, 'triangle', 0.12, 700),
-  up: () => { tone('up1', 523, 0.12, 'square', 0.05); setTimeout(() => tone('up2', 784, 0.2, 'square', 0.05), 90); },
-  fanfare: () => [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(`ff${i}`, f, 0.25, 'square', 0.05), i * 110)),
-};
 
 // ---- 画面のはしの表示（タイマー・スコア・ハート・スティック） ----
 // ゲーム側のカメラをズームしても大きさが変わらないように、別のシーンに描く

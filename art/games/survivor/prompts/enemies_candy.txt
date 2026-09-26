@@ -1,0 +1,10 @@
+Use your image generation tool to create an ENEMY SPRITE SHEET and save it as ./enemies_candy.png.
+Six different cute-but-mischievous monster enemies from a CANDY LAND world for a Vampire-Survivors-like game, each facing LEFT, full body, with little angry-cute eyes.
+They will be shown on a pastel pink background, so each must have strong saturated colors and thick dark outlines (avoid pale pink bodies).
+Layout: a strict 3 columns x 2 rows grid (6 equal cells) on a landscape canvas. One monster per cell, centered, similar visual size, with clear transparent margin so no monster touches a cell boundary.
+Order (row by row, left to right):
+row1: red gummy bear, wrapped purple candy with tiny bat wings, chocolate-glazed donut rolling like a wheel
+row2: cupcake monster with a cherry cannon on top, big layered cake golem with arms, BOSS: giant chocolate king with a candy crown and a lollipop scepter
+Art style: exactly the same as the attached reference image (flat cel-shaded chibi cartoon, thick dark outlines, bright friendly colors) for a kids game (ages 5-8), cute and not scary. Use the reference ONLY for art style; the content is different. No text, no letters, no numbers, no grid lines.
+Background: fully transparent (real PNG alpha).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.

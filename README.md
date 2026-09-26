@@ -9,6 +9,7 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
 - ごほうびの仕組みと、ゲームに共通する決まり: [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
+- ゲームデザインの考え方と、設計 → 実装の流れ: [docs/05-game-design.md](docs/05-game-design.md)（ゲームごとの設計書は [docs/games/](docs/games/)）
 - ゲーム候補（あそびラボ）の引き継ぎ: [docs/04-game-candidates.md](docs/04-game-candidates.md)
 - 手書き判定の検証用プロトタイプ: [prototypes/handwriting/](prototypes/handwriting/)
 
@@ -16,7 +17,7 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 
 1. **クエスト**（こくご / さんすう、1回5問。学年とカテゴリをえらぶ）→ 🪙コイン。その日はじめての教科なら 🎟️ゲーム券 も
 2. **ゲーム**（🎟️を1枚使う。クリアでも少し🪙がもらえる）
-   - **サバイバー**: ダダサバ風。1回3分生きのこればクリア
+   - **サバイバー**: ダダサバ風。4分生きのこるか、3分で来るボスをたおせばクリア。3つのせかい × 5ステージ。とくちょうの違う武器を3つまで持ち、しんかさせる。おみせ・★・ずかん
    - **ひっぱりアタック**: モンスト風。ひっぱって はなし、はねかえりで敵に当てるターン制。20ステージ（5ステージごとにボス）
 3. **つよくする**（ゲームのタイトル画面で、ゲームごとに）→ 🪙で強化する
 
@@ -75,6 +76,7 @@ scripts/gen-strokes.mjs   KanjiVG から筆順データを作る
 scripts/art/gen.sh        Codex で画像を生成（art/<スコープ>/prompts/ → raw/）
 scripts/art/build.mjs     生成画像を切り出して並べ直し、public/assets/<スコープ>/ に出力
 scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/04）
+scripts/playtest-survivor.mjs  サバイバーを自動で遊ばせて、ステージの難しさを確かめる
 art/common/               土台の画像（アイコン・アバター・ホームの背景）
 art/games/<id>/           ゲームごとの画像
 art/lab/                  あそびラボの画像

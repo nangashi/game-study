@@ -1,7 +1,7 @@
 // ゲームのタイトル画面・結果画面を作るための部品（使うかどうかはゲームが決める）
 // 色や背景は、ゲームの CSS で --game-accent などを上書きして変える（kit.css）
 import './kit.css';
-import type { GameDef, Platform } from '../types';
+import type { GameDef, Platform, UpgradeDef } from '../types';
 import type { Sheet } from '../../assets/sprite';
 import { spriteEl } from '../../assets/sprite';
 import { chip, h, ico, overlay } from '../../ui/dom';
@@ -21,26 +21,35 @@ export function playButton(platform: Platform, onClick: () => void, label = 'あ
 }
 
 // つよくする（ずっと残る強化）。onChange は買ったあとに呼ばれる
-export function upgradePanel(platform: Platform, game: GameDef, sheet: Sheet, onChange: () => void): void {
+// sheet は アイコンのシート。いくつか渡すと、フレーム名が見つかったシートを使う
+// 数値の強化（stat）と 解放（unlock）を分けて出す
+export function upgradePanel(platform: Platform, game: GameDef, sheet: Sheet | Sheet[], onChange: () => void): void {
   const o = overlay();
   const card = o.el.firstElementChild as HTMLElement;
   card.classList.add('upgrade-panel');
+  const sheets = Array.isArray(sheet) ? sheet : [sheet];
+  const icon = (name: string) => spriteEl(sheets.find(x => name in x.frames) ?? sheets[0], name, 60);
+  const row = (u: UpgradeDef) => {
+    const lv = platform.upgradeLevel(u.id);
+    const unlock = u.kind === 'unlock';
+    return h('div', { class: `upgrade ${unlock ? 'unlock' : ''} ${unlock && lv >= u.max ? 'owned' : ''}` },
+      icon(u.icon),
+      h('div', {},
+        h('div', { class: 'name', textContent: u.name }),
+        u.desc ? h('div', { class: 'desc', textContent: u.desc }) : null,
+        u.max > 1 ? h('div', { class: 'pips' }, ...Array.from({ length: u.max }, (_, i) => h('i', { class: i < lv ? 'on' : '' }))) : null),
+      h('button', {
+        disabled: !platform.canUpgrade(u.id),
+        onclick: () => { if (platform.buyUpgrade(u.id)) { render(); onChange(); } },
+      }, ...(lv >= u.max ? [unlock ? 'もってる' : 'MAX'] : [ico('coin'), `${platform.upgradeCost(u.id)}`])),
+    );
+  };
+  const stats = game.upgrades.filter(u => u.kind !== 'unlock'), unlocks = game.upgrades.filter(u => u.kind === 'unlock');
   const render = () => card.replaceChildren(
     h('h1', { class: 'title' }, ico('hammer', 44), ' つよくする'),
     walletBar(platform),
-    h('div', { class: 'upgrades' }, ...game.upgrades.map(u => {
-      const lv = platform.upgradeLevel(u.id);
-      return h('div', { class: 'upgrade' },
-        spriteEl(sheet, u.icon, 60),
-        h('div', {},
-          h('div', { class: 'name', textContent: u.name }),
-          h('div', { class: 'pips' }, ...Array.from({ length: u.max }, (_, i) => h('i', { class: i < lv ? 'on' : '' })))),
-        h('button', {
-          disabled: !platform.canUpgrade(u.id),
-          onclick: () => { if (platform.buyUpgrade(u.id)) { render(); onChange(); } },
-        }, ...(lv >= u.max ? ['MAX'] : [ico('coin'), `${platform.upgradeCost(u.id)}`])),
-      );
-    })),
+    h('div', { class: 'upgrades' }, ...stats.map(row)),
+    ...(unlocks.length ? [h('h2', { class: 'upgrade-head', textContent: 'かいほう（できることが ふえる）' }), h('div', { class: 'upgrades' }, ...unlocks.map(row))] : []),
     h('p', { class: 'note', style: 'margin:0' }, ico('coin'), ' は べんきょうで たくさん もらえるよ'),
     h('button', { class: 'pill-btn primary', textContent: 'とじる', onclick: () => o.close() }),
   );

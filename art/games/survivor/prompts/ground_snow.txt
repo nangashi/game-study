@@ -1,0 +1,6 @@
+Use your image generation tool to create a GROUND TEXTURE and save it as ./ground_snow.png.
+Content: soft snowy ground with a few tiny pale-blue ice patches, small footprints-free snow bumps and very small sparkles. Mostly light blue-white.
+Composition: square canvas, SEAMLESSLY TILEABLE texture seen from straight above (top-down), the left edge must continue into the right edge and the top into the bottom. Evenly distributed small details, no big objects, no horizon, no shadows from a single light, LOW CONTRAST so characters on top stand out.
+Art style: same as the attached reference image (flat cel-shaded cartoon, bright friendly colors) for a kids game (ages 5-8). No text.
+Opaque image (no transparency).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.

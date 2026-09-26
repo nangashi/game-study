@@ -7,12 +7,15 @@ import type { GameProgress } from '../state/types';
 // 遊ぶ画面・結果）はゲームが自分で作る。ただしゲーム券・コイン・強化の費用は、かならず Platform を通す
 
 // 強化。費用は base + step × いまのレベル（コイン）。ふつうは step: 0 で一定にする
+// kind: 数値の強化（stat）か、解放（unlock: スキル・さいしょの武器・装備など）か。どちらも1段階 = 推奨強化レベル1つ（docs/03 4. 7.）
 export interface UpgradeDef {
   id: string;
   name: string;
   icon: string;       // ゲームのシートのフレーム名
   max: number;
   cost: { base: number; step: number };
+  kind?: 'stat' | 'unlock';   // 省略すると stat
+  desc?: string;              // 解放で なにができるようになるか（ひらがな）
 }
 
 export interface GameDef {

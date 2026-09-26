@@ -23,6 +23,9 @@ function scopes() {
   walk(ART);
   return found;
 }
+// raw がないとき（別の端末で生成した画像など）に投げる
+class MissingRaw extends Error {}
+
 const config = scope => JSON.parse(fs.readFileSync(path.join(ART, scope, 'art.json'), 'utf8'));
 
 // 生成画像から切り出した絵（名前 → 絵）。同じ画像は1回だけ切る
@@ -33,7 +36,7 @@ function source(scope, name) {
   const def = config(scope).sources?.[name];
   if (!def) throw new Error(`${scope}/art.json に sources.${name} がありません`);
   const file = path.join(ART, scope, 'raw', `${name}.png`);
-  if (!fs.existsSync(file)) throw new Error(`${path.relative(ROOT, file)} がありません（scripts/art/gen.sh ${scope} ${name} で生成）`);
+  if (!fs.existsSync(file)) throw new MissingRaw(`${path.relative(ROOT, file)} がありません（scripts/art/gen.sh ${scope} ${name} で生成）`);
   const [cols, rows] = def.grid.split('x').map(Number);
   if (def.names.length !== cols * rows) throw new Error(`${key}: names の数がグリッド ${def.grid} と合いません`);
   const pieces = cut(readPng(file), cols, rows, def.group);
@@ -55,15 +58,37 @@ function frames(scope, refs) {
   });
 }
 
+function previous(ts) {
+  const file = ts && path.join(ROOT, ts);
+  if (!file || !fs.existsSync(file)) return { sheets: {}, images: {} };
+  const src = fs.readFileSync(file, 'utf8');
+  const grab = name => JSON.parse(src.match(new RegExp(`export const ${name} = ([\\s\\S]*?) as const;`))?.[1] ?? '{}');
+  return { sheets: grab('SHEETS'), images: grab('IMAGES') };
+}
+
 async function build(scope) {
   const cfg = config(scope);
   const out = path.join(ROOT, 'public/assets', scope);
   fs.mkdirSync(out, { recursive: true });
   const url = f => `assets/${scope}/${f}`;
   const sheets = {}, images = {};
+  // 前に出力した対応表。raw がないシート・画像は、前の出力をそのまま使う
+  const prev = previous(cfg.ts);
+  const keep = (kind, name) => {
+    const entry = prev[kind][name];
+    const url = entry && (typeof entry === 'string' ? entry : entry.url);
+    if (!url || !fs.existsSync(path.join(ROOT, 'public', url))) return false;
+    (kind === 'sheets' ? sheets : images)[name] = entry;
+    console.log(`(raw がないので前の出力を使う) ${url}`);
+    return true;
+  };
 
   for (const [name, def] of Object.entries(cfg.sheets ?? {})) {
-    const list = frames(scope, def.frames);
+    let list;
+    try { list = frames(scope, def.frames); } catch (e) {
+      if (e instanceof MissingRaw && keep('sheets', name)) continue;
+      throw e;
+    }
     const cols = def.cols ?? Math.ceil(Math.sqrt(list.length));
     const { png, rows } = pack(list.map(f => f.piece), { cols, cell: def.cell, mode: def.mode });
     await sharp(png.data, { raw: { width: png.width, height: png.height, channels: 4 } })
@@ -74,7 +99,10 @@ async function build(scope) {
     // from: ほかのスコープの生成画像を使う（"games/survivor/ground"）
     const [s, n] = def.from ? [def.from.slice(0, def.from.lastIndexOf('/')), def.from.slice(def.from.lastIndexOf('/') + 1)] : [scope, name];
     const file = path.join(ART, s, 'raw', `${n}.png`);
-    if (!fs.existsSync(file)) throw new Error(`${path.relative(ROOT, file)} がありません（scripts/art/gen.sh ${s} ${n} で生成）`);
+    if (!fs.existsSync(file)) {
+      if (keep('images', name)) continue;
+      throw new MissingRaw(`${path.relative(ROOT, file)} がありません（scripts/art/gen.sh ${s} ${n} で生成）`);
+    }
     await sharp(file).resize({ width: def.width }).webp({ quality: 85, effort: 6 }).toFile(path.join(out, `${name}.webp`));
     images[name] = url(`${name}.webp`);
   }

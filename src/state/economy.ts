@@ -48,8 +48,25 @@ export function studyGivesTicket(p: Profile, s: Settings, studyId: string, sel?:
 }
 
 export const upgradeLevel = (p: Profile, game: GameDef, u: UpgradeDef) => gameProgress(p, game.id).upgrades[u.id] ?? 0;
-// ステージ n の推奨強化レベル（全強化のレベルの合計）。1〜3は強化なし、そのあと1ステージにつき2段階
-export const recommendedLevel = (stage: number) => Math.max(0, 2 * (stage - 3));
+// ステージ n までに 強化に使う目安のコイン（docs/03 5.）。1〜3は0、そのあと1ステージにつき 80
+// （はじめてのクリア 28 + 勉強 約2回ぶん）
+export const COINS_PER_STAGE = 80;
+export const recommendedCoins = (stage: number) => Math.max(0, COINS_PER_STAGE * (stage - 3));
+
+// 推奨強化レベル: recommendedCoins を 数値の強化（stat）に、安いものから じゅんに使ったときの レベルの合計。
+// 敵の強さは これに そろえる。解放（unlock）は ふくめない
+export function recommendedLevel(stage: number, upgrades: UpgradeDef[]): number {
+  const stats = upgrades.filter(u => (u.kind ?? 'stat') === 'stat');
+  const lv = stats.map(() => 0);
+  let coins = recommendedCoins(stage), total = 0;
+  for (;;) {
+    let best = -1;
+    stats.forEach((u, i) => { if (lv[i] < u.max && (best < 0 || upgradeCost(u, lv[i]) < upgradeCost(stats[best], lv[best]))) best = i; });
+    if (best < 0 || upgradeCost(stats[best], lv[best]) > coins) return total;
+    coins -= upgradeCost(stats[best], lv[best]);
+    lv[best]++; total++;
+  }
+}
 
 export const upgradeCost = (u: UpgradeDef, level: number) => u.cost.base + u.cost.step * level;
 
