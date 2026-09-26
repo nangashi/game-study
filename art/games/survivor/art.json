@@ -1,0 +1,15 @@
+{
+  "ts": "src/games/survivor/assets.gen.ts",
+  "sources": {
+    "enemies": { "grid": "3x2", "names": ["slime", "ghost", "bat", "mushroom", "golem", "dragon"] }
+  },
+  "sheets": {
+    "enemies": { "cell": 160, "cols": 3, "frames": ["enemies:*"] },
+    "icons": { "cell": 128, "frames": [
+      "common/icons1:bolt", "common/icons1:orbit", "common/icons1:gem", "common/icons1:boom",
+      "common/icons1:heart", "common/icons1:shoe", "common/icons1:magnet", "common/icons1:sword",
+      "common/icons1:star", "common/icons2:clock", "common/icons1:swords", "common/icons1:hammer"
+    ] }
+  },
+  "images": { "ground": { "width": 512 }, "title_bg": { "width": 1600 } }
+}

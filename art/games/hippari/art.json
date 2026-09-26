@@ -1,0 +1,14 @@
+{
+  "ts": "src/games/hippari/assets.gen.ts",
+  "sources": {
+    "chars":   { "grid": "3x2", "names": ["panda", "chick", "penguin", "hamster", "piglet", "bear"] },
+    "enemies": { "grid": "3x2", "names": ["robot", "top", "dino", "blocks", "teddy", "king"] },
+    "icons":   { "grid": "4x4", "group": "cell", "names": ["glove", "arm", "arrow", "balls", "bomb", "spring", "heart", "wing", "apple", "spark", "lock", "flag", "crown", "trophy", "popper", "hand"] }
+  },
+  "sheets": {
+    "chars":   { "cell": 192, "cols": 3, "frames": ["chars:*"] },
+    "enemies": { "cell": 192, "cols": 3, "frames": ["enemies:*"] },
+    "icons":   { "cell": 128, "cols": 4, "frames": ["icons:*"] }
+  },
+  "images": { "field": { "width": 720 }, "title_bg": { "width": 1600 } }
+}

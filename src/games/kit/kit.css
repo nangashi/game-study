@@ -1,0 +1,28 @@
+/* ゲームのタイトル画面の土台。ゲームの CSS（.game-<id>）で変数を上書きして見た目を変える */
+.game-root {
+  --game-accent: #2563eb;
+  --game-ink: #1f2937;
+  --game-title: #fff;
+  --game-title-stroke: #1f2937;
+}
+.lobby {
+  position: absolute; inset: 0; overflow: auto;
+  display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 16px;
+  background: center / cover no-repeat var(--game-bg, #fff7e6);
+  color: var(--game-ink);
+}
+.lobby-top { width: 100%; display: flex; align-items: center; gap: 10px; }
+.lobby-title {
+  font-size: clamp(40px, 9vw, 72px); font-weight: 900; margin: 2vh 0 0; text-align: center; line-height: 1.1;
+  color: var(--game-title); -webkit-text-stroke: 3px var(--game-title-stroke); paint-order: stroke fill;
+  text-shadow: 0 6px 0 var(--game-title-stroke);
+}
+.lobby-play {
+  font-size: 30px; font-weight: 900; color: #fff; background: var(--game-accent);
+  padding: 16px 40px; border-radius: 999px; box-shadow: 0 6px 0 rgba(0,0,0,.25);
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.lobby-play:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.25); }
+.lobby-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.lobby .bubble { background: rgba(255,255,255,.9); }
+.upgrade-panel { gap: 12px; }

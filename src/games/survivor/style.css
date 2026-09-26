@@ -1,0 +1,8 @@
+/* サバイバーの見た目（夕やけの草原） */
+.game-survivor {
+  --game-accent: #7c3aed;
+  --game-title: #fde68a;
+  --game-title-stroke: #4c1d95;
+  background: #bbf7d0;
+}
+.game-survivor .stage { position: absolute; inset: 0; }

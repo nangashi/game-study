@@ -1,0 +1,6 @@
+Use your image generation tool to create a GAME FIELD BACKGROUND and save it as ./field.png.
+Content: top-down view of a soft pastel kids' play mat inside a toy room, seen straight from above: a gentle pattern of large pastel squares and a few faint star and circle shapes. The whole image is the playing field of a pinball-like game: flat, calm, LOW CONTRAST so characters on top stand out. No objects, no toys, no characters, no text. Slightly darker frame-like border along all four edges.
+Composition: PORTRAIT canvas (2:3).
+Art style: same as the attached reference image (flat cartoon colors) for a kids game.
+Opaque image (no transparency).
+Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.

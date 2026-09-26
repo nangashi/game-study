@@ -4,7 +4,7 @@ import { HEROES, isHero, type HeroId } from '../art';
 const KEY = 'manabi-survivor:v1';
 
 export const DEFAULT_SETTINGS: Settings = {
-  freePlaysPerDay: 0, playsPerSubject: 1, ticketsPerDay: 3, questLength: 5, runSeconds: 180,
+  freePlaysPerDay: 0, playsPerSubject: 1, ticketsPerDay: 3, questLength: 5,
 };
 
 // 端末のローカル時刻での日付（YYYY-MM-DD）
@@ -56,6 +56,8 @@ interface LegacyProfile {
 // 古いデータを今の形にそろえる
 function normalize(d: SaveData): SaveData {
   const out = { ...empty(), ...d, settings: { ...DEFAULT_SETTINGS, ...d.settings } };
+  // ゲームの設定は土台に置かない（サバイバーの長さはゲームの中で決める）
+  delete (out.settings as Partial<Record<'runSeconds', number>>).runSeconds;
   out.profiles.forEach((p, i) => {
     if (!isHero(p.avatar)) p.avatar = HEROES[i % HEROES.length].id;
     const old = p as Profile & LegacyProfile;

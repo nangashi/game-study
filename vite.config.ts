@@ -9,8 +9,8 @@ export default defineConfig({
       useCredentials: true, // Cloudflare Access の裏でも manifest を読めるようにする
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'まなびサバイバー',
-        short_name: 'まなびサバイバー',
+        name: 'まなびランド',
+        short_name: 'まなびランド',
         lang: 'ja',
         display: 'fullscreen',
         orientation: 'any',

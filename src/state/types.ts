@@ -3,7 +3,6 @@ import type { HeroId } from '../art';
 
 // 'k' = 年長
 export type Grade = 'k' | 1 | 2 | 3;
-export type Subject = 'kokugo' | 'sansu';
 
 export type TrackId =
   | 'hira-write' | 'hira-match'   // 年長〜
@@ -23,6 +22,7 @@ export interface GameProgress {
   plays: number;
   clears: number;
   upgrades: Record<string, number>;  // 強化の id → レベル
+  data?: unknown;                    // ゲームだけが使う小さな保存データ（えらんだキャラなど）
 }
 
 export interface Profile {
@@ -36,17 +36,16 @@ export interface Profile {
   games: Record<string, GameProgress>; // key: ゲームの id
   tracks: Partial<Record<TrackId, TrackState>>;
   cards: Record<string, CardState>; // key: 'hira:あ' など
-  daily: { date: string; quests: number; ticketsEarned: number; subjects: Subject[] };
+  daily: { date: string; quests: number; ticketsEarned: number; subjects: string[] }; // subjects: きょうやった勉強の id
   streak: { count: number; last: string };
   stats: { quests: number; correct: number };
 }
 
 export interface Settings {
   freePlaysPerDay: number;  // 毎日むりょうでもらえるゲーム券
-  playsPerSubject: number;  // その日はじめてやった教科ごとにもらえるゲーム券
+  playsPerSubject: number;  // その日はじめてやった教科（勉強）ごとにもらえるゲーム券
   ticketsPerDay: number;    // 勉強でもらえるゲーム券の1日の上限
   questLength: number;      // 1クエストの問題数
-  runSeconds: number;       // 1回のバトルの長さ
 }
 
 export interface SaveData {

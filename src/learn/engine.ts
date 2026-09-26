@@ -1,4 +1,4 @@
-import type { Grade, Profile, Subject, TrackId, TrackState } from '../state/types';
+import type { Grade, Profile, TrackId, TrackState } from '../state/types';
 import type { Answer, Question } from './types';
 import { LEVELS, keisan, kazu, numberToChoice, tokei } from './math';
 import { hiraMatch, hiraWrite, kanjiRead, kanjiWrite, kataWrite } from './kokugo';
@@ -13,14 +13,6 @@ const START_LEVEL: Record<Grade, Partial<Record<TrackId, number>>> = {
   1: { keisan: 1, tokei: 1 },
   2: { keisan: 2, tokei: 2 },
   3: { keisan: 4, tokei: 3 },
-};
-
-// 1クエストの中身（学年×教科）。問題数が多いときはくり返す
-const QUEST_PLAN: Record<Grade, Record<Subject, TrackId[]>> = {
-  k: { kokugo: ['hira-write', 'hira-match', 'hira-write', 'hira-match', 'hira-write'], sansu: ['kazu'] },
-  1: { kokugo: ['hira-write', 'kanji-read', 'kata-write', 'kanji-write', 'hira-write'], sansu: ['keisan', 'tokei', 'keisan'] },
-  2: { kokugo: ['kanji-write', 'kanji-read', 'kata-write', 'kanji-write', 'kanji-read'], sansu: ['keisan', 'tokei', 'keisan'] },
-  3: { kokugo: ['kanji-write', 'kanji-read', 'kata-write', 'kanji-write', 'kanji-read'], sansu: ['keisan', 'tokei', 'keisan'] },
 };
 
 export function track(p: Profile, id: TrackId): TrackState {
@@ -41,8 +33,8 @@ function make(rng: Rng, p: Profile, id: TrackId, today: string, used: Set<string
   }
 }
 
-export function buildQuest(rng: Rng, p: Profile, subject: Subject, length: number, today: string): Question[] {
-  const plan = QUEST_PLAN[p.grade][subject];
+// plan の順に問題を作る（src/studies/ の各教科が学年ごとの plan を持つ）。問題数が多いときはくり返す
+export function buildQuest(rng: Rng, p: Profile, plan: TrackId[], length: number, today: string): Question[] {
   const used = new Set<string>(); // 同じクエストで同じ字を2回出さない
   return Array.from({ length }, (_, i) => {
     const q = make(rng, p, plan[i % plan.length], today, used);

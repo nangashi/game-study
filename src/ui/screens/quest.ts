@@ -1,15 +1,17 @@
-import { applyAnswer, buildQuest } from '../../learn/engine';
+import { applyAnswer } from '../../learn/engine';
 import { questReward } from '../../state/economy';
 import { save, store, today } from '../../state/store';
-import type { Subject } from '../../state/types';
+import { studyDef } from '../../studies/registry';
 import { chip, h, ico, mount } from '../dom';
 import { renderQuestion } from '../question';
 import { showHome, topbar } from './home';
 
-export function showQuest(id: string, subject: Subject): void {
+export function showQuest(id: string, studyId: string): void {
   const p = store.profile(id)!;
+  const study = studyDef(studyId);
+  if (!study) return showHome(id);
   const day = today();
-  const questions = buildQuest(Math.random, p, subject, store.settings.questLength, day);
+  const questions = study.build(Math.random, p, store.settings.questLength, day);
   const results: boolean[] = [];
   let answerCoins = 0;
 
@@ -31,7 +33,7 @@ export function showQuest(id: string, subject: Subject): void {
 
   const finish = () => {
     const correct = results.filter(Boolean).length;
-    const r = questReward(p, store.settings, subject, answerCoins, day);
+    const r = questReward(p, store.settings, studyId, answerCoins, day);
     save();
     mount(h('div', { class: 'screen scenic' },
       h('h1', { class: 'title' }, ico(correct === results.length ? 'trophy' : 'star', 64),
@@ -43,7 +45,7 @@ export function showQuest(id: string, subject: Subject): void {
       r.tickets ? null : h('p', { class: 'note bubble' }, 'きょうの ', ico('ticket'), ' は もう もらったよ。ほかの きょうかも やってみよう'),
       h('div', { class: 'row' },
         h('button', { class: 'pill-btn', onclick: () => showHome(id) }, ico('home', 26), ' もどる'),
-        h('button', { class: 'pill-btn primary', textContent: 'もういっかい', onclick: () => showQuest(id, subject) }),
+        h('button', { class: 'pill-btn primary', textContent: 'もういっかい', onclick: () => showQuest(id, studyId) }),
       ),
     ));
   };

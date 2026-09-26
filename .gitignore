@@ -3,4 +3,4 @@ dist/
 dev-dist/
 .wrangler/
 *.log
-art/raw/
+art/**/raw/
