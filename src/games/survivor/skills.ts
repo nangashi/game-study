@@ -1,7 +1,7 @@
 import { SHEETS } from './assets.gen';
 
 // ラン内の成長（1回だけの成長。docs/03 4.）
-// ぶき7つ（こうげきの とくちょうが ちがう）+ ほじょ3つ。もてる ぶきは 3つまで（わく）。
+// ぶき7つ（とどく きょりと あたる かずで やくを わける。docs/games/survivor.md「武器の役」）+ ほじょ3つ。もてる ぶきは 3つまで（わく）。
 // でてくる ぶきは「つよくする」で 解放したものだけ。ぶきは MAX にして たからばこを あけると しんかする
 
 export type WeaponId = 'bolt' | 'rang' | 'boom' | 'orbit' | 'frost' | 'thunder' | 'sword';
@@ -23,19 +23,19 @@ export const BASE_SLOTS = 3;
 export const unlockId = (w: WeaponId) => `w_${w}`;
 
 export const SKILLS: Record<SkillId, SkillDef> = {
-  bolt:    { art: items('orb'), name: 'まほうだま', tag: 'ホーミング', desc: 'てきを おいかける', max: 5,
+  bolt:    { art: items('orb'), name: 'まほうだま', tag: 'とおく・ねらう', desc: 'とおくの てきを ねらう', max: 5,
     evo: { art: items('comet'), name: 'ながれぼし', desc: 'つらぬく ほしが たくさん' } },
-  rang:    { art: items('rang'), name: 'ブーメラン', tag: 'つらぬく', desc: 'いって かえってくる', max: 5,
+  rang:    { art: items('rang'), name: 'ブーメラン', tag: 'つらぬく・むれ', desc: 'いって かえってくる', max: 5,
     evo: { art: items('tornado'), name: 'たつまき', desc: 'てきを すいこむ' } },
-  boom:    { art: icons('boom'), name: 'どかーん', tag: 'はんい', desc: 'まわりを ふきとばす', max: 5,
-    evo: { art: items('firework'), name: 'はなび', desc: 'あちこちで どかーん' } },
-  orbit:   { art: icons('orbit'), name: 'まわるほし', tag: 'ちかく', desc: 'まわりを まもる', max: 5,
+  boom:    { art: items('cherrybomb'), name: 'ばくだん', tag: 'とおく・かたまり', desc: 'とおくの かたまりに なげる', max: 5,
+    evo: { art: items('firework'), name: 'はなび', desc: 'ばくはつが はじけて ひろがる' } },
+  orbit:   { art: icons('orbit'), name: 'まわるほし', tag: 'まもる・たまをけす', desc: 'まわりを まもる', max: 5,
     evo: { art: items('planet'), name: 'ぎんがリング', desc: 'おおきな わが のびちぢみ' } },
-  frost:   { art: items('shard'), name: 'こおり', tag: 'おそくする', desc: 'あたった てきが のろくなる', max: 5,
+  frost:   { art: items('shard'), name: 'こおり', tag: 'のろくする', desc: 'あたった てきが のろくなる', max: 5,
     evo: { art: items('blizzard'), name: 'ふぶき', desc: 'まわりが ずっと こおる' } },
-  thunder: { art: items('thunder'), name: 'かみなり', tag: 'ランダム', desc: 'がめんの どこかに おちる', max: 5,
+  thunder: { art: items('thunder'), name: 'かみなり', tag: 'つながる・しびれる', desc: 'てきから てきへ つながる', max: 5,
     evo: { art: items('storm'), name: 'らいうん', desc: 'かみなりが ふりつづく' } },
-  sword:   { art: items('slash'), name: 'つるぎ', tag: 'ちかく・つよい', desc: 'すすむ ほうを きる', max: 5,
+  sword:   { art: items('slash'), name: 'つるぎ', tag: 'ちかい・つよい', desc: 'ちかくの てきを きる', max: 5,
     evo: { art: icons('swords'), name: 'にとうりゅう', desc: 'ぐるっと まわりを きる' } },
   shoes:   { art: icons('shoe'), name: 'はやあし', desc: 'はやく うごける', max: 5 },
   heart:   { art: icons('heart'), name: 'げんき', desc: 'ハートが ふえる', max: 5 },

@@ -3,8 +3,10 @@
 //
 // じゅんび: scripts/playtest.mjs と同じ（playwright）
 // つかいかた:
-//   node scripts/playtest-survivor.mjs [--stage=1] [--up=<数値の強化レベルの合計。省略すると推奨レベル>] [--weapons=all|orbit,frost] [--start=rang] [--reroll=0-3] [--slot=1] [--bot=smart|still] [--grade=1|k] [--out=playtest-out] [--shots=10]
+//   node scripts/playtest-survivor.mjs [--stage=1] [--up=<数値の強化レベルの合計。省略すると推奨レベル>] [--weapons=all|orbit,frost] [--start=rang] [--reroll=0-3] [--slot=1] [--bot=smart|brave|still] [--grade=1|k] [--out=playtest-out] [--shots=10] [--only=sword]
 //   --weapons / --start / --reroll / --slot は 解放（docs/03 4.）。つけたぶんは --up から へらさない
+//   --bot=brave: 敵に ちかづいて たたかう（ちかい ぶきを くらべる。smart は にげつづける）
+//   --only=<ぶき>: その ぶき1つだけで あそぶ（ぶきごとの 強さを くらべる）
 //   bot: smart（敵から にげながら ジェムと アイテムを ひろう）/ still（うごかない。へたな子のかわり）
 import { chromium } from 'playwright';
 import { createServer } from 'vite';
@@ -33,6 +35,7 @@ mkdirSync(out, { recursive: true });
 const ids = ['atk', 'hp', 'speed', 'magnet'];
 const upgrades = Object.fromEntries(ids.map((id, i) => [id, Math.floor(up / 4) + (i < up % 4 ? 1 : 0)]));
 const extra = opt.weapons === 'all' ? ['orbit', 'frost', 'thunder', 'sword'] : (opt.weapons ?? '').split(',').filter(Boolean);
+if (opt.only) { extra.push(opt.only); opt.start = opt.only; }
 for (const w of extra) upgrades[`w_${w}`] = 1;
 if (opt.reroll) upgrades.reroll = Number(opt.reroll);
 if (opt.slot) upgrades.slot = Number(opt.slot);
@@ -59,6 +62,7 @@ try {
   await page.locator('.game-card').filter({ hasText: 'サバイバー' }).click();
   await page.locator('.lobby-play').click();
   await page.waitForFunction(() => window.__survivor?.t > 0.3);
+  if (opt.only) await page.evaluate(w => { const lo = window.__survivor.cfg.loadout; lo.pool = [w]; lo.slots = 1; }, opt.only);
 
   // bot: 100ms ごとに スティックを うごかす。レベルアップは ぶきを優先して えらぶ
   await page.evaluate(bot => {
@@ -79,7 +83,7 @@ try {
       const pick = document.querySelectorAll('.skill');
       if (pick.length) {
         const order = ['rang', 'sword', 'thunder', 'frost', 'boom', 'orbit', 'bolt', 'heart', 'shoes', 'magnet'];
-        const names = { bolt: 'まほうだま', orbit: 'まわるほし', boom: 'どかーん', rang: 'ブーメラン', thunder: 'かみなり', frost: 'こおり', sword: 'つるぎ', shoes: 'はやあし', heart: 'げんき', magnet: 'すいよせ' };
+        const names = { bolt: 'まほうだま', orbit: 'まわるほし', boom: 'ばくだん', rang: 'ブーメラン', thunder: 'かみなり', frost: 'こおり', sword: 'つるぎ', shoes: 'はやあし', heart: 'げんき', magnet: 'すいよせ' };
         const btns = [...pick];
         // 持っている ぶきを先に MAX にする（しんかさせたいので）
         // もっている ぶきを先に MAX にする（ぶきの わくは ゲームが きめる）
@@ -89,12 +93,17 @@ try {
         (want ?? btns[0]).click();
         return;
       }
-      if (bot !== 'smart' || s.ended || s.paused) return;
+      if (bot === 'still' || s.ended || s.paused) return;
       const px = s.player.x, py = s.player.y;
       let fx = 0, fy = 0;
       for (const e of s.enemies) {
         const dx = px - e.obj.x, dy = py - e.obj.y, d = Math.hypot(dx, dy) || 1;
-        if (d < 320) { const w = (e.boss ? 4 : e.role === 'tank' ? 2 : 1) / (d * d) * 1e4; fx += dx / d * w; fy += dy / d * w; }
+        if (d < (bot === 'brave' ? 110 : 320)) { const w = (e.boss ? 4 : e.role === 'tank' ? 2 : 1) / (d * d) * 1e4; fx += dx / d * w; fy += dy / d * w; }
+      }
+      // brave: いちばん ちかい 敵に 140px まで ちかづく
+      if (bot === 'brave') {
+        const t = s.enemies.map(e => ({ e, d: Math.hypot(e.obj.x - px, e.obj.y - py) })).sort((a, b) => a.d - b.d)[0];
+        if (t && t.d > 140) { fx += (t.e.obj.x - px) / t.d * 1.5; fy += (t.e.obj.y - py) / t.d * 1.5; }
       }
       for (const sh of s.shots) {
         const dx = px - sh.obj.x, dy = py - sh.obj.y, d = Math.hypot(dx, dy) || 1;
@@ -141,6 +150,7 @@ try {
   console.log(`stage ${stage} up ${up} (${JSON.stringify(upgrades)}) bot ${bot}`);
   console.log(log.join('\n'));
   console.log('result:', res.replace(/\s+/g, ' '));
+  console.log('dealt:', JSON.stringify(await page.evaluate(() => Object.fromEntries(Object.entries(window.__survivor.dealt ?? {}).map(([k, v]) => [k, Math.round(v)])))));
   console.log(errors.length ? `errors:\n${errors.join('\n')}` : 'no errors');
 } finally {
   await browser.close();
