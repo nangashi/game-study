@@ -4,6 +4,7 @@
 Android タブレットのブラウザで動く PWA で、Cloudflare の無料プランに置く。
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
+- ごほうびの仕組みと、ゲームに共通する決まり: [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
 - 手書き判定の検証用プロトタイプ: [prototypes/handwriting/](prototypes/handwriting/)
 
 ## 遊びの流れ
