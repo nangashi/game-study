@@ -1,4 +1,5 @@
-import { applyAnswer, battleQuiz } from '../../learn/engine';
+import { applyAnswer } from '../../learn/engine';
+import { battleQuiz } from '../../studies/quiz';
 import { buyUpgrade, canUpgrade, finishGame, gameContext, upgradeCost, upgradeLevel } from '../../state/economy';
 import { gameProgress, save, store, today } from '../../state/store';
 import type { Profile } from '../../state/types';

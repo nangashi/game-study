@@ -1,7 +1,6 @@
-import { track } from '../../learn/engine';
 import { newProfile, save, store } from '../../state/store';
 import { GAMES } from '../../games/registry';
-import type { Grade, Profile, TrackId } from '../../state/types';
+import type { Grade, Profile } from '../../state/types';
 import type { Tolerance } from '../../learn/handwriting/judge';
 import { h, hero, ico, mount, overlay } from '../dom';
 import { HEROES, type HeroId } from '../../art';
@@ -9,7 +8,6 @@ import { showProfiles } from './profiles';
 
 const GRADES: [Grade, string][] = [['k', '年長'], [1, '1年生'], [2, '2年生'], [3, '3年生']];
 const TOLS: [Tolerance, string][] = [['easy', 'やさしい'], ['normal', 'ふつう'], ['strict', 'きびしい']];
-const TRACK_NAMES: Partial<Record<TrackId, string>> = { kazu: 'かず', keisan: 'けいさん', tokei: 'とけい', 'hira-match': 'もじさがし' };
 
 // 子どもがうっかり入らないように、かけ算で確認する
 export function showParentGate(): void {
@@ -51,7 +49,7 @@ function heroPicker(value: HeroId, onChange: (v: HeroId) => void): HTMLElement {
 
 function profileSection(p: Profile): HTMLElement {
   const learned = (prefix: string) => Object.entries(p.cards).filter(([k, c]) => k.startsWith(prefix + ':') && c.box >= 2).length;
-  const levels = (Object.keys(TRACK_NAMES) as TrackId[]).filter(t => p.tracks[t]).map(t => `${TRACK_NAMES[t]} Lv${track(p, t).level}`).join(' / ');
+  const cards = Object.values(p.cards);
   return h('section', {},
     h('h2', {}, hero(p.avatar, 44), ` ${p.name}`),
     h('label', {}, '学年', select(GRADES, p.grade, v => { p.grade = v; save(); })),
@@ -62,7 +60,7 @@ function profileSection(p: Profile): HTMLElement {
       ...GAMES.filter(g => p.games[g.id]).map(g => h('tr', {}, h('th', { textContent: g.name }),
         h('td', { textContent: `${p.games[g.id].plays}回（クリア ${p.games[g.id].clears}回、ステージ ${p.games[g.id].stage}）` }))),
       h('tr', {}, h('th', { textContent: '覚えた字（2回以上連続で正解）' }), h('td', { textContent: `ひらがな ${learned('hira')} / カタカナ ${learned('kata')} / 漢字 ${learned('kanji')}` })),
-      h('tr', {}, h('th', { textContent: 'レベル' }), h('td', { textContent: levels || '—' })),
+      h('tr', {}, h('th', { textContent: '問題' }), h('td', { textContent: `${cards.length}問に挑戦（定着 ${cards.filter(c => c.box >= 3).length}問）` })),
       h('tr', {}, h('th', { textContent: '連続日数' }), h('td', { textContent: `${p.streak.count}日` })),
     ),
     h('div', { class: 'row', style: 'justify-content:flex-start' },

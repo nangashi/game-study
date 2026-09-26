@@ -1,4 +1,6 @@
 import type { Profile, Settings } from './types';
+import { gradeRank } from './types';
+import type { Selection } from '../studies/types';
 import type { GameContext, GameDef, GameResult, GameReward, UpgradeDef } from '../games/types';
 import { gameProgress, rollDaily, touchStreak } from './store';
 
@@ -7,19 +9,29 @@ import { gameProgress, rollDaily, touchStreak } from './store';
 export const QUEST_BONUS = 10;   // さいごまでやったら
 export const GAME_COINS = { play: 3, firstClear: 25, replayClear: 8 };
 
+// 勉強のコインの倍率。まぜこぜがいちばん多く、下の学年はかなり少ない。上の学年は自分の学年と同じ
+export const RATE = { mixed: 1, category: 0.7, lower: 0.3 };
+
+export const isLowerGrade = (p: Profile, sel: Selection) => gradeRank(sel.grade) < gradeRank(p.grade);
+export const selectionRate = (p: Profile, sel: Selection) =>
+  isLowerGrade(p, sel) ? RATE.lower : sel.category ? RATE.category : RATE.mixed;
+
+// 1回ぶんのコイン = (完走ボーナス + 問題ごとのコイン) × 倍率（切り上げ）
+export const questCoins = (answerCoins: number, rate: number) => Math.ceil((QUEST_BONUS + answerCoins) * rate - 1e-9);
+
 export interface QuestReward { coins: number; tickets: number }
 
 // クエストのごほうび。answerCoins は問題ごとのコインの合計（applyAnswer のもどり値）
-// ゲーム券は、その日はじめてやった教科のときだけ
-export function questReward(p: Profile, s: Settings, studyId: string, answerCoins: number, today: string): QuestReward {
+// ゲーム券は、その日はじめてやった教科のときだけ。下の学年をえらんだときは券なし
+export function questReward(p: Profile, s: Settings, sel: Selection, answerCoins: number, today: string): QuestReward {
   rollDaily(p, s, today);
   touchStreak(p, today);
   let tickets = 0;
-  if (!p.daily.subjects.includes(studyId)) {
-    p.daily.subjects.push(studyId);
+  if (!isLowerGrade(p, sel) && !p.daily.subjects.includes(sel.study)) {
+    p.daily.subjects.push(sel.study);
     tickets = Math.max(0, Math.min(s.playsPerSubject, s.ticketsPerDay - p.daily.ticketsEarned));
   }
-  const r: QuestReward = { coins: QUEST_BONUS + answerCoins, tickets };
+  const r: QuestReward = { coins: questCoins(answerCoins, selectionRate(p, sel)), tickets };
   p.coins += r.coins;
   p.tickets += tickets;
   p.daily.ticketsEarned += tickets;
@@ -28,8 +40,9 @@ export function questReward(p: Profile, s: Settings, studyId: string, answerCoin
   return r;
 }
 
-// きょう、まだゲーム券がもらえる教科か
-export function studyGivesTicket(p: Profile, s: Settings, studyId: string): boolean {
+// きょう、まだゲーム券がもらえる教科か（sel をわたすと、下の学年なら false）
+export function studyGivesTicket(p: Profile, s: Settings, studyId: string, sel?: Selection): boolean {
+  if (sel && isLowerGrade(p, sel)) return false;
   return !p.daily.subjects.includes(studyId) && s.playsPerSubject > 0 && p.daily.ticketsEarned < s.ticketsPerDay;
 }
 

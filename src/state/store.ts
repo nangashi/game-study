@@ -30,7 +30,7 @@ export function newProfile(name: string, avatar: HeroId, grade: Grade): Profile 
     tolerance: 'easy',
     coins: 0, tickets: 1,
     games: {},
-    tracks: {}, cards: {},
+    cards: {},
     daily: { date: today(), quests: 0, ticketsEarned: 0, subjects: [] },
     streak: { count: 0, last: '' },
     stats: { quests: 0, correct: 0 },
@@ -62,6 +62,8 @@ function normalize(d: SaveData): SaveData {
     if (!isHero(p.avatar)) p.avatar = HEROES[i % HEROES.length].id;
     const old = p as Profile & LegacyProfile;
     p.daily.subjects ??= [];
+    // 問題の種類ごとのレベルは使わなくなった（カードの定着度で出す順を決める）
+    delete (p as Partial<Record<'tracks', unknown>>).tracks;
     if (!p.games) {
       // 羽と星はコインに換算し、強化とバトルの記録はサバイバーに引きつぐ
       p.coins += (old.feathers ?? 0) + (old.stars ?? 0);
