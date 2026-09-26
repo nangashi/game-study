@@ -12,22 +12,25 @@ const numChoices = (rng: Rng, ans: number, spread: number[]) =>
 // 年長〜1年: 絵をかぞえる → 絵のたし算・ひき算（字が読めなくても解ける）
 export function kazu(rng: Rng, level: number): Question {
   const e = pick(rng, THINGS);
-  let prompt: string, ans: number;
+  let prompt: string, ans: number, card: string;
   if (level <= 2) {
     ans = randInt(rng, 1, level === 1 ? 5 : 10);
     prompt = row(e, ans);
+    card = `kazu:${ans}`;
   } else if (level <= 4) {
     const max = level === 3 ? 5 : 10;
     const a = randInt(rng, 1, max - 1), b = randInt(rng, 1, max - a);
     ans = a + b;
     prompt = `${row(e, a)}<span class="op">＋</span>${row(e, b)}`;
+    card = `kazu:${a}+${b}`;
   } else {
     const a = randInt(rng, 2, 6), b = randInt(rng, 1, a - 1);
     ans = a - b;
     prompt = `${row(e, a)}<span class="op">ー</span>${row(e, b)}`;
+    card = `kazu:${a}-${b}`;
   }
   const [choices, answer] = numChoices(rng, ans, [-2, -1, 1, 2]);
-  return { kind: 'choice', track: 'kazu', prompt, choices: choices.map(String), answer };
+  return { kind: 'choice', track: 'kazu', prompt, choices: choices.map(String), answer, card };
 }
 
 // 1年〜: けいさん（テンキーで答える）
@@ -47,7 +50,7 @@ export function keisan(rng: Rng, level: number): Question {
     }
   }
   const answer = op === '+' ? a + b : op === '−' ? a - b : a * b;
-  return { kind: 'number', track: 'keisan', prompt: `<span class="formula">${a} ${op} ${b} ＝ ?</span>`, answer };
+  return { kind: 'number', track: 'keisan', prompt: `<span class="formula">${a} ${op} ${b} ＝ ?</span>`, answer, card: `keisan:${a}${op}${b}` };
 }
 
 // とけい（アナログ時計の読み）
@@ -62,7 +65,7 @@ export function tokei(rng: Rng, level: number): Question {
     label(h, (m + 5) % 60), label(h, (m + 55) % 60),
   ];
   const [choices, answer] = makeChoices(rng, label(h, m), wrong);
-  return { kind: 'choice', track: 'tokei', prompt: clockSvg(h, m), choices, answer };
+  return { kind: 'choice', track: 'tokei', prompt: clockSvg(h, m), choices, answer, card: `tokei:${h}:${m}` };
 }
 
 export function clockSvg(h: number, m: number): string {
@@ -84,5 +87,5 @@ export function clockSvg(h: number, m: number): string {
 export function numberToChoice(rng: Rng, q: Extract<Question, { kind: 'number' }>): Question {
   const spread = q.answer >= 10 ? [-10, -2, -1, 1, 2, 10] : [-2, -1, 1, 2];
   const [choices, answer] = numChoices(rng, q.answer, spread);
-  return { kind: 'choice', track: q.track, prompt: q.prompt, choices: choices.map(String), answer };
+  return { kind: 'choice', track: q.track, prompt: q.prompt, choices: choices.map(String), answer, card: q.card };
 }

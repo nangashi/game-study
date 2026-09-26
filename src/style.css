@@ -186,3 +186,12 @@ button:disabled { opacity: 0.45; }
   .big-btn .icon { font-size: 44px; }
   .prompt .big-char { font-size: 72px; }
 }
+
+/* ゲームをえらぶ */
+.home-grid .wide { grid-column: 1 / -1; }
+.game-list { display: grid; gap: 14px; width: min(100%, 760px); }
+.game-card { background: #fff; border-radius: var(--radius); padding: 14px; display: flex; align-items: center; gap: 14px; box-shadow: 0 5px 0 rgba(0,0,0,.08); }
+.game-card .name { font-size: 24px; font-weight: 800; }
+.game-card > div { min-width: 0; }
+.game-actions { margin-left: auto; display: flex; flex-direction: column; gap: 8px; flex: none; }
+.game-actions .pill-btn { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }

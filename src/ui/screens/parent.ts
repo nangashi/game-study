@@ -1,5 +1,6 @@
 import { track } from '../../learn/engine';
 import { newProfile, save, store } from '../../state/store';
+import { GAMES } from '../../games/registry';
 import type { Grade, Profile, TrackId } from '../../state/types';
 import type { Tolerance } from '../../learn/handwriting/judge';
 import { h, hero, ico, mount, overlay } from '../dom';
@@ -58,13 +59,14 @@ function profileSection(p: Profile): HTMLElement {
     h('label', {}, '手書きの判定', select(TOLS, p.tolerance, v => { p.tolerance = v; save(); })),
     h('table', {},
       h('tr', {}, h('th', { textContent: 'クエスト' }), h('td', { textContent: `${p.stats.quests}回（正解 ${p.stats.correct}問）` })),
-      h('tr', {}, h('th', { textContent: 'バトル' }), h('td', { textContent: `${p.stats.runs}回（クリア ${p.stats.clears}回）` })),
+      ...GAMES.filter(g => p.games[g.id]).map(g => h('tr', {}, h('th', { textContent: g.name }),
+        h('td', { textContent: `${p.games[g.id].plays}回（クリア ${p.games[g.id].clears}回、ステージ ${p.games[g.id].stage}）` }))),
       h('tr', {}, h('th', { textContent: '覚えた字（2回以上連続で正解）' }), h('td', { textContent: `ひらがな ${learned('hira')} / カタカナ ${learned('kata')} / 漢字 ${learned('kanji')}` })),
       h('tr', {}, h('th', { textContent: 'レベル' }), h('td', { textContent: levels || '—' })),
       h('tr', {}, h('th', { textContent: '連続日数' }), h('td', { textContent: `${p.streak.count}日` })),
     ),
     h('div', { class: 'row', style: 'justify-content:flex-start' },
-      h('button', { class: 'pill-btn', onclick: () => { p.tickets++; save(); showParent(); } }, ico('ticket'), ' バトル券を1枚あげる'),
+      h('button', { class: 'pill-btn', onclick: () => { p.tickets++; save(); showParent(); } }, ico('ticket'), ' ゲーム券を1枚あげる'),
       h('button', { class: 'pill-btn', textContent: '削除', onclick: () => {
         if (confirm(`${p.name} のデータを削除しますか？（元に戻せません）`)) { store.removeProfile(p.id); showParent(); }
       } }),
@@ -119,7 +121,9 @@ export function showParent(): void {
     addProfileSection(),
     h('section', {},
       h('h2', { textContent: 'ルール（全員共通）' }),
-      numberField('1日にもらえるバトル券の上限', s.ticketsPerDay, 0, 20, v => { s.ticketsPerDay = v; save(); }),
+      numberField('毎日むりょうでもらえるゲーム券', s.freePlaysPerDay, 0, 10, v => { s.freePlaysPerDay = v; save(); }),
+      numberField('その日はじめての教科でもらえるゲーム券', s.playsPerSubject, 0, 5, v => { s.playsPerSubject = v; save(); }),
+      numberField('勉強でもらえるゲーム券の1日の上限', s.ticketsPerDay, 0, 20, v => { s.ticketsPerDay = v; save(); }),
       numberField('1クエストの問題数', s.questLength, 3, 10, v => { s.questLength = v; save(); }),
       numberField('バトル1回の長さ（秒）', s.runSeconds, 60, 600, v => { s.runSeconds = v; save(); }),
     ),
