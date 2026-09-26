@@ -11,6 +11,7 @@ export function showQuest(id: string, subject: Subject): void {
   const day = today();
   const questions = buildQuest(Math.random, p, subject, store.settings.questLength, day);
   const results: boolean[] = [];
+  let answerCoins = 0;
 
   const step = (i: number) => {
     if (i >= questions.length) return finish();
@@ -20,7 +21,7 @@ export function showQuest(id: string, subject: Subject): void {
       topbar(p, () => showHome(id)),
       progress,
       renderQuestion(questions[i], p, a => {
-        applyAnswer(p, questions[i], a, day);
+        answerCoins += applyAnswer(p, questions[i], a, day);
         results.push(a.correct && !a.helped);
         save();
         step(i + 1);
@@ -30,18 +31,16 @@ export function showQuest(id: string, subject: Subject): void {
 
   const finish = () => {
     const correct = results.filter(Boolean).length;
-    const r = questReward(p, store.settings, subject, correct, day);
+    const r = questReward(p, store.settings, subject, answerCoins, day);
     save();
     mount(h('div', { class: 'screen scenic' },
       h('h1', { class: 'title' }, ico(correct === results.length ? 'trophy' : 'star', 64),
         correct === results.length ? ' パーフェクト！' : ' クエスト クリア！'),
       h('div', { class: 'reward' },
         chip('coin', `+${r.coins}`),
-        r.feathers ? chip('feather', `+${r.feathers}`) : null,
-        r.stars ? chip('star', `+${r.stars}`) : null,
-        r.ticket ? chip('ticket', '+1') : null,
+        r.tickets ? chip('ticket', `+${r.tickets}`) : null,
       ),
-      r.ticket ? null : h('p', { class: 'note bubble' }, 'きょうの ', ico('ticket'), ' は もう もらったよ'),
+      r.tickets ? null : h('p', { class: 'note bubble' }, 'きょうの ', ico('ticket'), ' は もう もらったよ。ほかの きょうかも やってみよう'),
       h('div', { class: 'row' },
         h('button', { class: 'pill-btn', onclick: () => showHome(id) }, ico('home', 26), ' もどる'),
         h('button', { class: 'pill-btn primary', textContent: 'もういっかい', onclick: () => showQuest(id, subject) }),

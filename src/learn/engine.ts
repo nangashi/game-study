@@ -3,7 +3,7 @@ import type { Answer, Question } from './types';
 import { LEVELS, keisan, kazu, numberToChoice, tokei } from './math';
 import { hiraMatch, hiraWrite, kanjiRead, kanjiWrite, kataWrite } from './kokugo';
 import { pick, type Rng } from './random';
-import { updateCard } from './srs';
+import { cardCoins, updateCard } from './srs';
 
 const MAX_LEVEL: Partial<Record<TrackId, number>> = { ...LEVELS, 'hira-match': 2 };
 
@@ -59,14 +59,17 @@ export function battleQuiz(rng: Rng, p: Profile, today: string): Question {
 }
 
 // 3問つづけて正解でレベルアップ、2問つづけてまちがえたらレベルダウン
-export function applyAnswer(p: Profile, q: Question, a: Answer, today: string): void {
+// もどり値はこの問題のコイン（docs/03-rewards-and-games.md）
+export function applyAnswer(p: Profile, q: Question, a: Answer, today: string): number {
   const t = track(p, q.track);
   const good = a.correct && !a.helped;
+  const coins = good ? (q.card ? cardCoins(p.cards[q.card], today) : 1) : a.correct ? 1 : 0;
   if (good) { t.streak++; t.miss = 0; } else { t.miss++; t.streak = 0; }
   const max = MAX_LEVEL[q.track];
   if (max && t.streak >= 3 && t.level < max) { t.level++; t.streak = 0; }
   if (max && t.miss >= 2 && t.level > 1) { t.level--; t.miss = 0; }
   if (q.card) updateCard(p, q.card, good, today);
   if (a.correct) p.stats.correct++;
+  return coins;
 }
 

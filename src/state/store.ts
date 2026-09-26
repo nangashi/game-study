@@ -1,9 +1,11 @@
-import type { Grade, Profile, SaveData, Settings } from './types';
+import type { GameProgress, Grade, Profile, SaveData, Settings } from './types';
 import { HEROES, isHero, type HeroId } from '../art';
 
 const KEY = 'manabi-survivor:v1';
 
-export const DEFAULT_SETTINGS: Settings = { ticketsPerDay: 3, questLength: 5, runSeconds: 180 };
+export const DEFAULT_SETTINGS: Settings = {
+  freePlaysPerDay: 0, playsPerSubject: 1, ticketsPerDay: 3, questLength: 5, runSeconds: 180,
+};
 
 // 端末のローカル時刻での日付（YYYY-MM-DD）
 export function today(now = new Date()): string {
@@ -26,23 +28,49 @@ export function newProfile(name: string, avatar: HeroId, grade: Grade): Profile 
     id: Math.random().toString(36).slice(2, 10),
     name, avatar, grade,
     tolerance: 'easy',
-    coins: 0, feathers: 0, stars: 0, tickets: 1,
-    upgrades: { hp: 0, atk: 0, speed: 0, magnet: 0 },
+    coins: 0, tickets: 1,
+    games: {},
     tracks: {}, cards: {},
-    daily: { date: today(), quests: 0, ticketsEarned: 0 },
+    daily: { date: today(), quests: 0, ticketsEarned: 0, subjects: [] },
     streak: { count: 0, last: '' },
-    stats: { quests: 0, correct: 0, runs: 0, clears: 0, bestKills: 0 },
+    stats: { quests: 0, correct: 0 },
   };
+}
+
+// ゲームの進みぐあい。はじめて遊ぶゲームなら作る
+export function gameProgress(p: Profile, gameId: string): GameProgress {
+  return (p.games[gameId] ??= { stage: 0, best: 0, plays: 0, clears: 0, upgrades: {} });
 }
 
 function empty(): SaveData {
   return { version: 1, profiles: [], settings: { ...DEFAULT_SETTINGS } };
 }
 
-// 古いデータ（アバターが絵文字だったころ）を今の形にそろえる
+// 羽・星・バトル専用の強化があったころのデータ
+interface LegacyProfile {
+  feathers?: number; stars?: number;
+  upgrades?: Record<string, number>;
+  stats: { runs?: number; clears?: number; bestKills?: number };
+}
+
+// 古いデータを今の形にそろえる
 function normalize(d: SaveData): SaveData {
   const out = { ...empty(), ...d, settings: { ...DEFAULT_SETTINGS, ...d.settings } };
-  out.profiles.forEach((p, i) => { if (!isHero(p.avatar)) p.avatar = HEROES[i % HEROES.length].id; });
+  out.profiles.forEach((p, i) => {
+    if (!isHero(p.avatar)) p.avatar = HEROES[i % HEROES.length].id;
+    const old = p as Profile & LegacyProfile;
+    p.daily.subjects ??= [];
+    if (!p.games) {
+      // 羽と星はコインに換算し、強化とバトルの記録はサバイバーに引きつぐ
+      p.coins += (old.feathers ?? 0) + (old.stars ?? 0);
+      p.games = { survivor: {
+        stage: old.stats.clears ? 1 : 0, best: old.stats.bestKills ?? 0,
+        plays: old.stats.runs ?? 0, clears: old.stats.clears ?? 0, upgrades: { ...old.upgrades },
+      } };
+      delete old.feathers; delete old.stars; delete old.upgrades;
+      delete old.stats.runs; delete old.stats.clears; delete old.stats.bestKills;
+    }
+  });
   return out;
 }
 
@@ -77,9 +105,11 @@ export const store = {
   },
 };
 
-// 日付が変わっていたら「きょう」のカウンタを戻す
-export function rollDaily(p: Profile, now = today()): void {
-  if (p.daily.date !== now) p.daily = { date: now, quests: 0, ticketsEarned: 0 };
+// 日付が変わっていたら「きょう」のカウンタを戻し、むりょうのゲーム券をくばる
+export function rollDaily(p: Profile, s: Settings, now = today()): void {
+  if (p.daily.date === now) return;
+  p.daily = { date: now, quests: 0, ticketsEarned: 0, subjects: [] };
+  p.tickets += s.freePlaysPerDay;
 }
 
 // 連続日数。1日休んでもつながる（おやすみ1日ぶんは許す）
