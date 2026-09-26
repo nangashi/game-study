@@ -5,7 +5,7 @@ import { chip, h, ico, mount, overlay } from '../dom';
 import { showHome, topbar } from './home';
 
 // あそびラボ: バトルとは べつの ゲームを ためす ところ。
-// バトル券は つかわない・ごほうびも でない（そうさ感を ためすための わく）
+// ゲーム券は つかわない・ごほうびも でない（そうさ感を ためすための わく）
 
 interface LabGame {
   id: string; icon: IconName; name: string; how: string; seconds: number;

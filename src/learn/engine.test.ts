@@ -55,6 +55,20 @@ describe('applyAnswer', () => {
   });
 });
 
+describe('問題ごとのコイン', () => {
+  it('はじめて・苦手な問題ほど多く、同じ日のくり返しは少ない', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const [q] = buildQuest(Math.random, p, 'sansu', 1, DAY);
+    expect(q.card).toBeTruthy();
+    expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(4);             // はじめて
+    expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(1);             // 同じ日にもう一度
+    expect(applyAnswer(p, q, { correct: false }, DAY)).toBe(0);
+    expect(applyAnswer(p, q, { correct: true, helped: true }, DAY)).toBe(1);
+    p.cards[q.card!] = { box: 4, due: DAY };
+    expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(2);             // よく覚えている
+  });
+});
+
 describe('data', () => {
   it('1〜2年の漢字すべてに出題用のことばがある', () => {
     for (const c of CHAR_SETS.g1 + CHAR_SETS.g2) {

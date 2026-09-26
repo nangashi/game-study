@@ -1,5 +1,5 @@
 // あそびラボのゲームを ヘッドレスブラウザで うごかして、スクリーンショットと 状態のログを とる。
-// バランス調整の たしかめに つかう（docs/03-game-candidates.md）。
+// バランス調整の たしかめに つかう（docs/04-game-candidates.md）。
 //
 // じゅんび（playwright は package.json に入れていない）:
 //   npm i --no-save playwright && npx playwright install chromium-headless-shell
@@ -38,9 +38,9 @@ try {
   page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource')) errors.push(m.text()); });
   const profile = {
     id: 'p1', name: 'テスト', avatar: 'cat', grade: opt.grade === 'k' ? 'k' : Number(opt.grade ?? 1), tolerance: 'easy',
-    coins: 0, feathers: 0, stars: 0, tickets: 3, upgrades: { hp: 0, atk: 0, speed: 0, magnet: 0 }, tracks: {}, cards: {},
-    daily: { date: '2000-01-01', quests: 0, ticketsEarned: 0 }, streak: { count: 0, last: '' },
-    stats: { quests: 0, correct: 0, runs: 0, clears: 0, bestKills: 0 },
+    coins: 0, tickets: 3, games: {}, tracks: {}, cards: {},
+    daily: { date: '2000-01-01', quests: 0, ticketsEarned: 0, subjects: [] }, streak: { count: 0, last: '' },
+    stats: { quests: 0, correct: 0 },
   };
   await page.addInitScript(p => localStorage.setItem('manabi-survivor:v1', JSON.stringify({ version: 1, profiles: [p], settings: { ticketsPerDay: 3, questLength: 5, runSeconds: 180 } })), profile);
   await page.goto('http://localhost:5199/');

@@ -4,18 +4,21 @@
 Android タブレットのブラウザで動く PWA で、Cloudflare の無料プランに置く。
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
+- ごほうびの仕組みと、ゲームに共通する決まり: [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
+- ゲーム候補（あそびラボ）の引き継ぎ: [docs/04-game-candidates.md](docs/04-game-candidates.md)
 - 手書き判定の検証用プロトタイプ: [prototypes/handwriting/](prototypes/handwriting/)
-- ゲーム候補（あそびラボ）の引き継ぎ: [docs/03-game-candidates.md](docs/03-game-candidates.md)
 
 ## 遊びの流れ
 
-1. **クエスト**（こくご / さんすう、1回5問）→ 🪙コイン と 🪶ことばの羽（こくご）/ ⭐ひかりの星（さんすう）、🎟️バトル券
-2. **バトル**（ダダサバ風、1回3分）→ レベルアップのたびにクイズ。正解するとスキルが「スーパー」になる
-3. **つよくする** → 🪙と🪶⭐で、たいりょく・こうげき・すばやさ・じしゃくを上げる（両方の教科をやらないと全部は上げられない）
+1. **クエスト**（こくご / さんすう、1回5問）→ 🪙コイン。その日はじめての教科なら 🎟️ゲーム券 も
+2. **ゲーム**（いまは「サバイバー」1つ。ダダサバ風、1回3分）→ 🎟️を1枚使う。クリアでも少し🪙がもらえる
+3. **つよくする**（ゲームごと）→ 🪙で強化する
 
-ホームの「あそびラボ」では、バトルとは別のゲーム候補（モンスターまもり・ひっぱりアタック・ぱくぱくビッグ）をためしに遊べる。バトル券は使わず、ごほうびも出ない。
+- コインは、はじめての問題・まだ定着していない問題ほど多くもらえる（同じ問題のくり返しは少ない）
+- ゲーム券は「毎日むりょう（初期値0枚）」「教科ごと（初期値1枚）」「1日の上限（初期値3枚）」をおうちのひと画面で変えられる
+- ゲームのコインだけでは先に進めなくなるように作る。くわしくは [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
 
-バトル券は1日にもらえる数に上限あり（初期値3枚、おうちのひと画面で変更できる）。上限に達したあともクエストはでき、コインと素材はもらえる。
+ホームの「あそびラボ」では、正式なゲームにする前の候補（モンスターまもり・ひっぱりアタック・ぱくぱくビッグ）をためしに遊べる。ゲーム券は使わず、ごほうびも出ない。
 
 ## 学年ごとの内容
 
@@ -45,14 +48,15 @@ npm run build
 src/
   learn/          問題の生成・難易度調整・間隔反復・手書き判定
   state/          保存データ・報酬と強化
-  game/           バトル（Phaser）
+  games/          ゲームの登録簿と共通の決まり（types.ts）
+  game/           サバイバー（Phaser）
   lab/            あそびラボのゲーム候補（Phaser）
   ui/             画面（DOM）
   data/           文字セット・漢字のことば
 scripts/gen-strokes.mjs   KanjiVG から筆順データを作る
 scripts/gen-art.sh        Codex で画像を生成（art/prompts/ → art/raw/）
 scripts/build-art.mjs     生成画像を整えて public/sprites/ に出力
-scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/03）
+scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/04）
 ```
 
 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。

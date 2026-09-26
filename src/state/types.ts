@@ -16,7 +16,14 @@ export interface TrackState { level: number; streak: number; miss: number }
 // 間隔反復（ライトナー方式）。box が上がるほど次に出るまでの日数が伸びる
 export interface CardState { box: number; due: string }
 
-export type UpgradeId = 'hp' | 'atk' | 'speed' | 'magnet';
+// ゲームごとの進みぐあい（docs/03-rewards-and-games.md）
+export interface GameProgress {
+  stage: number;                     // クリアした一番先のステージ（0 = まだ）
+  best: number;                      // ベスト記録（ゲームごとの意味: サバイバーは倒した数）
+  plays: number;
+  clears: number;
+  upgrades: Record<string, number>;  // 強化の id → レベル
+}
 
 export interface Profile {
   id: string;
@@ -25,19 +32,19 @@ export interface Profile {
   grade: Grade;
   tolerance: Tolerance;
   coins: number;
-  feathers: number; // こくごで手に入る「ことばの羽」
-  stars: number;    // さんすうで手に入る「ひかりの星」
-  tickets: number;  // バトル券
-  upgrades: Record<UpgradeId, number>;
+  tickets: number;  // ゲーム券（全ゲーム共通）
+  games: Record<string, GameProgress>; // key: ゲームの id
   tracks: Partial<Record<TrackId, TrackState>>;
   cards: Record<string, CardState>; // key: 'hira:あ' など
-  daily: { date: string; quests: number; ticketsEarned: number };
+  daily: { date: string; quests: number; ticketsEarned: number; subjects: Subject[] };
   streak: { count: number; last: string };
-  stats: { quests: number; correct: number; runs: number; clears: number; bestKills: number };
+  stats: { quests: number; correct: number };
 }
 
 export interface Settings {
-  ticketsPerDay: number;    // 1日にもらえるバトル券の上限
+  freePlaysPerDay: number;  // 毎日むりょうでもらえるゲーム券
+  playsPerSubject: number;  // その日はじめてやった教科ごとにもらえるゲーム券
+  ticketsPerDay: number;    // 勉強でもらえるゲーム券の1日の上限
   questLength: number;      // 1クエストの問題数
   runSeconds: number;       // 1回のバトルの長さ
 }

@@ -1,18 +1,17 @@
 import { battleQuiz, applyAnswer } from '../../learn/engine';
-import { runReward, type RunResult } from '../../state/economy';
+import { finishGame, gameContext, type RunResult } from '../../state/economy';
 import { save, store, today } from '../../state/store';
 import type { Profile } from '../../state/types';
 import { SKILLS, skillChoices, type SkillId, type SkillPick } from '../../game/skills';
 import { chip, h, ico, mount, overlay } from '../dom';
 import type { BattleScene } from '../../game/BattleScene';
 import { renderQuestion } from '../question';
-import { showHome } from './home';
+import { SURVIVOR } from '../../games/survivor';
+import { showGames } from './games';
 
 export async function showBattle(id: string): Promise<void> {
   const p = store.profile(id)!;
-  if (p.tickets <= 0) return showHome(id);
-  p.tickets--;
-  save();
+  const ctx = gameContext(p, SURVIVOR);
 
   const root = h('div', { class: 'battle-root' });
   mount(root, h('div', { class: 'note', textContent: 'じゅんびちゅう…' }));
@@ -21,10 +20,10 @@ export async function showBattle(id: string): Promise<void> {
 
   let ended = false;
   const game = startBattle(root, {
-    avatar: p.avatar,
-    easy: p.grade === 'k',
+    avatar: ctx.avatar,
+    easy: ctx.easy,
     seconds: store.settings.runSeconds,
-    upgrades: p.upgrades,
+    upgrades: ctx.upgrades as { hp: number; atk: number; speed: number; magnet: number },
     onLevelUp: (level, levels) => levelUpDialog(p, level, levels),
     onEnd: r => end(r),
   });
@@ -39,7 +38,8 @@ export async function showBattle(id: string): Promise<void> {
     ended = true;
     quit.remove();
     game.scene.pause('battle');
-    const coins = runReward(p, r);
+    // サバイバーにはまだステージがないので、いつもステージ1
+    const { coins } = finishGame(p, SURVIVOR.id, { cleared: r.cleared, stage: 1, score: r.kills });
     save();
     const o = overlay(
       h('h1', { class: 'title' }, ico(r.cleared ? 'trophy' : 'star', 64), r.cleared ? ' クリア！' : ' おつかれさま！'),
@@ -49,7 +49,7 @@ export async function showBattle(id: string): Promise<void> {
         h('span', { class: 'chip', textContent: `Lv ${r.level}` }),
         chip('coin', `+${coins}`),
       ),
-      h('button', { class: 'pill-btn primary', onclick: () => { o.close(); game.destroy(true); showHome(id); } }, ico('home', 26), ' もどる'),
+      h('button', { class: 'pill-btn primary', onclick: () => { o.close(); game.destroy(true); showGames(id); } }, ico('home', 26), ' もどる'),
     );
   }
 }

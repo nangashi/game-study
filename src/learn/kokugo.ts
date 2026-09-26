@@ -77,5 +77,5 @@ export function hiraMatch(rng: Rng, level: number): Question {
     others = shuffle(rng, all.filter(c => c !== char));
   }
   const choices = shuffle(rng, [char, ...others.slice(0, 2)]);
-  return { kind: 'choice', track: 'hira-match', prompt: `<span class="big-char">${char}</span>`, choices, answer: choices.indexOf(char) };
+  return { kind: 'choice', track: 'hira-match', prompt: `<span class="big-char">${char}</span>`, choices, answer: choices.indexOf(char), card: `match:${char}` };
 }
