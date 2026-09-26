@@ -251,3 +251,23 @@ button:disabled { opacity: 0.45; }
 @media (max-width: 480px) {
   .grade-tab { padding: 8px 11px; font-size: 16px; }
 }
+
+/* 算数の図と式（筆算・分数・●・絵グラフ・図形） */
+.prompt .box { display: inline-block; min-width: 1.4em; border: 4px solid var(--sansu); border-radius: 10px; color: var(--sansu); padding: 0 8px; line-height: 1.2; }
+.prompt .dots { font-size: 34px; letter-spacing: .12em; }
+.prompt .dots .on { color: var(--kokugo); }
+.prompt .dots .off { color: #cbd5e1; }
+.prompt svg.fig { width: min(100%, 440px); height: auto; }
+.prompt svg.fig.small { width: min(50vw, 220px); }
+.prompt .clock + .sentence, .prompt .stack .clock { width: min(200px, 44vw); }
+.hissan { font-size: 56px; font-weight: 900; font-variant-numeric: tabular-nums; border-collapse: collapse; }
+.hissan td { width: 1em; text-align: center; padding: 0 4px; line-height: 1.15; }
+.hissan tr.line td { border-top: 5px solid var(--ink); height: .9em; }
+.frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 1.05; vertical-align: middle; font-variant-numeric: tabular-nums; }
+.frac span:first-child { border-bottom: 3px solid currentColor; padding: 0 4px; }
+.choice .shape { width: 84px; height: 84px; display: block; }
+.choice .things { max-width: 220px; }
+.pictograph { display: flex; gap: 14px; align-items: flex-end; background: #fff; border-radius: 16px; padding: 10px 16px; }
+.pictograph .g-col { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pictograph .g-dots { display: flex; flex-direction: column-reverse; font-size: 22px; line-height: 1; }
+.pictograph .g-name { font-size: 18px; border-top: 2px solid var(--ink); padding-top: 4px; }

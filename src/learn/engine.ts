@@ -46,6 +46,9 @@ function plan(p: Profile, cats: Category[], reviewCats: Category[], mixed: boole
     }
     if (f.length) fresh.push(f);
   }
+  // 新しい問題は、始めた問題が少ないカテゴリから（毎回同じカテゴリからにならないように）
+  const started = (f: Pick[]) => f[0].cat.cards().filter(c => p.cards[c]).length;
+  fresh.sort((a, b) => started(a) - started(b));
   const state = (x: Pick) => p.cards[x.card]!;
   const byNeed = (a: Pick, b: Pick) => state(a).box - state(b).box || state(a).due.localeCompare(state(b).due);
   due.sort(byNeed);

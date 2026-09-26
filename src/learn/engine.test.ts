@@ -41,8 +41,8 @@ describe('カテゴリと問題プール', () => {
     }
   });
 
-  it('国語の問題文と選択肢には、その学年までに習う漢字だけを使う', () => {
-    for (const c of KOKUGO.categories) {
+  it('問題文と選択肢には、その学年までに習う漢字だけを使う', () => {
+    for (const c of STUDIES.flatMap(s => s.categories)) {
       const known = knownKanji(c.grade === 3 ? 2 : c.grade) + BUSHU.map(([, mark]) => mark).join('');
       for (const card of c.cards()) {
         const q = c.make(card, Math.random, p);
@@ -105,6 +105,19 @@ describe('問題の選び方（planSet）', () => {
     expect(planSet(KOKUGO, p, { study: 'kokugo', grade: 3 }, 5, DAY).map(x => x.card)).not.toContain('kanji:一');
   });
 
+  it('まぜこぜの新しい問題は、始めた問題が少ないカテゴリから出す', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const sansu = studyDef('sansu')!;
+    const seen = new Set<string>();
+    for (let day = 0; day < 8; day++) {
+      for (const x of planSet(sansu, p, { study: 'sansu', grade: 2 }, 5, DAY)) {
+        seen.add(x.cat.id);
+        p.cards[x.card] = { box: 3, due: '2026-12-31' };
+      }
+    }
+    expect(seen.size).toBe(sansu.categories.filter(c => c.grade === 2).length);
+  });
+
   it('まぜこぜでは同じカテゴリがなるべく続かない', () => {
     const p = newProfile('t', 'wizard', 2);
     const set = buildSet(Math.random, KOKUGO, p, { study: 'kokugo', grade: 2 }, 5, DAY);
@@ -135,7 +148,7 @@ describe('ゲームの中のクイズ', () => {
       for (let i = 0; i < 30; i++) expect(battleQuiz(Math.random, p, DAY).kind).toBe('choice');
     }
     const k = newProfile('t', 'wizard', 'k');
-    for (let i = 0; i < 30; i++) expect(battleQuiz(Math.random, k, DAY).card).toMatch(/^(kazu|match):/);
+    for (let i = 0; i < 30; i++) expect(battleQuiz(Math.random, k, DAY).card).toMatch(/^(kazu|kurabe|match):/);
   });
 });
 

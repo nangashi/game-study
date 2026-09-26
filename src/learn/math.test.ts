@@ -14,9 +14,9 @@ describe('さんすうの問題', () => {
     for (const c of SANSU.categories) {
       for (const card of c.cards()) {
         const q = c.make(card, rng, p);
-        if (q.kind !== 'number') continue;
-        const [, a, op, b] = q.prompt.match(/(\d+) (.) (\d+)/)!;
-        expect(q.answer).toBe(op === '+' ? +a + +b : op === '−' ? +a - +b : +a * +b);
+        if (q.kind !== 'number' || !card.startsWith('keisan:')) continue;
+        const [, a, op, b] = card.match(/^keisan:(\d+)(.)(\d+)$/)!;
+        expect(q.answer, card).toBe(op === '+' ? +a + +b : op === '−' ? +a - +b : op === '×' ? +a * +b : +a / +b);
         expect(q.answer).toBeGreaterThanOrEqual(0);
         if (c.id === 'add-carry') expect(q.answer).toBeGreaterThan(10);
         if (c.id === 'sub-borrow') expect(+a % 10).toBeLessThan(+b);
@@ -24,10 +24,19 @@ describe('さんすうの問題', () => {
     }
   });
 
+  it('答えは0以上の整数', () => {
+    for (const c of SANSU.categories) {
+      for (const card of c.cards()) {
+        const q = c.make(card, Math.random, p);
+        if (q.kind === 'number') expect(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < 100000, card).toBe(true);
+      }
+    }
+  });
+
   it('プールは同じ並びで作られ、大きすぎない', () => {
     for (const c of SANSU.categories) {
       expect(c.cards().length, c.id).toBeGreaterThan(0);
-      expect(c.cards().length, c.id).toBeLessThanOrEqual(150);
+      expect(c.cards().length, c.id).toBeLessThanOrEqual(400);
     }
     expect(cat('add-3').cards()[0]).toBe(cat('add-3').cards()[0]);
   });
@@ -39,7 +48,7 @@ describe('さんすうの問題', () => {
         let q = c.make(card, rng, p);
         if (q.kind === 'number') q = numberToChoice(rng, q);
         if (q.kind !== 'choice') throw new Error();
-        expect(new Set(q.choices).size).toBe(3);
+        expect(new Set(q.choices).size, card).toBe(3);
         expect(q.answer).toBeGreaterThanOrEqual(0);
       }
     }

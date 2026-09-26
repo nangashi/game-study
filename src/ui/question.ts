@@ -48,7 +48,7 @@ export function renderQuestion(q: Question, p: Profile, onAnswer: (a: Answer) =>
         if (!correct) { box.textContent = `${q.answer}`; box.style.borderColor = 'var(--ng)'; msg.textContent = `こたえは ${q.answer}`; }
         void finish({ correct });
         return;
-      } else if (value.length < 4) value += k;
+      } else if (value.length < 5) value += k;
       box.textContent = value || ' ';
     };
     const keys = ['7', '8', '9', '4', '5', '6', '1', '2', '3', 'del', '0', 'ok'];
