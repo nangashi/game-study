@@ -9,6 +9,7 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 
 - 調査と実現可能性の検証: [docs/01-research-and-feasibility.md](docs/01-research-and-feasibility.md)
 - ごほうびの仕組みと、ゲームに共通する決まり: [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
+- ゲーム候補（あそびラボ）の引き継ぎ: [docs/04-game-candidates.md](docs/04-game-candidates.md)
 - 手書き判定の検証用プロトタイプ: [prototypes/handwriting/](prototypes/handwriting/)
 
 ## 遊びの流れ
@@ -24,6 +25,8 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 - コインは、はじめての問題・まだ定着していない問題ほど多くもらえる（同じ問題のくり返しは少ない）
 - ゲーム券は「毎日むりょう（初期値0枚）」「教科ごと（初期値1枚）」「1日の上限（初期値3枚）」をおうちのひと画面で変えられる
 - ゲームのコインだけでは先に進めなくなるように作る。くわしくは [docs/03-rewards-and-games.md](docs/03-rewards-and-games.md)
+
+ホームの「あそびラボ」では、正式なゲームにする前の候補（モンスターまもり・ぱくぱくビッグ）をためしに遊べる。ゲーム券は使わず、ごほうびも出ない。
 
 ## 学年ごとの内容
 
@@ -59,13 +62,16 @@ src/
     kit/          ゲームの画面で使える部品（コイン・券の表示、つよくする、結果、やめる、Phaser）
     survivor/     サバイバー（Phaser）
     hippari/      ひっぱりアタック（Phaser）
+  lab/            あそびラボのゲーム候補（Phaser）
   ui/             土台の画面（DOM）。game-host.ts がゲームを開き、Platform を渡す
   data/           文字セット・漢字のことば
 scripts/gen-strokes.mjs   KanjiVG から筆順データを作る
 scripts/art/gen.sh        Codex で画像を生成（art/<スコープ>/prompts/ → raw/）
 scripts/art/build.mjs     生成画像を切り出して並べ直し、public/assets/<スコープ>/ に出力
+scripts/playtest.mjs      あそびラボのゲームを自動で遊ばせて確かめる（docs/04）
 art/common/               土台の画像（アイコン・アバター・ホームの背景）
 art/games/<id>/           ゲームごとの画像
+art/lab/                  あそびラボの画像
 ```
 
 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。

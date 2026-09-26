@@ -71,8 +71,10 @@ async function build(scope) {
     sheets[name] = { url: url(`${name}.webp`), cell: def.cell, cols, rows, frames: Object.fromEntries(list.map((f, i) => [f.name, i])) };
   }
   for (const [name, def] of Object.entries(cfg.images ?? {})) {
-    const file = path.join(ART, scope, 'raw', `${name}.png`);
-    if (!fs.existsSync(file)) throw new Error(`${path.relative(ROOT, file)} がありません（scripts/art/gen.sh ${scope} ${name} で生成）`);
+    // from: ほかのスコープの生成画像を使う（"games/survivor/ground"）
+    const [s, n] = def.from ? [def.from.slice(0, def.from.lastIndexOf('/')), def.from.slice(def.from.lastIndexOf('/') + 1)] : [scope, name];
+    const file = path.join(ART, s, 'raw', `${n}.png`);
+    if (!fs.existsSync(file)) throw new Error(`${path.relative(ROOT, file)} がありません（scripts/art/gen.sh ${s} ${n} で生成）`);
     await sharp(file).resize({ width: def.width }).webp({ quality: 85, effort: 6 }).toFile(path.join(out, `${name}.webp`));
     images[name] = url(`${name}.webp`);
   }

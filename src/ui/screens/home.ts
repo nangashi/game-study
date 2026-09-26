@@ -4,6 +4,7 @@ import type { Profile } from '../../state/types';
 import { STUDIES } from '../../studies/registry';
 import { chip, h, hero, ico, mount } from '../dom';
 import { showGames } from './games';
+import { showLab } from './lab';
 import { showProfiles } from './profiles';
 import { showQuest } from './quest';
 
@@ -42,6 +43,8 @@ export function showHome(id: string): void {
       // ゲーム（src/games/registry.ts）
       h('button', { class: 'big-btn battle wide', onclick: () => showGames(p.id) },
         ico('swords', 72), 'ゲーム', small(ico('ticket'), ' を 1まい つかう')),
+      h('button', { class: 'big-btn lab', onclick: () => showLab(p.id) },
+        ico('flame', 48), 'あそびラボ', small('ためしプレイ')),
     ),
     h('p', { class: 'note bubble' }, ...(ticketStudies.length
       ? [`${ticketStudies.map(x => x.name).join('・')}を やると `, ico('ticket'), ' が もらえるよ']
