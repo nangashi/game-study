@@ -6,7 +6,7 @@ import { chip, h, hero, ico, mount } from '../dom';
 import { showGames } from './games';
 import { showLab } from './lab';
 import { showProfiles } from './profiles';
-import { showQuest } from './quest';
+import { showStudy } from './study';
 
 export function wallet(p: Profile): HTMLElement {
   return h('div', { class: 'wallet' },
@@ -38,7 +38,7 @@ export function showHome(id: string): void {
     topbar(p, showProfiles),
     h('div', { class: 'home-grid' },
       // べんきょう（src/studies/registry.ts）
-      ...STUDIES.map(st => h('button', { class: 'big-btn', style: `background:${st.color}`, onclick: () => showQuest(p.id, st.id) },
+      ...STUDIES.map(st => h('button', { class: 'big-btn', style: `background:${st.color}`, onclick: () => showStudy(p.id, st.id) },
         ico(st.icon, 72), st.name, reward(st.id))),
       // ゲーム（src/games/registry.ts）
       h('button', { class: 'big-btn battle wide', onclick: () => showGames(p.id) },

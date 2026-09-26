@@ -1,49 +1,65 @@
 import { describe, expect, it } from 'vitest';
-import { LEVELS, kazu, keisan, numberToChoice, tokei } from './math';
+import { SANSU } from '../studies/sansu';
+import { newProfile } from '../state/store';
+import { numberToChoice } from './math';
 
 const seeded = (seed = 1) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+const cat = (id: string) => SANSU.categories.find(c => c.id === id)!;
 
-describe('keisan', () => {
-  it('どのレベルでも式と答えが合っている', () => {
+describe('さんすうの問題', () => {
+  const p = newProfile('t', 'wizard', 2);
+
+  it('どのカードでも式と答えが合っていて、答えは0以上', () => {
     const rng = seeded();
-    for (let lv = 1; lv <= LEVELS.keisan; lv++) {
-      for (let i = 0; i < 300; i++) {
-        const q = keisan(rng, lv);
-        if (q.kind !== 'number') throw new Error();
-        const [, a, op, b] = q.prompt.match(/(\d+) (.) (\d+)/)!;
-        const expected = op === '+' ? +a + +b : op === '−' ? +a - +b : +a * +b;
-        expect(q.answer).toBe(expected);
+    for (const c of SANSU.categories) {
+      for (const card of c.cards()) {
+        const q = c.make(card, rng, p);
+        if (q.kind !== 'number' || !card.startsWith('keisan:')) continue;
+        const [, a, op, b] = card.match(/^keisan:(\d+)(.)(\d+)$/)!;
+        expect(q.answer, card).toBe(op === '+' ? +a + +b : op === '−' ? +a - +b : op === '×' ? +a * +b : +a / +b);
         expect(q.answer).toBeGreaterThanOrEqual(0);
-        if (lv === 2) expect(q.answer).toBeGreaterThan(10); // くりあがり
-        if (lv === 3) expect(+a % 10).toBeLessThan(+b);     // くりさがり
+        if (c.id === 'add-carry') expect(q.answer).toBeGreaterThan(10);
+        if (c.id === 'sub-borrow') expect(+a % 10).toBeLessThan(+b);
       }
     }
   });
-});
 
-describe('choice questions', () => {
-  it('選択肢に正解がちょうど1つあり、重複しない', () => {
-    const rng = seeded(7);
-    const qs = [
-      ...Array.from({ length: 200 }, (_, i) => kazu(rng, (i % LEVELS.kazu) + 1)),
-      ...Array.from({ length: 200 }, (_, i) => tokei(rng, (i % LEVELS.tokei) + 1)),
-      ...Array.from({ length: 200 }, (_, i) => { const q = keisan(rng, (i % 8) + 1); return q.kind === 'number' ? numberToChoice(rng, q) : q; }),
-    ];
-    for (const q of qs) {
-      if (q.kind !== 'choice') throw new Error();
-      expect(new Set(q.choices).size).toBe(q.choices.length);
-      expect(q.choices.length).toBe(3);
-      expect(q.answer).toBeGreaterThanOrEqual(0);
+  it('答えは0以上の整数', () => {
+    for (const c of SANSU.categories) {
+      for (const card of c.cards()) {
+        const q = c.make(card, Math.random, p);
+        if (q.kind === 'number') expect(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < 100000, card).toBe(true);
+      }
     }
   });
 
-  it('kazu の絵の数が正解と一致する（かぞえる問題）', () => {
+  it('プールは同じ並びで作られ、大きすぎない', () => {
+    for (const c of SANSU.categories) {
+      expect(c.cards().length, c.id).toBeGreaterThan(0);
+      expect(c.cards().length, c.id).toBeLessThanOrEqual(400);
+    }
+    expect(cat('add-3').cards()[0]).toBe(cat('add-3').cards()[0]);
+  });
+
+  it('3択の選択肢に正解がちょうど1つあり、重複しない', () => {
+    const rng = seeded(7);
+    for (const c of SANSU.categories) {
+      for (const card of c.cards().slice(0, 40)) {
+        let q = c.make(card, rng, p);
+        if (q.kind === 'number') q = numberToChoice(rng, q);
+        if (q.kind !== 'choice') throw new Error();
+        expect(new Set(q.choices).size, card).toBe(3);
+        expect(q.answer).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
+
+  it('かぞえる問題の絵の数が正解と一致する', () => {
     const rng = seeded(3);
-    for (let i = 0; i < 100; i++) {
-      const q = kazu(rng, 2);
+    for (const card of cat('kazu-count').cards()) {
+      const q = cat('kazu-count').make(card, rng, p);
       if (q.kind !== 'choice') throw new Error();
-      const n = (q.prompt.match(/class="ico"/g) ?? []).length;
-      expect(Number(q.choices[q.answer])).toBe(n);
+      expect(Number(q.choices[q.answer])).toBe((q.prompt.match(/class="ico"/g) ?? []).length);
     }
   });
 });
