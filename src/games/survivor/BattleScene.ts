@@ -45,7 +45,7 @@ interface Enemy {
   obj: Phaser.GameObjects.Image; shadow: Phaser.GameObjects.Image;
   role: Role; kind: string; hp: number; maxHp: number; speed: number; r: number; base: number; phase: number;
   elite: boolean; boss: boolean; mini: boolean; mass: number;
-  trait: Trait | null; faded: boolean; count: number; slowUntil: number; stunUntil: number;
+  trait: Trait | null; faded: boolean; count: number; slowUntil: number; stunUntil: number; bornAt: number;
   kbx: number; kby: number;                  // ノックバック
   state: 'walk' | 'aim' | 'dash' | 'rest'; stateT: number; dirX: number; dirY: number; cd: number;
   straight: boolean;                         // むれ: まっすぐ よこぎる
@@ -438,7 +438,7 @@ export class BattleScene extends Phaser.Scene {
     const speed = R.speed * this.spec.speed * (this.cfg.easy ? 0.85 : 1) * (0.9 + Math.random() * 0.2);
     const e: Enemy = {
       obj, shadow, role, kind: `${this.world.sheet}:${kind}`, hp, maxHp: hp, speed, r: size * 0.38, base, phase: Math.random() * 6,
-      elite: !!o.elite, boss: !!o.boss, mini: !!o.mini, trait: o.mini ? null : this.world.traits[role], faded: false, count: 0, slowUntil: 0, stunUntil: 0, mass: o.boss ? 12 : o.elite ? 5 : role === 'tank' ? 3 : 1,
+      elite: !!o.elite, boss: !!o.boss, mini: !!o.mini, trait: o.mini ? null : this.world.traits[role], faded: false, count: 0, slowUntil: 0, stunUntil: 0, bornAt: this.t, mass: o.boss ? 12 : o.elite ? 5 : role === 'tank' ? 3 : 1,
       kbx: 0, kby: 0, state: 'walk', stateT: 0, dirX: 0, dirY: 0, cd: 1 + Math.random() * 2, straight: false, hitAt: {}, flashAt: 0, dead: false,
     };
     if (o.elite) e.obj.setTint(0xffe08a);
@@ -778,7 +778,7 @@ export class BattleScene extends Phaser.Scene {
   private fireBolts(dt: number, _now: number) {
     const lv = this.skill.bolt, evo = this.evo('bolt');
     if (!lv || !this.enemies.length) return;
-    if (!this.cool('bolt', dt, evo ? 0.45 : Math.max(0.6, 0.9 - lv * 0.06))) return;
+    if (!this.cool('bolt', dt, evo ? 0.6 : Math.max(0.6, 0.9 - lv * 0.06))) return;
     const targets = this.nearestEnemies(evo ? 5 : lv);
     targets.forEach(t => {
       const a = Math.atan2(t.obj.y - this.player.y, t.obj.x - this.player.x);
@@ -786,7 +786,7 @@ export class BattleScene extends Phaser.Scene {
         ? this.item('comet', this.player.x, this.player.y, 60).setDepth(8).setRotation(a + Math.PI * 0.8)
         : this.item('orb', this.player.x, this.player.y, 40).setDepth(8);
       const sp = evo ? 620 : 480;
-      this.bullets.push({ obj, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.2, dmg: this.atk * (evo ? 2 : 1.3), pierce: evo ? 3 : 0, hit: new Set(), src: 'bolt' });
+      this.bullets.push({ obj, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1.2, dmg: this.atk * (evo ? 1.8 : 1.3), pierce: evo ? 2 : 0, hit: new Set(), src: 'bolt' });
     });
     if (evo) sfx.shoot();
   }
@@ -856,11 +856,11 @@ export class BattleScene extends Phaser.Scene {
     for (const [x, y] of this.bombTargets(n, R)) this.throwBomb(x, y, R, dmg, evo);
   }
 
-  // ねらう ところ: 150px より とおくて、まわりに 敵が いちばん おおい ところ（おなじ ところには かさねない）
+  // ねらう ところ: 120〜360px（ほぼ 画面の中）で、まわりに 敵が いちばん おおい ところ（おなじ ところには かさねない）
   private bombTargets(n: number, R: number): [number, number][] {
     const px = this.player.x, py = this.player.y;
     const alive = this.enemies.filter(e => !e.dead);
-    const far = alive.filter(e => { const d = Phaser.Math.Distance.Between(e.obj.x, e.obj.y, px, py); return d > 150 && d < 480; });
+    const far = alive.filter(e => { const d = Phaser.Math.Distance.Between(e.obj.x, e.obj.y, px, py); return d > 120 && d < 360; });
     const cand = (far.length ? far : alive)
       .map(e => ({ e, n: alive.filter(o => Phaser.Math.Distance.Between(o.obj.x, o.obj.y, e.obj.x, e.obj.y) < R).length }))
       .sort((a, b) => b.n - a.n);
@@ -1044,6 +1044,8 @@ export class BattleScene extends Phaser.Scene {
 
   private damage(e: Enemy, dmg: number, knock: number, fx: number, fy: number, src: WeaponId | 'item', slow = 0) {
     if (e.dead || e.faded) return; // すきとおっている あいだは きかない
+    // わかれた ばかりの 子は すこし きかない（はんいの 1ぱつで 親と 子を まとめて たおさない）
+    if (e.mini && this.t - e.bornAt < 0.25) return;
     if (slow) { e.slowUntil = this.t + slow; e.obj.setTint(0x93c5fd); }
     this.dealt[src] = (this.dealt[src] ?? 0) + Math.min(dmg, e.hp);
     e.hp -= dmg;
