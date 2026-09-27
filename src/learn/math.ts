@@ -8,7 +8,8 @@ import { AMARI, BUN1, BUN2, BUN3, type AmariTemplate, type BunOp, type BunTempla
 
 // 算数の問題の作り方。カテゴリの一覧は src/studies/sansu.ts
 // カードは1問ずつ（例: 'keisan:7+8'、'tani2:cm_mm,3,4'）。カードが同じなら同じ問題になる（選択肢のならびだけ変わる）
-// 数が多すぎる種類は、決まった並びでえらんだものだけをプールにする
+// 問題の数は「これだけ解けたら習熟した」と言える量（docs/03-rewards-and-games.md）。やり方を身につけるものは「要素 × 数問」
+// 計算（筆算など）は「要素 × わく」をカードにし、出すたびに数を変える（calcCategory）
 
 // ---- 道具 ----
 
@@ -45,6 +46,11 @@ function interleave<T>(lists: T[][]): T[] {
   return out;
 }
 
+// 要素ごとに決まった数だけえらび、要素を順番にまぜる（例: [[差が1の組, 6], [同じ数の組, 4]]）
+function each<T>(id: string, groups: [T[], number][]): T[] {
+  return interleave(groups.map(([list, n], i) => sample(`${id}:${i}`, list, n)));
+}
+
 function choice(card: string, rng: Rng, prompt: string, correct: string, wrong: string[], note?: string): Question {
   const [choices, answer] = makeChoices(rng, correct, wrong);
   return { kind: 'choice', card, prompt, choices, answer, note };
@@ -69,12 +75,18 @@ function kazuCategory(id: string, name: string, cards: () => string[]): Category
 }
 
 export const kazuCount = kazuCategory('kazu-count', 'かぞえる', () => range(1, 10).map(n => `kazu:${n}`));
+// 答え（ひき算は ひかれる数）ごとに2つずつ
 export const kazuAdd = kazuCategory('kazu-add', 'えの たしざん', () =>
-  all(range(1, 9), a => range(1, 10 - a)).sort((x, y) => x[0] + x[1] - y[0] - y[1]).map(([a, b]) => `kazu:${a}+${b}`));
-export const kazuSub = kazuCategory('kazu-sub', 'えの ひきざん', () => all(range(2, 10), a => range(1, a - 1)).map(([a, b]) => `kazu:${a}-${b}`));
+  range(2, 10).flatMap(s => sample(`kazu-add${s}`, range(1, s - 1), 2).map(a => `kazu:${a}+${s - a}`)));
+export const kazuSub = kazuCategory('kazu-sub', 'えの ひきざん', () =>
+  range(2, 10).flatMap(a => sample(`kazu-sub${a}`, range(1, a - 1), 2).map(b => `kazu:${a}-${b}`)));
 
-// どっちが おおい（絵の列をえらぶ。同じなら ＝）
-export const kurabe = category('kurabe', 'どっちが おおい', 'k', () => all(range(1, 10), () => range(1, 10)).map(([a, b]) => `kurabe:${a},${b}`), (card, rng) => {
+// どっちが おおい（絵の列をえらぶ。同じなら ＝）。ちがいが大きい・2〜3・1・同じ
+const KURABE = all(range(1, 10), () => range(1, 10));
+const kurabeBy = (ok: (d: number) => boolean) => KURABE.filter(([a, b]) => ok(Math.abs(a - b)));
+export const kurabe = category('kurabe', 'どっちが おおい', 'k', () => each('kurabe', [
+  [kurabeBy(d => d >= 4), 4], [kurabeBy(d => d === 2 || d === 3), 6], [kurabeBy(d => d === 1), 6], [kurabeBy(d => d === 0), 4],
+]).map(([a, b]) => `kurabe:${a},${b}`), (card, rng) => {
   const [a, b] = args(card).map(Number);
   const [e1, e2] = shuffle(rng, THINGS);
   return {
@@ -106,16 +118,57 @@ function keisanCategory(id: string, name: string, grade: Grade, list: () => [num
 const withOp = (op: Op, list: [number, number][]) => list.map(([a, b]) => [a, op, b] as [number, Op, number]);
 const bySum = (x: [number, number], y: [number, number]) => x[0] + x[1] - y[0] - y[1];
 
-// ランダムな組を、決まった並びで n 個（すべて並べると多すぎるとき）
-function randomPairs(id: string, n: number, a: [number, number], b: (a: number) => [number, number]): [number, number][] {
-  const rng = seeded(id), seen = new Set<string>(), out: [number, number][] = [];
-  while (out.length < n) {
-    const x = a[0] + Math.floor(rng() * (a[1] - a[0] + 1));
-    const [lo, hi] = b(x);
-    const y = lo + Math.floor(rng() * (hi - lo + 1));
-    if (!seen.has(`${x},${y}`)) { seen.add(`${x},${y}`); out.push([x, y]); }
-  }
-  return out;
+// ---- 計算のわく（出すたびに数が変わる） ----
+// 覚えて答える計算（10まで・くり上がり・九九など）は上の keisanCategory で1問ずつ。やり方を身につける計算（筆算など）は
+// カードを '<カテゴリ>:<要素>:<わく>'（例: 'add-2:ari:1'）にし、make のたびに要素の条件に合う数を作る
+
+const int = (rng: Rng, lo: number, hi: number) => lo + Math.floor(rng() * (hi - lo + 1));
+const dig = (n: number, k: number) => Math.floor(n / 10 ** k) % 10;
+// くり上がる位・くり下がる位（0: 一の位）。例: '0,1'
+function carries(a: number, b: number): string {
+  const out: number[] = [];
+  for (let k = 0, c = 0; k < 4; k++) { c = dig(a, k) + dig(b, k) + c >= 10 ? 1 : 0; if (c) out.push(k); }
+  return out.join();
+}
+function borrows(a: number, b: number): string {
+  const out: number[] = [];
+  for (let k = 0, c = 0; k < 4; k++) { c = dig(a, k) - dig(b, k) - c < 0 ? 1 : 0; if (c) out.push(k); }
+  return out.join();
+}
+
+// 数の範囲から、条件に合うまで作りなおす
+type Draw = (rng: Rng) => number[];
+function draw(ranges: [number, number][], ok: (...n: number[]) => boolean = () => true): Draw {
+  return rng => {
+    for (let i = 0; i < 100000; i++) {
+      const n = ranges.map(([lo, hi]) => int(rng, lo, hi));
+      if (ok(...n)) return n;
+    }
+    throw new Error(`draw: ${JSON.stringify(ranges)}`);
+  };
+}
+const map = (d: Draw, f: (n: number[]) => number[]): Draw => rng => f(d(rng));
+const tens = (d: Draw): Draw => map(d, n => n.map(x => x * 10));
+
+// 要素: slots 個のわく（カード）を持つ。まだやっていないわくは、要素の順（やさしい順）に出す
+interface Part { id: string; slots: number; draw: Draw; op?: Op }
+const part = (id: string, slots: number, op: Op, d: Draw): Part => ({ id, slots, op, draw: d });
+
+function variedCategory(id: string, name: string, grade: Grade, parts: Part[], show: (card: string, rng: Rng, part: Part, n: number[]) => Question): Category {
+  const byId = new Map(parts.map(x => [x.id, x]));
+  return {
+    id, name, grade, quiz: true, varied: true,
+    cards: once(() => parts.flatMap(x => range(1, x.slots).map(i => `${id}:${x.id}:${i}`))),
+    make(card, rng) {
+      const x = byId.get(card.split(':')[1])!;
+      return show(card, rng, x, x.draw(rng));
+    },
+  };
+}
+// 2つの数の計算（たし算・ひき算などは要素ごとに決める）
+function calcCategory(id: string, name: string, grade: Grade, parts: Part[], vertical = false): Category {
+  return variedCategory(id, name, grade, parts, (card, _rng, x, [a, b]) =>
+    number(card, vertical ? hissan(a, x.op!, b) : formula(`${a} ${SIGN[x.op!]} ${b} ＝ ?`), calc(a, x.op!, b)));
 }
 
 // 1年
@@ -123,27 +176,69 @@ export const add10 = keisanCategory('add-10', 'たしざん（10まで）', 1, (
 export const addCarry = keisanCategory('add-carry', 'くりあがりの たしざん', 1, () => withOp('+', all(range(2, 9), a => range(11 - a, 9)).sort(bySum)));
 export const sub10 = keisanCategory('sub-10', 'ひきざん（10まで）', 1, () => withOp('−', all(range(2, 10), a => range(1, a - 1))));
 export const subBorrow = keisanCategory('sub-borrow', 'くりさがりの ひきざん', 1, () => withOp('−', all(range(11, 18), a => range(a - 9, 9))));
-// 何十の計算と、くり上がり・くり下がりのない 2けた ± 1けた
-export const nanjuu = keisanCategory('nanjuu', 'なんじゅうの けいさん', 1, () => interleave([
-  withOp('+', all(range(1, 9), a => range(1, 10 - a)).map(([a, b]) => [a * 10, b * 10])),
-  withOp('−', all(range(2, 10), a => range(1, a - 1)).map(([a, b]) => [a * 10, b * 10])),
-  withOp('+', sample('nanjuu+', all(range(21, 98).filter(n => n % 10 && n % 10 < 9), a => range(1, 9 - (a % 10))), 45)),
-  withOp('−', sample('nanjuu-', all(range(22, 99).filter(n => n % 10 > 1), a => range(1, (a % 10) - 1)), 45)),
-]));
+// 何十の計算、何十と1けた、くり上がり・くり下がりのない 2けた ± 1けた
+export const nanjuu = calcCategory('nanjuu', 'なんじゅうの けいさん', 1, [
+  part('juu+', 3, '+', tens(draw([[1, 9], [1, 9]], (a, b) => a + b <= 10))),     // 30 ＋ 50
+  part('juu-', 3, '−', tens(draw([[2, 10], [1, 9]], (a, b) => b < a))),          // 80 − 30
+  part('juu+1', 2, '+', draw([[10, 90], [1, 9]], a => a % 10 === 0)),            // 30 ＋ 4
+  part('-1juu', 2, '−', draw([[11, 99], [1, 9]], (a, b) => a % 10 === b)),       // 34 − 4
+  part('2+1', 3, '+', draw([[21, 98], [1, 8]], (a, b) => a % 10 > 0 && a % 10 + b <= 9)),   // 32 ＋ 5
+  part('2-1', 3, '−', draw([[21, 99], [1, 8]], (a, b) => a % 10 > b)),           // 38 − 5
+]);
 // 2年（筆算の形）
-export const add2 = keisanCategory('add-2', '2けたの たしざん', 2, () => withOp('+', sample('add-2', all(range(11, 79), a => range(11, 99 - a)), 150)), true);
-export const sub2 = keisanCategory('sub-2', '2けたの ひきざん', 2, () => withOp('−', sample('sub-2', all(range(21, 99), a => range(11, a - 1)), 150)), true);
+export const add2 = calcCategory('add-2', '2けたの たしざん', 2, [
+  part('nashi', 3, '+', draw([[11, 88], [11, 88]], (a, b) => carries(a, b) === '')),
+  part('ari', 3, '+', draw([[11, 88], [11, 88]], (a, b) => carries(a, b) === '0' && (a + b) % 10 > 0)),
+  part('zero', 2, '+', draw([[11, 88], [11, 88]], (a, b) => carries(a, b) === '0' && (a + b) % 10 === 0)),   // 37 ＋ 23
+  part('1keta', 2, '+', draw([[11, 89], [2, 9]], (a, b) => carries(a, b) === '0')),                         // 45 ＋ 8
+  part('hyaku', 2, '+', draw([[11, 99], [11, 99]], (a, b) => carries(a, b) === '1')),                       // 76 ＋ 52（答えが3けた）
+  part('nikai', 2, '+', draw([[11, 99], [11, 99]], (a, b) => carries(a, b) === '0,1')),                     // 67 ＋ 58
+], true);
+export const sub2 = calcCategory('sub-2', '2けたの ひきざん', 2, [
+  part('nashi', 3, '−', draw([[21, 99], [11, 89]], (a, b) => a - b >= 10 && borrows(a, b) === '')),
+  part('ari', 3, '−', draw([[21, 99], [11, 89]], (a, b) => a - b >= 10 && a % 10 > 0 && borrows(a, b) === '0')),
+  part('nanjuu', 2, '−', draw([[30, 90], [11, 89]], (a, b) => a % 10 === 0 && b % 10 > 0 && a - b >= 10)),     // 60 − 24
+  part('1keta', 2, '−', draw([[21, 99], [11, 98]], (a, b) => a > b && a - b < 10 && borrows(a, b) === '0')),  // 52 − 47
+  part('hyaku', 2, '−', draw([[101, 198], [11, 99]], (a, b) => borrows(a, b) === '1')),                    // 128 − 52
+  part('nikai', 2, '−', draw([[101, 198], [11, 99]], (a, b) => borrows(a, b) === '0,1')),                  // 125 − 67
+], true);
 export const kuku1 = keisanCategory('kuku-1', 'かけざん（2〜5の だん）', 2, () => withOp('×', all(range(2, 5), () => range(1, 9))));
 export const kuku2 = keisanCategory('kuku-2', 'かけざん（6〜9と 1の だん）', 2, () => withOp('×', [...all(range(6, 9), () => range(1, 9)), ...all([1], () => range(1, 9))]));
 // 3年
-export const add3 = keisanCategory('add-3', '3けたの たしざん', 3, () => withOp('+', randomPairs('add-3', 150, [101, 899], a => [11, 999 - a])), true);
-export const sub3 = keisanCategory('sub-3', '3けたの ひきざん', 3, () => withOp('−', randomPairs('sub-3', 150, [101, 999], a => [11, a - 1])), true);
+const ABC: [number, number][] = [[101, 999], [101, 999]];
+export const add3 = calcCategory('add-3', '3けたの たしざん', 3, [
+  part('nashi', 3, '+', draw(ABC, (a, b) => carries(a, b) === '')),
+  part('ichi', 3, '+', draw(ABC, (a, b) => carries(a, b) === '0')),
+  part('juu', 3, '+', draw(ABC, (a, b) => carries(a, b) === '1')),
+  part('nikai', 3, '+', draw(ABC, (a, b) => carries(a, b) === '0,1')),
+  part('tsuzuku', 3, '+', draw([[101, 989], [11, 99]], (a, b) => carries(a, b) === '0,1' && dig(a, 1) + dig(b, 1) === 9)),   // 358 ＋ 47
+  part('sen', 3, '+', draw(ABC, (a, b) => a + b >= 1000)),                                                     // 答えが4けた
+], true);
+export const sub3 = calcCategory('sub-3', '3けたの ひきざん', 3, [
+  part('nashi', 3, '−', draw(ABC, (a, b) => a > b && borrows(a, b) === '')),
+  part('ichi', 3, '−', draw(ABC, (a, b) => a > b && borrows(a, b) === '0')),
+  part('juu', 3, '−', draw(ABC, (a, b) => a > b && borrows(a, b) === '1')),
+  part('nikai', 3, '−', draw(ABC, (a, b) => a > b && borrows(a, b) === '0,1' && dig(a, 1) > 0)),
+  part('zero', 3, '−', draw(ABC, (a, b) => a > b && borrows(a, b) === '0,1' && dig(a, 1) === 0)),              // 403 − 157
+  part('nanbyaku', 3, '−', map(draw([[2, 9], [101, 899]], (a, b) => b < a * 100 && b % 10 > 0), ([a, b]) => [a * 100, b])),   // 500 − 234
+], true);
 export const waru = keisanCategory('waru', 'わりざん', 3, () => withOp('÷', all(range(2, 9), () => range(1, 9)).map(([b, q]) => [b * q, b])));
-export const kake1 = keisanCategory('kake-1', 'かけざん（×1けた）', 3, () => withOp('×', interleave([
-  randomPairs('kake-1a', 100, [11, 99], () => [2, 9]),
-  randomPairs('kake-1b', 50, [101, 999], () => [2, 9]),
-])), true);
-export const kake2 = keisanCategory('kake-2', 'かけざん（2けた×2けた）', 3, () => withOp('×', randomPairs('kake-2', 150, [11, 99], () => [11, 99])), true);
+export const kake1 = calcCategory('kake-1', 'かけざん（×1けた）', 3, [
+  part('nashi', 3, '×', draw([[11, 44], [2, 4]], (a, b) => a % 10 > 0 && dig(a, 0) * b < 10 && dig(a, 1) * b < 10)),   // 23 × 3
+  part('ari', 3, '×', draw([[11, 49], [2, 9]], (a, b) => dig(a, 0) * b >= 10 && a * b < 100)),                       // 16 × 4
+  part('3keta', 3, '×', draw([[11, 99], [2, 9]], (a, b) => a * b >= 100)),                                           // 43 × 4
+  part('3x1', 3, '×', draw([[101, 999], [2, 9]], a => dig(a, 1) > 0)),                                              // 214 × 3
+  part('zero', 3, '×', draw([[101, 909], [2, 9]], a => dig(a, 1) === 0 && dig(a, 0) > 0)),                           // 306 × 4
+], true);
+// 部分積（2けた × 1けた）に くり上がりがない
+const kantan = (a: number, b: number) => [0, 1].every(i => [0, 1].every(j => dig(a, i) * dig(b, j) < 10));
+export const kake2 = calcCategory('kake-2', 'かけざん（×2けた）', 3, [
+  part('nanjuu', 3, '×', map(draw([[11, 99], [2, 9]], a => a % 10 > 0), ([a, b]) => [a, b * 10])),                    // 23 × 40
+  part('kantan', 3, '×', draw([[11, 44], [11, 44]], (a, b) => a % 10 > 0 && b % 10 > 0 && kantan(a, b))),             // 12 × 23
+  part('3keta', 3, '×', draw([[11, 99], [11, 99]], (a, b) => a % 10 > 0 && b % 10 > 0 && a * b < 1000 && !kantan(a, b))),
+  part('4keta', 3, '×', draw([[11, 99], [11, 99]], (a, b) => b % 10 > 0 && a * b >= 1000)),
+  part('3x2', 3, '×', draw([[101, 999], [11, 99]], (a, b) => b % 10 > 0)),                                          // 324 × 26
+], true);
 
 // けいさんりょく（ドリル）: 考えずにすぐ答えが出てほしい計算。学年が上がると ふえていく
 // まだやっていない問題は、その学年で新しく出てきた計算と、前の学年の計算を交互に出す
@@ -159,10 +254,10 @@ export const drill1 = drillCategory(1, FACTS1, []);
 export const drill2 = drillCategory(2, [kuku1, kuku2], FACTS1);
 export const drill3 = drillCategory(3, [waru], [kuku1, kuku2, ...FACTS1]);
 
-// あまりのある わりざん（3択）
-export const amari = category('amari', 'あまりの ある わりざん', 3, () => all(range(2, 9), b => all(range(1, 9), () => range(1, b - 1)))
-  .map(([b, [q, r]]) => `amari:${b * q + r},${b}`), (card, rng) => {
-  const [a, b] = args(card).map(Number);
+// あまりのある わりざん（3択）。わる数ごとに2つのわく
+export const amari = variedCategory('amari', 'あまりの ある わりざん', 3, range(2, 9).map(b => ({
+  id: `d${b}`, slots: 2, draw: map(draw([[1, 9], [1, b - 1]]), ([q, r]) => [b * q + r, b]),
+})), (card, rng, _x, [a, b]) => {
   const q = Math.floor(a / b), r = a % b;
   const lab = (x: number, y: number) => `${x} あまり ${y}`;
   // よくあるまちがい: あまりが わる数より大きい・答えが1ちがう
@@ -177,30 +272,34 @@ export const ikutsu = category('ikutsu', 'いくつと いくつ', 1, () => all(
   return number(card, stack(`<span class="dots"><span class="on">${'●'.repeat(a)}</span><span class="off">${'●'.repeat(n - a)}</span></span>`, formula(`${n} は ${a} と ${box}`)), n - a);
 });
 
-// かずの ならび（1ずつ・2ずつ・5ずつ・10ずつ）
-export const narabi = category('narabi', 'かずの ならび', 1, () => sample('narabi', [
-  ...product(range(1, 96), [1]), ...product(range(2, 90, 2), [2]), ...product(range(5, 95, 5), [5]), ...product(range(1, 60), [10]),
-].flatMap(([s, step]) => range(1, 4).map(k => `narabi:${s},${step},${k}`)), 120), card => {
+// かずの ならび（1ずつ・2ずつ・5ずつ・10ずつ）。1ずつは 20まで / 十の位が かわる、10ずつは 何十 / 何十でない（3、13、23 …）
+const narabiOf = (starts: number[], step: number) => starts.flatMap(s => range(1, 4).map(k => `narabi:${s},${step},${k}`));
+export const narabi = category('narabi', 'かずの ならび', 1, () => each('narabi', [
+  [narabiOf(range(1, 16), 1), 4], [narabiOf(range(16, 96).filter(s => s % 10 >= 6), 1), 4], [narabiOf(range(2, 90, 2), 2), 4],
+  [narabiOf(range(5, 95, 5), 5), 4], [narabiOf(range(10, 60, 10), 10), 4], [narabiOf(range(1, 59).filter(s => s % 10), 10), 4],
+]), card => {
   const [s, step, k] = args(card).map(Number);
   const seq = range(0, 4).map(i => s + step * i);
   return number(card, stack(sentence(`${box} に はいる かずは？`), formula(seq.map((x, i) => (i === k ? box : x)).join('、'))), seq[k]);
 });
 
-// 3つの かずの けいさん（とちゅうの答えも 0〜20）
-export const mittsu = category('mittsu', '3つの かずの けいさん', 1, () => {
-  const list: string[] = [];
-  for (const a of range(1, 10)) for (const b of range(1, 9)) for (const c of range(1, 9)) for (const o1 of ['+', '−'] as Op[]) for (const o2 of ['+', '−'] as Op[]) {
+// 3つの かずの けいさん（計算のわく。とちゅうの答えも 0〜20）。＋＋・＋−・−＋・−− が要素
+const MITTSU: Record<string, [Op, Op]> = { pp: ['+', '+'], pm: ['+', '−'], mp: ['−', '+'], mm: ['−', '−'] };
+export const mittsu = variedCategory('mittsu', '3つの かずの けいさん', 1, Object.entries(MITTSU).map(([id, [o1, o2]]) => ({
+  id, slots: 3, draw: draw([[1, 10], [1, 9], [1, 9]], (a, b, c) => {
     const mid = calc(a, o1, b), ans = calc(mid, o2, c);
-    if (mid >= 0 && mid <= 20 && ans >= 0 && ans <= 20) list.push(`mittsu:${a},${o1},${b},${o2},${c}`);
-  }
-  return sample('mittsu', list, 120);
-}, card => {
-  const [a, o1, b, o2, c] = args(card);
-  return number(card, formula(`${a} ${SIGN[o1 as Op]} ${b} ${SIGN[o2 as Op]} ${c} ＝ ?`), calc(calc(+a, o1 as Op, +b), o2 as Op, +c));
+    return mid >= 0 && mid <= 20 && ans >= 0 && ans <= 20;
+  }),
+})), (card, _rng, x, [a, b, c]) => {
+  const [o1, o2] = MITTSU[x.id];
+  return number(card, formula(`${a} ${SIGN[o1]} ${b} ${SIGN[o2]} ${c} ＝ ?`), calc(calc(a, o1, b), o2, c));
 });
 
 // ながさくらべ（マスの いくつぶん）
-export const nagasa = category('nagasa', 'ながさくらべ', 1, () => all(range(3, 10), a => range(3, 10).filter(b => b !== a)).map(([a, b]) => `nagasa:${a},${b}`), (card, rng) => {
+// ちがい 1〜7 ごとに、あ が ながい・い が ながい を1つずつ
+const NAGASA = all(range(3, 10), () => range(3, 10));
+export const nagasa = category('nagasa', 'ながさくらべ', 1, () => range(1, 7).flatMap(d => [d, -d])
+  .flatMap(d => sample(`nagasa${d}`, NAGASA.filter(([a, b]) => a - b === d), 1)).map(([a, b]) => `nagasa:${a},${b}`), (card, rng) => {
   const [a, b] = args(card).map(Number);
   const cell = 22, w = 10 * cell + 40;
   const grid = range(0, 10).map(i => `<line x1="${30 + i * cell}" y1="4" x2="${30 + i * cell}" y2="84" stroke="#cbd5e1"/>`).join('');
@@ -246,9 +345,10 @@ function bunCategory(id: string, grade: Grade, templates: BunTemplate[], per: nu
   }, false);
 }
 
-export const bun1 = bunCategory('bun1', 1, BUN1, 25);
-export const bun2 = bunCategory('bun2', 2, BUN2, 20);
-export const bun3 = bunCategory('bun3', 3, BUN3, 25, AMARI);
+// 式をえらぶ問題なので、数を変えても練習にならない。文の型ごとに数問
+export const bun1 = bunCategory('bun1', 1, BUN1, 4);
+export const bun2 = bunCategory('bun2', 2, BUN2, 3);
+export const bun3 = bunCategory('bun3', 3, BUN3, 3, AMARI);
 
 // ---- とけい・時こくと時間 ----
 
@@ -274,12 +374,22 @@ function tokeiCategory(id: string, name: string, grade: Grade, list: () => [numb
 
 const hours = (mins: number[]) => mins.flatMap(m => range(1, 12).map(h => [h, m] as [number, number]));
 export const tokei1 = tokeiCategory('tokei-1', 'とけい（なんじ・なんじはん）', 1, () => hours([0, 30]));
-export const tokei2 = tokeiCategory('tokei-2', 'とけい（なんじ なんぷん）', 1, () => sample('tokei-2', hours(range(5, 55, 5).filter(m => m !== 30)), 144));
-export const tokei3 = tokeiCategory('tokei-3', 'とけい（1ぷん きざみ）', 2, () => sample('tokei-3', hours(range(0, 59)), 150));
+// 5分ごとの目もりを3つずつ
+export const tokei2 = tokeiCategory('tokei-2', 'とけい（なんじ なんぷん）', 1, () =>
+  interleave(range(5, 55, 5).filter(m => m !== 30).map(m => sample(`tokei-2:${m}`, range(1, 12), 3).map(h => [h, m] as [number, number]))));
+// 5分の目もりでない分。45分より あとは、みじかい はりが つぎの 時に ちかい
+const oddMin = range(0, 59).filter(m => m % 5);
+export const tokei3 = tokeiCategory('tokei-3', 'とけい（1ぷん きざみ）', 2, () => each('tokei-3', [
+  [hours(oddMin.filter(m => m < 45)), 16], [hours(oddMin.filter(m => m > 45)), 8],
+]));
 
 // ○分あと・○分まえの 時こく（時計の絵つき）
-export const jikoku = category('jikoku', 'じこくと じかん', 2, () => sample('jikoku',
-  product(range(1, 11), range(0, 55, 5), [5, 10, 15, 20, 30, 40, 50], [1, -1]).map(x => `jikoku:${x.join(',')}`), 150), (card, rng) => {
+// あと / まえ × 時を またぐ / またがない
+const JIKOKU = product(range(1, 11), range(0, 55, 5), [5, 10, 15, 20, 30, 40, 50], [1, -1]);
+const jikokuBy = (s: number, cross: boolean) => JIKOKU.filter(([, m, d, x]) => x === s && (m + d * x < 0 || m + d * x >= 60) === cross);
+export const jikoku = category('jikoku', 'じこくと じかん', 2, () => each('jikoku', [
+  [jikokuBy(1, false), 6], [jikokuBy(-1, false), 6], [jikokuBy(1, true), 6], [jikokuBy(-1, true), 6],
+]).map(x => `jikoku:${x.join(',')}`), (card, rng) => {
   const [h, m, d, s] = args(card).map(Number);
   const [h2, m2] = addMin(h, m, d * s);
   return choice(card, rng, stack(clockSvg(h, m), sentence(`${d}分 ${s > 0 ? 'あと' : 'まえ'}の 時こくは？`)), timeLabel(h2, m2), [
@@ -290,9 +400,9 @@ export const jikoku = category('jikoku', 'じこくと じかん', 2, () => samp
 
 // 3年: 時間の計算
 export const jikan = category('jikan', 'じかんの けいさん', 3, () => interleave([
-  sample('jikan-a', product(range(7, 10), range(5, 55, 5), range(10, 50, 5)).filter(([, m, d]) => m + d > 60).map(x => `jikan:after,${x.join(',')}`), 80),
-  sample('jikan-k', product(range(7, 10), range(10, 55, 5), range(5, 50, 5)).map(x => `jikan:kan,${x.join(',')}`), 60),
-  sample('jikan-b', all(range(1, 5), () => range(1, 59)).map(([a, b]) => `jikan:byou,${a},${b}`), 40),
+  sample('jikan-a', product(range(7, 10), range(5, 55, 5), range(10, 50, 5)).filter(([, m, d]) => m + d > 60).map(x => `jikan:after,${x.join(',')}`), 8),
+  sample('jikan-k', product(range(7, 10), range(10, 55, 5), range(5, 50, 5)).map(x => `jikan:kan,${x.join(',')}`), 8),
+  sample('jikan-b', all(range(1, 5), () => range(1, 59)).map(([a, b]) => `jikan:byou,${a},${b}`), 6),
 ]), (card, rng) => {
   const [t, ...rest] = args(card);
   const [a, b, c] = rest.map(Number);
@@ -307,10 +417,13 @@ export const jikan = category('jikan', 'じかんの けいさん', 3, () => int
 
 // ---- 2年: 数・長さ・かさ・分数・形・グラフ ----
 
-// 1000までの数・10000までの数（位ごとの数を あわせる）
-export const kazu2 = category('kazu2', '1000までの かず', 2, () => interleave([
-  sample('kazu2-3', range(101, 999), 100), sample('kazu2-4', range(1001, 9999), 50),
-]).map(n => `kazu2:${n}`), card => {
+// 1000までの数・10000までの数（位ごとの数を あわせる）。0の ある位が ちがうものを数問ずつ
+const zeros = (n: number) => String(n).split('').map((d, i) => (d === '0' ? i : -1)).filter(i => i >= 0).join();
+const n3 = range(101, 999), n4 = range(1001, 9999);
+export const kazu2 = category('kazu2', '1000までの かず', 2, () => [
+  ...each('kazu2-3', [[n3.filter(n => zeros(n) === ''), 4], [n3.filter(n => zeros(n) === '1'), 3], [n3.filter(n => zeros(n) === '2'), 3]]),
+  ...each('kazu2-4', [[n4.filter(n => zeros(n) === ''), 4], [n4.filter(n => zeros(n) !== '' && zeros(n) !== '2,3'), 4], [n4.filter(n => zeros(n) === '2,3'), 2]]),
+].map(n => `kazu2:${n}`), card => {
   const n = Number(args(card)[0]);
   const digits = String(n).split('').map(Number);
   const parts = digits.map((d, i) => [10 ** (digits.length - 1 - i), d]).filter(([, d]) => d > 0);
@@ -318,7 +431,11 @@ export const kazu2 = category('kazu2', '1000までの かず', 2, () => interlea
 });
 
 // ものさし（cm・mm）
-export const monosashi = category('monosashi', 'ものさし', 2, () => range(12, 98).map(mm => `mono:${mm}`), (card, rng) => {
+// cm ちょうど・mm が 1〜4・5・6〜9
+const MM = range(12, 98);
+export const monosashi = category('monosashi', 'ものさし', 2, () => each('monosashi', [
+  [MM.filter(m => m % 10 === 0), 3], [MM.filter(m => m % 10 >= 1 && m % 10 <= 4), 4], [MM.filter(m => m % 10 === 5), 3], [MM.filter(m => m % 10 >= 6), 5],
+]).map(mm => `mono:${mm}`), (card, rng) => {
   const mm = Number(args(card)[0]), W = 330, s = 3;
   const ticks = range(0, 100).map(i => {
     const x = 15 + i * s, hgt = i % 10 === 0 ? 18 : i % 5 === 0 ? 12 : 7;
@@ -332,9 +449,10 @@ export const monosashi = category('monosashi', 'ものさし', 2, () => range(12
 
 // 長さの たんい（cm・mm・m）
 export const nagasaTani = category('nagasa-tani', 'ながさの たんい', 2, () => interleave([
-  sample('cm_mm', all(range(1, 15), () => range(1, 9)), 40).map(([a, b]) => `tani2:cm_mm,${a},${b}`),
-  sample('mm_cm', all(range(1, 15), () => range(1, 9)), 40).map(([a, b]) => `tani2:mm_cm,${a},${b}`),
-  sample('m_cm', all(range(1, 3), () => range(5, 95, 5)), 40).map(([a, b]) => `tani2:m_cm,${a},${b}`),
+  sample('cm_mm', all(range(1, 15), () => range(1, 9)), 7).map(([a, b]) => `tani2:cm_mm,${a},${b}`),
+  sample('mm_cm', all(range(1, 15), () => range(1, 9)), 7).map(([a, b]) => `tani2:mm_cm,${a},${b}`),
+  // 1m 5cm ＝ 105cm のように、0が はいる ものも1つ
+  [...sample('m_cm', all(range(1, 3), () => range(10, 95, 5)), 5), ...sample('m_cm0', all(range(1, 3), () => [5]), 1)].map(([a, b]) => `tani2:m_cm,${a},${b}`),
 ]), card => {
   const [t, as, bs] = args(card);
   const a = Number(as), b = Number(bs);
@@ -345,10 +463,10 @@ export const nagasaTani = category('nagasa-tani', 'ながさの たんい', 2, (
 
 // かさ（L・dL・mL）
 export const kasa = category('kasa', 'かさ', 2, () => interleave([
-  sample('L_dL', all(range(1, 9), () => range(1, 9)), 40).map(([a, b]) => `kasa:L_dL,${a},${b}`),
-  sample('dL_L', all(range(1, 9), () => range(1, 9)), 40).map(([a, b]) => `kasa:dL_L,${a},${b}`),
-  range(1, 9).map(a => `kasa:L_mL,${a},0`),
-  range(1, 9).map(a => `kasa:dL_mL,${a},0`),
+  sample('L_dL', all(range(1, 9), () => range(1, 9)), 6).map(([a, b]) => `kasa:L_dL,${a},${b}`),
+  sample('dL_L', all(range(1, 9), () => range(1, 9)), 6).map(([a, b]) => `kasa:dL_L,${a},${b}`),
+  sample('L_mL', range(1, 9), 4).map(a => `kasa:L_mL,${a},0`),
+  sample('dL_mL', range(1, 9), 4).map(a => `kasa:dL_mL,${a},0`),
 ]), card => {
   const [t, as, bs] = args(card);
   const a = Number(as), b = Number(bs);
@@ -399,7 +517,7 @@ function shapeSvg(kind: string, rng: Rng): string {
   }
 }
 const SHAPES = ['せいほうけい', 'ちょうほうけい', 'ちょっかくさんかくけい', 'さんかくけい', 'だいけい', 'ひしがた', 'えん'];
-export const katachi = category('katachi', 'かたち', 2, () => all(range(0, 2), () => range(0, 9)).map(([t, v]) => `katachi:${t},${v}`), (card, rng) => {
+export const katachi = category('katachi', 'かたち', 2, () => all(range(0, 2), () => range(0, 3)).map(([t, v]) => `katachi:${t},${v}`), (card, rng) => {
   const target = SHAPES[Number(args(card)[0])];
   const fig = seeded(card);
   // 正方形は長方形の なかまなので、長方形の問題の はずれに 正方形を 入れない
@@ -410,7 +528,7 @@ export const katachi = category('katachi', 'かたち', 2, () => all(range(0, 2)
 // 表とグラフ（絵グラフを読む）
 const FRUITS = ['りんご', 'みかん', 'ぶどう', 'もも'];
 const FRUIT_COLORS = ['#ef4444', '#f97316', '#8b5cf6', '#ec4899'];
-export const graph = category('graph', 'ひょうと グラフ', 2, () => range(0, 59).map(i => `graph:${i}`), (card, rng) => {
+export const graph = category('graph', 'ひょうと グラフ', 2, () => range(0, 11).map(i => `graph:${i}`), (card, rng) => {
   const fig = seeded(card);
   let c: number[];
   do c = FRUITS.map(() => 1 + Math.floor(fig() * 8)); while (c.filter(x => x === Math.max(...c)).length > 1);
@@ -428,8 +546,11 @@ export const graph = category('graph', 'ひょうと グラフ', 2, () => range(
 
 // ---- 3年: 大きな数・小数・分数・たんい・円・□の式・ぼうグラフ ----
 
-export const ookii = category('ookii', 'おおきな かず', 3, () => sample('ookii', all(range(1, 9), () => all(range(0, 9), () => range(0, 9))), 150)
-  .map(([a, [b, c]]) => `ookii:${a},${b},${c}`), (card, rng) => {
+// 千の位・百の位の 0 の あるなしで数問ずつ
+const OOKII = product(range(1, 9), range(0, 9), range(0, 9));
+export const ookii = category('ookii', 'おおきな かず', 3, () => each('ookii', [
+  [OOKII.filter(([, b, c]) => b && c), 5], [OOKII.filter(([, b, c]) => !b && c), 4], [OOKII.filter(([, b, c]) => b && !c), 4], [OOKII.filter(([, b, c]) => !b && !c), 2],
+]).map(([a, b, c]) => `ookii:${a},${b},${c}`), (card, rng) => {
   const [a, b, c] = args(card).map(Number);
   const n = a * 10000 + b * 1000 + c * 100;
   const parts = [[10000, a], [1000, b], [100, c]].filter(([, d]) => d > 0).map(([u, d]) => `${u}を ${d}こ`).join('、');
@@ -440,9 +561,11 @@ export const ookii = category('ookii', 'おおきな かず', 3, () => sample('o
 
 const dec = (tenths: number) => (tenths % 10 === 0 ? String(tenths / 10) : (tenths / 10).toFixed(1));
 export const shosu = category('shosu', 'しょうすう', 3, () => interleave([
-  range(1, 19).filter(k => k !== 10).map(k => `shosu:line,${k},0`),
-  sample('shosu+', all(range(1, 9), () => range(1, 9)), 60).map(([a, b]) => `shosu:add,${a},${b}`),
-  sample('shosu-', all(range(2, 9), a => range(1, a - 1)), 30).map(([a, b]) => `shosu:sub,${a},${b}`),
+  each('shosu-line', [[range(1, 9), 4], [range(11, 19), 4]]).map(k => `shosu:line,${k},0`),
+  // 1を こえない・ちょうど 1・1を こえる
+  each('shosu+', [[all(range(1, 8), a => range(1, 9 - a)), 4], [all(range(1, 9), a => [10 - a]), 2], [all(range(2, 9), a => range(11 - a, 9)), 2]])
+    .map(([a, b]) => `shosu:add,${a},${b}`),
+  sample('shosu-', all(range(2, 9), a => range(1, a - 1)), 6).map(([a, b]) => `shosu:sub,${a},${b}`),
 ]), (card, rng) => {
   const [t, as, bs] = args(card);
   const a = Number(as), b = Number(bs);
@@ -458,11 +581,12 @@ export const shosu = category('shosu', 'しょうすう', 3, () => interleave([
 });
 
 export const bunsu3 = category('bunsu3', 'ぶんすう', 3, () => interleave([
-  all(range(3, 10), n => range(2, n - 1)).map(([n, a]) => `bunsu3:nanko,${n},${a},0`),
-  sample('bunsu3+', all(range(3, 10), n => all(range(1, n - 1), a => range(1, n - a))), 60)
-    .flatMap(([n, [a, b]]) => [`bunsu3:add,${n},${a},${b}`]),
-  sample('bunsu3-', all(range(3, 10), n => all(range(2, n), a => range(1, a - 1))), 40)
-    .flatMap(([n, [a, b]]) => [`bunsu3:sub,${n},${a},${b}`]),
+  sample('bunsu3', all(range(3, 10), n => range(2, n - 1)), 8).map(([n, a]) => `bunsu3:nanko,${n},${a},0`),
+  // 1より 小さい・ちょうど 1
+  each('bunsu3+', [[all(range(3, 10), n => all(range(1, n - 2), a => range(1, n - a - 1))), 6], [all(range(3, 10), n => all(range(1, n - 1), a => [n - a])), 2]])
+    .map(([n, [a, b]]) => `bunsu3:add,${n},${a},${b}`),
+  sample('bunsu3-', all(range(3, 10), n => all(range(2, n), a => range(1, a - 1))), 6)
+    .map(([n, [a, b]]) => `bunsu3:sub,${n},${a},${b}`),
 ]), (card, rng) => {
   const [t, ...rest] = args(card);
   const [n, a, b] = rest.map(Number);
@@ -476,10 +600,11 @@ export const bunsu3 = category('bunsu3', 'ぶんすう', 3, () => interleave([
 });
 
 export const tani3 = category('tani3', 'ながさと おもさの たんい', 3, () => interleave([
-  sample('km', all(range(1, 5), () => range(100, 900, 100)), 40).map(([a, b]) => `tani3:km,${a},${b}`),
-  sample('kg', all(range(1, 5), () => range(100, 900, 100)), 40).map(([a, b]) => `tani3:kg,${a},${b}`),
-  sample('g_kg', all(range(1, 5), () => range(100, 900, 100)), 40).map(([a, b]) => `tani3:g_kg,${a},${b}`),
-  range(1, 9).map(a => `tani3:kg_g,${a},0`),
+  // 1km 50m ＝ 1050m のように、0が はいる ものも2つずつ
+  each('km', [[all(range(1, 5), () => range(100, 900, 100)), 4], [all(range(1, 5), () => range(10, 90, 10)), 2]]).map(([a, b]) => `tani3:km,${a},${b}`),
+  each('kg', [[all(range(1, 5), () => range(100, 900, 100)), 4], [all(range(1, 5), () => range(10, 90, 10)), 2]]).map(([a, b]) => `tani3:kg,${a},${b}`),
+  sample('g_kg', all(range(1, 5), () => range(100, 900, 100)), 4).map(([a, b]) => `tani3:g_kg,${a},${b}`),
+  sample('kg_g', range(1, 9), 3).map(a => `tani3:kg_g,${a},0`),
 ]), card => {
   const [t, as, bs] = args(card);
   const a = Number(as), b = Number(bs);
@@ -489,7 +614,7 @@ export const tani3 = category('tani3', 'ながさと おもさの たんい', 3,
   return number(card, formula(`${a}kg ＝ ${box} g`), a * 1000);
 });
 
-export const en = category('en', 'えん', 3, () => interleave([range(1, 20).map(r => `en:r,${r}`), range(2, 40, 2).map(d => `en:d,${d}`)]), (card, rng) => {
+export const en = category('en', 'えん', 3, () => interleave([sample('en-r', range(1, 20), 6).map(r => `en:r,${r}`), sample('en-d', range(2, 40, 2), 6).map(d => `en:d,${d}`)]), (card, rng) => {
   const [t, xs] = args(card);
   const x = Number(xs);
   const radius = t === 'r';
@@ -500,13 +625,14 @@ export const en = category('en', 'えん', 3, () => interleave([range(1, 20).map
 });
 
 // □を つかった しき（答えを先に決めてから式を作る）
-export const shiki = category('shiki', '□を つかった しき', 3, () => sample('shiki', [
-  ...all(range(2, 30), () => range(2, 20)).map(([x, a]) => `shiki:add,${x},${a}`),
-  ...all(range(2, 30), () => range(2, 20)).map(([x, a]) => `shiki:sub,${x},${a}`),
-  ...all(range(2, 20), () => range(1, 30)).map(([x, a]) => `shiki:rsub,${x},${a}`),
-  ...all(range(2, 9), () => range(2, 9)).map(([x, a]) => `shiki:mul,${x},${a}`),
-  ...all(range(2, 9), () => range(2, 9)).map(([x, a]) => `shiki:div,${x},${a}`),
-], 150), card => {
+// 式の形ごとに4つ
+export const shiki = category('shiki', '□を つかった しき', 3, () => each('shiki', [
+  [all(range(2, 30), () => range(2, 20)).map(([x, a]) => `shiki:add,${x},${a}`), 4],
+  [all(range(2, 30), () => range(2, 20)).map(([x, a]) => `shiki:sub,${x},${a}`), 4],
+  [all(range(2, 20), () => range(1, 30)).map(([x, a]) => `shiki:rsub,${x},${a}`), 4],
+  [all(range(2, 9), () => range(2, 9)).map(([x, a]) => `shiki:mul,${x},${a}`), 4],
+  [all(range(2, 9), () => range(2, 9)).map(([x, a]) => `shiki:div,${x},${a}`), 4],
+]), card => {
   const [t, xs, as] = args(card);
   const x = Number(xs), a = Number(as);
   if (t === 'add') return number(card, formula(`${box} ＋ ${a} ＝ ${x + a}`), x);
@@ -516,8 +642,8 @@ export const shiki = category('shiki', '□を つかった しき', 3, () => sa
   return number(card, formula(`${box} ÷ ${a} ＝ ${x}`), x * a);
 });
 
-// ぼうグラフ（1目もりが 1・2・5・10）
-export const bouGraph = category('bou-graph', 'ぼうグラフ', 3, () => range(0, 59).map(i => `bou:${i}`), card => {
+// ぼうグラフ（1目もりが 1・2・5・10 を4つずつ）
+export const bouGraph = category('bou-graph', 'ぼうグラフ', 3, () => range(0, 15).map(i => `bou:${i}`), card => {
   const rng = seeded(card);
   const unit = [1, 2, 5, 10][Number(args(card)[0]) % 4];
   const names = ['いぬ', 'ねこ', 'うさぎ', 'とり'];
