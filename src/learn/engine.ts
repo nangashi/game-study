@@ -121,6 +121,13 @@ export function pickOne(p: Profile, cat: Category, today: string): string {
   return plan(p, [cat], [cat], false, 1, today)[0]?.card ?? cat.cards()[0];
 }
 
+// はじめてで正解した問題は、もう知っているとみなして段を飛ばす（かんたんな問題を何度も出さない）
+// box 5 は14日後、box 4 は7日後。3択は当てずっぽうでも当たるので控えめに。手書きは、はじめは なぞり・お手本つきなので飛ばさない
+export function firstBox(q: Question): number | undefined {
+  if (q.kind === 'write') return q.guide === 'none' ? 5 : undefined;
+  return q.kind === 'choice' ? 4 : 5;
+}
+
 // 答えを記録する。もどり値はこの問題のコイン（倍率をかける前。docs/03-rewards-and-games.md）
 // retry: まちがえた問題を、同じセットの最後にもう一度出したもの（コインなし）
 // slowMs: ドリルのとき。これより遅い正解は「まだ速くない」とみなし、答えた時間も記録する
@@ -129,7 +136,8 @@ export function applyAnswer(p: Profile, q: Question, a: Answer, today: string, o
   const slow = drill && a.correct && !a.helped && (a.ms ?? 0) > opts.slowMs!;
   const good = a.correct && !a.helped && !slow;
   const coins = opts.retry ? 0 : good ? cardCoins(p.cards[q.card], today) : a.correct ? 1 : 0;
-  updateCard(p, q.card, good ? 'good' : slow ? 'slow' : 'bad', today, drill ? a.ms : undefined);
+  const jumpTo = good && !p.cards[q.card] ? firstBox(q) : undefined;
+  updateCard(p, q.card, good ? 'good' : slow ? 'slow' : 'bad', today, drill ? a.ms : undefined, jumpTo);
   if (a.correct) p.stats.correct++;
   return coins;
 }

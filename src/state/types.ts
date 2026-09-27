@@ -31,16 +31,31 @@ export interface Profile {
   tickets: number;  // ゲーム券（全ゲーム共通）
   games: Record<string, GameProgress>; // key: ゲームの id
   cards: Record<string, CardState>; // key: 'hira:あ' など
-  daily: { date: string; quests: number; ticketsEarned: number; subjects: string[] }; // subjects: きょうやった勉強の id
+  daily: Daily;
   streak: { count: number; last: string };
   stats: { quests: number; correct: number };
   best?: Record<string, number>;     // ドリルのベスト記録（カテゴリの id → 10問の合計時間 ms）
+  catLast: Record<string, string>;   // カテゴリ（'教科:カテゴリ'）の問題に最後に正解した日（きょうより前）
+  achieved: Record<string, 'open' | 'claimed'>; // たっせいミッションの id → まだ受け取っていない / 受け取った
+}
+
+// 「きょう」のカウンタ。日付が変わるとリセット（docs/03 ゲーム券）
+export interface Daily {
+  date: string;
+  quests: number;
+  ticketsEarned: number;             // きょうもらった券（教科 + きょうのミッション。うけとりまちもふくむ）
+  subjects: string[];                // きょうやった勉強の id
+  pending: number;                   // 満タンで入らなかった教科の券（きょうのうちだけ受け取れる）
+  cats: Record<string, number>;      // カテゴリ（'教科:カテゴリ'）ごとの、きょうの正解数
+  reviews: number;                   // きょう正解した、復習の日が来ていた問題の数
+  reviewGoal: number;                // ふくしゅうミッションの目標（その日のはじめに決める）
+  claimed: string[];                 // 受け取った、きょうのミッションの id
 }
 
 export interface Settings {
-  freePlaysPerDay: number;  // 毎日むりょうでもらえるゲーム券
+  ticketMax: number;        // 持てるゲーム券の上限
   playsPerSubject: number;  // その日はじめてやった教科（勉強）ごとにもらえるゲーム券
-  ticketsPerDay: number;    // 勉強でもらえるゲーム券の1日の上限
+  ticketsPerDay: number;    // 1日にもらえるゲーム券の上限（教科 + きょうのミッション）
   questLength: number;      // 1クエストの問題数
   drillSlowSec: number;     // けいさんりょく: これより遅い正解は「まだ速くない」とみなす（秒）
 }

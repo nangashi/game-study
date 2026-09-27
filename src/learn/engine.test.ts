@@ -139,6 +139,40 @@ describe('applyAnswer', () => {
     p.cards['kazu:3'] = { box: 4, due: DAY };
     expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(2);             // よく覚えている
   });
+
+  it('はじめてで正解した問題は「おぼえた」にして当面出さない（3択はひかえめ、手書きは飛ばさない）', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const sansu = studyDef('sansu')!;
+    const num = sansu.categories.find(c => c.id === 'add-10')!.make('keisan:4+5', Math.random, p);
+    expect(num.kind).toBe('number');
+    expect(applyAnswer(p, num, { correct: true }, DAY)).toBe(4);
+    expect(p.cards['keisan:4+5']).toEqual({ box: 5, due: '2026-10-10' });
+    expect(mastery(p, [sansu.categories.find(c => c.id === 'add-10')!], DAY).learned).toBe(1);
+    // 2年のドリルでも、日が来るまでは出さない
+    expect(planSet(sansu, p, { study: 'sansu', grade: 2, category: 'drill-2' }, 10, DAY, 5000).map(x => x.card)).not.toContain('keisan:4+5');
+
+    const choice = KOKUGO.categories.map(c => c.make(c.cards()[0], Math.random, p)).find(q => q.kind === 'choice')!;
+    applyAnswer(p, choice, { correct: true }, DAY);
+    expect(p.cards[choice.card]).toEqual({ box: 4, due: '2026-10-03' });
+
+    const write = KOKUGO.categories.find(c => c.id === 'kata-write')!;
+    const w = write.make(write.cards()[0], Math.random, p);
+    applyAnswer(p, w, { correct: true }, DAY);
+    expect(p.cards[w.card]).toEqual({ box: 1, due: '2026-09-27' });
+
+    // まちがえたら、ふつうの練習にもどる
+    applyAnswer(p, num, { correct: false }, DAY);
+    expect(p.cards['keisan:4+5']).toEqual({ box: 0, due: DAY });
+  });
+
+  it('ドリルで、はじめてでも遅い正解は飛ばさない', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const cat = studyDef('sansu')!.categories.find(c => c.id === 'drill-2')!;
+    applyAnswer(p, cat.make('keisan:6×7', Math.random, p), { correct: true, ms: 9000 }, DAY, { slowMs: 5000 });
+    expect(p.cards['keisan:6×7'].box).toBe(0);
+    applyAnswer(p, cat.make('keisan:6×8', Math.random, p), { correct: true, ms: 2000 }, DAY, { slowMs: 5000 });
+    expect(p.cards['keisan:6×8'].box).toBe(5);
+  });
 });
 
 describe('けいさんりょく（ドリル）', () => {
