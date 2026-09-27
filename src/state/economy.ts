@@ -3,6 +3,7 @@ import { gradeRank } from './types';
 import type { Selection } from '../studies/types';
 import type { GameContext, GameDef, GameResult, GameReward, UpgradeDef } from '../games/types';
 import { gameProgress, rollDaily, touchStreak } from './store';
+import { checkAchievements } from './missions';
 
 // ごほうびの決まりは docs/03-rewards-and-games.md
 
@@ -20,30 +21,34 @@ export const selectionRate = (p: Profile, sel: Selection) =>
 // 1回ぶんのコイン = (完走ボーナス + 問題ごとのコイン) × 倍率（切り上げ）
 export const questCoins = (answerCoins: number, rate: number) => Math.ceil((QUEST_BONUS + answerCoins) * rate - 1e-9);
 
-export interface QuestReward { coins: number; tickets: number }
+// tickets: もらった教科の券（pending: そのうち満タンで入らず、うけとりまちにしたもの）
+// achieved: 新しく たっせいした たっせいミッション
+export interface QuestReward { coins: number; tickets: number; pending: number; achieved: string[] }
 
 // クエストのごほうび。answerCoins は問題ごとのコインの合計（applyAnswer のもどり値）
-// ゲーム券は、その日はじめてやった教科のときだけ。下の学年をえらんだときは券なし
+// ゲーム券は、その日はじめてやった教科のときだけ。下の学年・ドリルは券なし
 export function questReward(p: Profile, s: Settings, sel: Selection, answerCoins: number, today: string): QuestReward {
-  rollDaily(p, s, today);
+  rollDaily(p, today);
   touchStreak(p, today);
-  let tickets = 0;
-  if (!isLowerGrade(p, sel) && !p.daily.subjects.includes(sel.study)) {
+  let tickets = 0, pending = 0;
+  if (!isLowerGrade(p, sel) && !sel.drill && !p.daily.subjects.includes(sel.study)) {
     p.daily.subjects.push(sel.study);
     tickets = Math.max(0, Math.min(s.playsPerSubject, s.ticketsPerDay - p.daily.ticketsEarned));
+    pending = Math.min(tickets, Math.max(0, tickets - (s.ticketMax - p.tickets)));
   }
-  const r: QuestReward = { coins: questCoins(answerCoins, selectionRate(p, sel)), tickets };
-  p.coins += r.coins;
-  p.tickets += tickets;
+  const coins = questCoins(answerCoins, selectionRate(p, sel));
+  p.coins += coins;
+  p.tickets += tickets - pending;
+  p.daily.pending += pending;
   p.daily.ticketsEarned += tickets;
   p.daily.quests++;
   p.stats.quests++;
-  return r;
+  return { coins, tickets, pending, achieved: checkAchievements(p, today) };
 }
 
-// きょう、まだゲーム券がもらえる教科か（sel をわたすと、下の学年なら false）
+// きょう、まだゲーム券がもらえる教科か（sel をわたすと、下の学年・ドリルなら false）
 export function studyGivesTicket(p: Profile, s: Settings, studyId: string, sel?: Selection): boolean {
-  if (sel && isLowerGrade(p, sel)) return false;
+  if (sel && (isLowerGrade(p, sel) || sel.drill)) return false;
   return !p.daily.subjects.includes(studyId) && s.playsPerSubject > 0 && p.daily.ticketsEarned < s.ticketsPerDay;
 }
 

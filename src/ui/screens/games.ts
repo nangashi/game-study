@@ -18,6 +18,6 @@ export function showGames(id: string): void {
     topbar(p, () => showHome(id)),
     h('h1', { class: 'title' }, ico('swords', 44), ' ゲームを えらぼう'),
     h('div', { class: 'game-list' }, ...cards),
-    p.tickets <= 0 ? h('p', { class: 'note bubble' }, 'べんきょうすると ', ico('ticket'), ' が もらえるよ') : null,
+    p.tickets <= 0 ? h('p', { class: 'note bubble' }, 'べんきょうや ミッションで ', ico('ticket'), ' が もらえるよ') : null,
   ));
 }
