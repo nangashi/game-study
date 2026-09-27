@@ -100,6 +100,9 @@ export const worldOf = (stage: number) => Math.floor((stage - 1) / STAGES_PER_WO
 export const ENEMY_POWER_PER_LEVEL = 0.07;
 export const enemyPower = (stage: number) => 1 + ENEMY_POWER_PER_LEVEL * recommendedLevel(stage, SURVIVOR_UPGRADES);
 
+// せかいの中の ステージ番号ごとの 出てくる多さ（4より先は 1）
+const DENSITY = [0.75, 0.82, 0.9, 1];
+
 export function stageSpec(stage: number): StageSpec {
   const world = worldOf(stage);
   const k = (stage - 1) % STAGES_PER_WORLD + 1; // せかいの中で何番め（1〜5）
@@ -126,10 +129,10 @@ export function stageSpec(stage: number): StageSpec {
     stage, world, roles, events,
     power: enemyPower(stage),
     speed: 1 + 0.01 * recommendedLevel(stage, SURVIVOR_UPGRADES),
-    // ステージ1〜3（強化なし）は、数で少しずつ むずかしくする
-    density: 0.7 + 0.1 * Math.min(k, 3),
-    // うつ敵は おおいと 弾だらけで 近づけない。ステージ1で3、15で9
-    shooterCap: 2 + k + world,
+    // ステージ1〜3（強化なし）は、数で少しずつ むずかしくする（ステージ2で おしつぶされない ように ゆるやかに。版6）
+    density: DENSITY[Math.min(k, DENSITY.length) - 1],
+    // うつ敵は おおいと 弾だらけで 近づけない。ステージ1で2、15で8
+    shooterCap: 1 + k + world,
     bossHp: ROLES.boss.hp * enemyPower(stage) * (big ? 1.6 : 1),
     bossSize: big ? 200 : 150,
     bigBoss: big,
