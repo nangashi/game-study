@@ -85,6 +85,7 @@ export interface StageSpec {
   power: number;        // 敵の体力の倍率
   speed: number;        // 敵の はやさの倍率
   density: number;      // 出てくる多さの倍率
+  shooterCap: number;   // うつ敵が 同時に 出ている かずの 上限
   events: StageEvent[];
   bossHp: number;
   bossSize: number;
@@ -127,6 +128,8 @@ export function stageSpec(stage: number): StageSpec {
     speed: 1 + 0.01 * recommendedLevel(stage, SURVIVOR_UPGRADES),
     // ステージ1〜3（強化なし）は、数で少しずつ むずかしくする
     density: 0.7 + 0.1 * Math.min(k, 3),
+    // うつ敵は おおいと 弾だらけで 近づけない。ステージ1で3、15で9
+    shooterCap: 2 + k + world,
     bossHp: ROLES.boss.hp * enemyPower(stage) * (big ? 1.6 : 1),
     bossSize: big ? 200 : 150,
     bigBoss: big,
