@@ -109,6 +109,13 @@ describe('たっせいミッション', () => {
     expect(p.tickets).toBe(1);
   });
 
+  it('下の学年のカテゴリ・学年は ぜんぶ おぼえても たっせいにならない', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const kokugo = STUDIES.find(x => x.id === 'kokugo')!;
+    for (const c of kokugo.categories.filter(c => c.grade === 1)) for (const card of c.cards()) p.cards[card] = { box: 3, due: '2026-10-10' };
+    expect(checkAchievements(p, DAY).filter(id => id.startsWith('cat:') || id.startsWith('grade:'))).toEqual([]);
+  });
+
   it('つづけた日数は 3・7日、そのあと7日ごと', () => {
     expect(streakMilestones(2)).toEqual([]);
     expect(streakMilestones(7)).toEqual([3, 7]);

@@ -90,12 +90,14 @@ export function achievement(id: string): Achievement | undefined {
 }
 
 // 新しく たっせいしたものを記録して返す（一度たっせいしたら、おぼえた が減っても消さない）
+// 下の学年はのぞく（はじめての正解で すぐ おぼえた になるので、かんたんな問題で券を集められないように）
 export function checkAchievements(p: Profile, today: string): string[] {
   const ids: string[] = [];
   const full = (cats: Category[]) => { const m = mastery(p, cats, today); return m.total > 0 && m.learned === m.total; };
+  const lower = (g: Grade) => gradeRank(g) < gradeRank(p.grade);
   for (const study of STUDIES) {
-    for (const c of study.categories) if (!c.drill && full([c])) ids.push(`cat:${study.id}:${c.id}`);
-    for (const g of GRADES) {
+    for (const c of study.categories) if (!c.drill && !lower(c.grade) && full([c])) ids.push(`cat:${study.id}:${c.id}`);
+    for (const g of GRADES.filter(g => !lower(g))) {
       const cats = selectedCategories(study, { study: study.id, grade: g });
       if (cats.length && full(cats)) ids.push(`grade:${study.id}:${g}`);
     }
