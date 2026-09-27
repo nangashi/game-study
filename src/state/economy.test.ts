@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { HIPPARI } from '../games/hippari';
 import { GAME_COINS, buyUpgrade, finishGame, questReward, recommendedCoins, recommendedLevel, upgradeLevel } from './economy';
 import { DEFAULT_SETTINGS, newProfile, rollDaily, touchStreak } from './store';
+import { claimPending } from './missions';
 import { SURVIVOR } from '../games/survivor';
 
 const mix = (study: string) => ({ study, grade: 2 as const });
@@ -11,9 +12,9 @@ describe('questReward', () => {
     const p = newProfile('t', 'wizard', 2);
     const s = DEFAULT_SETTINGS;
     const start = p.tickets;
-    expect(questReward(p, s, mix('kokugo'), 20, '2026-09-26')).toEqual({ coins: 30, tickets: 1 });
-    expect(questReward(p, s, mix('kokugo'), 20, '2026-09-26')).toEqual({ coins: 30, tickets: 0 });
-    expect(questReward(p, s, mix('sansu'), 0, '2026-09-26')).toEqual({ coins: 10, tickets: 1 });
+    expect(questReward(p, s, mix('kokugo'), 20, '2026-09-26')).toMatchObject({ coins: 30, tickets: 1 });
+    expect(questReward(p, s, mix('kokugo'), 20, '2026-09-26')).toMatchObject({ coins: 30, tickets: 0 });
+    expect(questReward(p, s, mix('sansu'), 0, '2026-09-26')).toMatchObject({ coins: 10, tickets: 1 });
     expect(p.tickets).toBe(start + 2);
     expect(questReward(p, s, mix('sansu'), 5, '2026-09-27').tickets).toBe(1);
     expect(p.coins).toBe(30 + 30 + 10 + 15);
@@ -29,20 +30,42 @@ describe('questReward', () => {
   it('カテゴリは0.7倍、下の学年は0.3倍で券なし。上の学年は自分の学年と同じ', () => {
     const p = newProfile('t', 'wizard', 2);
     const s = DEFAULT_SETTINGS;
-    expect(questReward(p, s, { study: 'kokugo', grade: 1 }, 20, '2026-09-26')).toEqual({ coins: 9, tickets: 0 });
-    expect(questReward(p, s, { study: 'kokugo', grade: 2, category: 'okuri' }, 20, '2026-09-26')).toEqual({ coins: 21, tickets: 1 });
-    expect(questReward(p, s, { study: 'sansu', grade: 3 }, 20, '2026-09-26')).toEqual({ coins: 30, tickets: 1 });
+    expect(questReward(p, s, { study: 'kokugo', grade: 1 }, 20, '2026-09-26')).toMatchObject({ coins: 9, tickets: 0 });
+    expect(questReward(p, s, { study: 'kokugo', grade: 2, category: 'okuri' }, 20, '2026-09-26')).toMatchObject({ coins: 21, tickets: 1 });
+    expect(questReward(p, s, { study: 'sansu', grade: 3 }, 20, '2026-09-26')).toMatchObject({ coins: 30, tickets: 1 });
     expect(questReward(p, s, { study: 'sansu', grade: 2, category: 'drill-2', drill: true }, 40, '2026-09-26').coins).toBe(25);
   });
 
-  it('むりょうの券は日付が変わったときにくばる', () => {
+  it('ログインだけでは券はふえない', () => {
     const p = newProfile('t', 'wizard', 2);
     const start = p.tickets;
-    rollDaily(p, { ...DEFAULT_SETTINGS, freePlaysPerDay: 2 }, '2026-10-01');
-    rollDaily(p, { ...DEFAULT_SETTINGS, freePlaysPerDay: 2 }, '2026-10-01');
-    expect(p.tickets).toBe(start + 2);
-    rollDaily(p, DEFAULT_SETTINGS, '2026-10-02');
-    expect(p.tickets).toBe(start + 2);
+    rollDaily(p, '2026-10-01');
+    rollDaily(p, '2026-10-02');
+    expect(p.tickets).toBe(start);
+  });
+
+  it('ドリルでは券はもらえず、そのあとの まぜこぜでもらえる', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const s = DEFAULT_SETTINGS;
+    expect(questReward(p, s, { study: 'sansu', grade: 2, category: 'drill-2', drill: true }, 0, '2026-09-26').tickets).toBe(0);
+    expect(questReward(p, s, mix('sansu'), 0, '2026-09-26').tickets).toBe(1);
+  });
+
+  it('満タンのときの教科の券は、きょうのうちだけ うけとりまちになる', () => {
+    const p = newProfile('t', 'wizard', 2);
+    const s = DEFAULT_SETTINGS;
+    p.tickets = s.ticketMax;
+    expect(questReward(p, s, mix('kokugo'), 0, '2026-09-26')).toMatchObject({ tickets: 1, pending: 1 });
+    expect(p.tickets).toBe(s.ticketMax);
+    expect(p.daily.pending).toBe(1);
+    p.tickets--;   // 1回あそんだ
+    expect(claimPending(p, s, '2026-09-26')).toBe(true);
+    expect(claimPending(p, s, '2026-09-26')).toBe(false);
+    expect(p.tickets).toBe(s.ticketMax);
+    // 受け取らないまま日付が変わると消える
+    questReward(p, s, mix('sansu'), 0, '2026-09-26');
+    rollDaily(p, '2026-09-27');
+    expect(p.daily.pending).toBe(0);
   });
 });
 
