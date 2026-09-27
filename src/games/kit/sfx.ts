@@ -1,6 +1,7 @@
 // こうかおん（WebAudio で合成。音の素材はいらない）。どのゲームから使ってもよい
 let ctx: AudioContext | null = null;
 const lastPlay: Record<string, number> = {};
+const noiseBufs: Record<string, AudioBuffer> = {}; // ノイズは 1回 作って つかいまわす（まいかい 作ると タブレットで おもい）
 
 function audio(): AudioContext | null {
   try {
@@ -32,9 +33,12 @@ function noise(kind: string, dur: number, vol: number) {
   const now = a.currentTime;
   if ((lastPlay[kind] ?? -1) > now - 0.05) return;
   lastPlay[kind] = now;
-  const buf = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2;
+  let buf = noiseBufs[dur];
+  if (!buf) {
+    buf = noiseBufs[dur] = a.createBuffer(1, Math.floor(a.sampleRate * dur), a.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length) ** 2;
+  }
   const src = a.createBufferSource(), g = a.createGain();
   src.buffer = buf; g.gain.value = vol;
   src.connect(g).connect(a.destination);
