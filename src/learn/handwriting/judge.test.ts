@@ -20,4 +20,25 @@ describe('StrokeJudge', () => {
     expect(new StrokeJudge(S['右']).judge(p[0].slice().reverse()).reason).toBe('direction');
     expect(new StrokeJudge(S['右']).judge([[10, 100], [100, 10]]).reason).toBe('shape');
   });
+  // 1画目を途中で止めて（甘めに）合格したあと、手本どおりに書いても通らなくなっていた
+  it('1画目を途中で止めても、あとの画は手本どおりに書けば合格', () => {
+    for (const [ch, f] of [['川', 0.8], ['右', 0.7], ['口', 0.6], ['二', 0.6], ['十', 0.6]] as const) {
+      const j = new StrokeJudge(S[ch], TOLERANCE.normal);
+      const p0 = pathToPoints(S[ch][0]);
+      expect(j.judge(p0.slice(0, Math.round(p0.length * f))).ok, ch).toBe(true);
+      for (const d of S[ch].slice(1)) expect(j.judge(pathToPoints(d)).ok, ch).toBe(true);
+      expect(j.finished).toBe(true);
+    }
+  });
+  it('それまでの画から推定した補正が外れていても、手本どおりの画は合格', () => {
+    for (const [ch, f] of [['上', 0.8], ['工', 0.7], ['石', 0.7]] as const) {
+      const j = new StrokeJudge(S[ch], TOLERANCE.normal);
+      // 最初の2画は短く書いて合格（大きさの推定がずれる）
+      for (const d of S[ch].slice(0, 2)) {
+        const p = pathToPoints(d);
+        expect(j.judge(p.slice(0, Math.round(p.length * f))).ok, ch).toBe(true);
+      }
+      for (const d of S[ch].slice(2)) expect(j.judge(pathToPoints(d)).ok, ch).toBe(true);
+    }
+  });
 });

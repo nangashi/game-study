@@ -70,10 +70,11 @@ function sameDirection(u: Pt[], t: Pt[]): boolean {
 const meanDist = (a: Pt[], b: Pt[]) => a.reduce((m, p, i) => m + Math.hypot(p[0] - b[i][0], p[1] - b[i][1]), 0) / a.length;
 
 // すでに合格した画（対応が分かっている）から、子どもの字の「位置ずれ・大きさ」を推定する
-// 一様スケール + 平行移動の最小二乗。画数が少ないうちは恒等変換に寄せる。
+// 一様スケール + 平行移動の最小二乗。
+// 1画だけだと大きさが大きくぶれる（途中で止めただけで倍率が上限に張り付く）ので、2画書くまでは補正しない。
 function fitTransform(userDone: Pt[][], tplDone: Pt[][]) {
+  if (userDone.length < 2) return { s: 1, tx: 0, ty: 0 };
   const U = userDone.flat(), T = tplDone.flat();
-  if (U.length < 2) return { s: 1, tx: 0, ty: 0 };
   const mu = [0, 0], mt = [0, 0];
   U.forEach(p => { mu[0] += p[0] / U.length; mu[1] += p[1] / U.length; });
   T.forEach(p => { mt[0] += p[0] / T.length; mt[1] += p[1] / T.length; });
@@ -85,10 +86,7 @@ function fitTransform(userDone: Pt[][], tplDone: Pt[][]) {
   });
   let s = den > 1e-6 ? num / den : 1;
   s = Math.min(1.6, Math.max(0.6, s));
-  // 1画だけだとスケールが不安定なので半分だけ効かせる
-  const w = Math.min(1, userDone.length / 2);
-  s = 1 + (s - 1) * w;
-  return { s, tx: (mt[0] - s * mu[0]) * w, ty: (mt[1] - s * mu[1]) * w };
+  return { s, tx: mt[0] - s * mu[0], ty: mt[1] - s * mu[1] };
 }
 
 // 許容値（109ボックス単位の平均距離）
@@ -110,7 +108,9 @@ export class StrokeJudge {
     const i = this.index;
     const u = resample(stroke);
     const { s, tx, ty } = fitTransform(this.done, this.tpl.slice(0, i));
-    const uu = u.map(([x, y]): Pt => [x * s + tx, y * s + ty]);
+    const fitted = u.map(([x, y]): Pt => [x * s + tx, y * s + ty]);
+    // 補正が外れていても、手本どおりに書いた画は通す（補正あり・なしの近いほうで判定）
+    const uu = meanDist(u, this.tpl[i]) < meanDist(fitted, this.tpl[i]) ? u : fitted;
     // 1画目は位置の手がかりがないので少しゆるく
     const tol = this.tolerance * (i === 0 ? 1.4 : 1);
     const dist = meanDist(uu, this.tpl[i]);
