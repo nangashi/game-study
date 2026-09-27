@@ -54,7 +54,7 @@ interface Enemy {
   dead: boolean;
 }
 interface Bullet { obj: Phaser.GameObjects.Image; vx: number; vy: number; life: number; dmg: number; pierce: number; hit: Set<Enemy>; src: WeaponId; slow?: number }
-interface Rang { obj: Phaser.GameObjects.Image; t: number; ax: number; ay: number; dmg: number }
+interface Rang { obj: Phaser.GameObjects.Image; t: number; ax: number; ay: number; dmg: number; reach: number; hitR: number }
 interface Tornado { obj: Phaser.GameObjects.Image; vx: number; vy: number; life: number }
 interface Shot { obj: Phaser.GameObjects.Arc; vx: number; vy: number; life: number; r: number; freeze: boolean }
 interface Gem { obj: Phaser.GameObjects.Image; value: number; pulled: boolean; medal: boolean }
@@ -115,6 +115,7 @@ export class BattleScene extends Phaser.Scene {
   private bossDefeated = false;
   private killsByKind: Record<string, number> = {};
   private dealt: Record<string, number> = {}; // ぶきごとに あたえた ダメージ（自動プレイで くらべる）
+  private hurtBy: Record<string, number> = {}; // なにに やられたか（自動プレイで くらべる）
   private limit = MAIN_SECONDS;  // おわる時間
   private slowUntil = 0;         // こおりで のろくなっている
   private swordDir = 0;          // つるぎを ふる むき（さいごに うごいた ほう）
@@ -405,7 +406,8 @@ export class BattleScene extends Phaser.Scene {
   private spawn(dt: number) {
     const easy = this.cfg.easy;
     // 一度に 出ている 敵の数の 上限。はじめの ステージは すくなめ
-    const cap = Math.min(160, 60 + this.cfg.stage * 10) * (easy ? 0.6 : 1);
+    // ひいて うつしている ときは、敵が とおくから くる ぶん（とちゅうの 敵で 上限が うまらないように）上限を ふやす
+    const cap = Math.min(160, 60 + this.cfg.stage * 10) * (easy ? 0.6 : 1) / this.scale.zoom;
     this.spawnCd -= dt;
     if (this.spawnCd > 0 || this.enemies.length >= cap) return;
     const rush = this.t < this.rushUntil ? 3 : 1;
@@ -548,7 +550,7 @@ export class BattleScene extends Phaser.Scene {
       }
       e.shadow.setPosition(e.obj.x, e.obj.y + e.r * 1.05);
       if (d < e.r + 22 && !e.faded) {
-        const hit = this.hurt(now);
+        const hit = this.hurt(now, e.boss ? 'boss' : e.role);
         if (hit && e.trait === 'freeze') this.slowPlayer(now);
         if (this.ended) return;
       }
@@ -606,16 +608,16 @@ export class BattleScene extends Phaser.Scene {
       case 'charge': return dash(0.9, 360, 0.8);                 // うなって とっしん（大きい）
       case 'bounce': return dash(0.5, 420, 0.45, 1);             // 2回 つづけて
       case 'spread':
-        aimShot(4.2, 520, () => [-0.35, 0, 0.35].forEach(a => this.enemyShot(e.obj.x, e.obj.y, Math.atan2(uy, ux) + a, 150)));
+        aimShot(5.5, 520, () => [-0.35, 0, 0.35].forEach(a => this.enemyShot(e.obj.x, e.obj.y, Math.atan2(uy, ux) + a, 150)));
         return keepAway();
       case 'bigball':
-        aimShot(4.5, 520, () => this.enemyShot(e.obj.x, e.obj.y, Math.atan2(uy, ux), 115, { r: 26 }));
+        aimShot(5.5, 520, () => this.enemyShot(e.obj.x, e.obj.y, Math.atan2(uy, ux), 115, { r: 26 }));
         return keepAway();
       case 'lob':
-        aimShot(6, 520, () => this.lob(e.obj.x, e.obj.y, this.player.x, this.player.y));
+        aimShot(7, 520, () => this.lob(e.obj.x, e.obj.y, this.player.x, this.player.y));
         return keepAway();
       case 'throw': // よわいけど ときどき ゆきだまを なげる
-        if (e.cd <= 0) { e.cd = 4 + Math.random() * 3; if (d < 420) this.enemyShot(e.obj.x, e.obj.y, Math.atan2(uy, ux), 130, { r: 9 }); }
+        if (e.cd <= 0) { e.cd = 6 + Math.random() * 3; if (d < 420) this.enemyShot(e.obj.x, e.obj.y, Math.atan2(uy, ux), 130, { r: 9 }); }
         return [vx * 0.9, vy * 0.9];
       case 'hop': { // ぴょん（はやい）→ とまる
         const on = (now + e.phase) % 0.9 < 0.4;
@@ -635,7 +637,7 @@ export class BattleScene extends Phaser.Scene {
           this.warnCircle(e.obj.x, e.obj.y, 150, 0.8, (x, y, r) => {
             if (e.dead) return;
             this.cameras.main.shake(150, 0.008); sfx.boom(); this.ring(x, y, r, 0x92400e, 10);
-            if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < r) this.hurt(this.t);
+            if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < r) this.hurt(this.t, 'stomp');
             e.state = 'walk';
           });
         }
@@ -702,7 +704,7 @@ export class BattleScene extends Phaser.Scene {
       this.tweens.add({ targets: fx, alpha: 0, duration: 300, onComplete: () => fx.destroy() });
       sfx.boom();
       this.ring(x, y, r, 0xef4444, 8);
-      if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < r) this.hurt(this.t);
+      if (Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y) < r) this.hurt(this.t, 'lob');
     });
   }
 
@@ -718,7 +720,7 @@ export class BattleScene extends Phaser.Scene {
       s.obj.x += s.vx * dt; s.obj.y += s.vy * dt; s.life -= dt;
       if (Phaser.Math.Distance.Between(s.obj.x, s.obj.y, this.player.x, this.player.y) < 18 + s.r) {
         s.life = 0;
-        if (this.hurt(now) && s.freeze) this.slowPlayer(now);
+        if (this.hurt(now, 'shot') && s.freeze) this.slowPlayer(now);
         if (this.ended) return;
       }
     }
@@ -733,9 +735,10 @@ export class BattleScene extends Phaser.Scene {
   }
 
   // やられたら true
-  private hurt(now: number): boolean {
+  private hurt(now: number, src: string): boolean {
     if (now < this.invulnUntil || this.winning || this.ended) return false;
     this.hp -= 1;
+    this.hurtBy[src] = (this.hurtBy[src] ?? 0) + 1;
     this.invulnUntil = now + 1.5;
     this.tweens.add({ targets: this.player, alpha: 0.3, duration: 100, yoyo: true, repeat: 5, onComplete: () => this.player.setAlpha(1) });
     this.cameras.main.shake(180, 0.008);
@@ -849,10 +852,11 @@ export class BattleScene extends Phaser.Scene {
   private updateBoom(dt: number, _now: number) {
     const lv = this.skill.boom, evo = this.evo('boom');
     if (!lv) return;
+    // レベルで: 2・4 は おおきく・はやく、3・5 は かず +1
     if (!this.cool('boom', dt, evo ? 2 : Math.max(2.2, 3 - lv * 0.2))) return;
-    const n = evo ? 3 : lv >= 3 ? 2 : 1;
+    const n = evo ? 3 : lv >= 5 ? 3 : lv >= 3 ? 2 : 1;
     const R = evo ? 110 : 75 + lv * 7;
-    const dmg = this.atk * (evo ? 3 : 1.8 + lv * 0.1);
+    const dmg = this.atk * (evo ? 3 : 2 + lv * 0.1);
     for (const [x, y] of this.bombTargets(n, R)) this.throwBomb(x, y, R, dmg, evo);
   }
 
@@ -903,23 +907,26 @@ export class BattleScene extends Phaser.Scene {
           this.tornados.push({ obj: this.item('tornado', this.player.x, this.player.y, 110).setDepth(8).setAlpha(0.9), vx: Math.cos(a) * 90, vy: Math.sin(a) * 90, life: 4.5 });
         }
       } else {
-        const n = 1 + Math.floor((lv + 1) / 2);
+        // レベルで: 2・4 は かず +1、3・5 は とおく・おおきく（あたる はばも ひろがる）
+        const n = 1 + Math.floor(lv / 2);
         const targets = this.nearestEnemies(n);
         for (let i = 0; i < n; i++) {
           const t = targets[i];
           const a = t ? Math.atan2(t.obj.y - this.player.y, t.obj.x - this.player.x) : Math.random() * Math.PI * 2;
-          this.rangs.push({ obj: this.item('rang', this.player.x, this.player.y, 44 + lv * 6).setDepth(8), t: 0, ax: Math.cos(a), ay: Math.sin(a), dmg: this.atk * 1.3 });
+          const big = Math.floor((lv - 1) / 2); // 0〜2
+          this.rangs.push({ obj: this.item('rang', this.player.x, this.player.y, 48 + big * 12).setDepth(8), t: 0, ax: Math.cos(a), ay: Math.sin(a),
+            dmg: this.atk * 1.2, reach: 300 + big * 50, hitR: 18 + big * 6 });
         }
       }
     }
     // いって かえってくる（とちゅうの敵に 0.4びょうに 1かい。たくさんに あたるぶん 1ぱつは よわい）
     for (const r of this.rangs) {
       r.t += dt;
-      const out = 340 * Math.sin(Math.min(r.t / 1.1, 1) * Math.PI);
+      const out = r.reach * Math.sin(Math.min(r.t / 1.1, 1) * Math.PI);
       r.obj.setPosition(this.player.x + r.ax * out, this.player.y + r.ay * out).setRotation(r.t * 14);
       for (const e of this.enemies) {
         if (e.dead || now - (e.hitAt.rang ?? -9) < 0.4) continue;
-        if (Phaser.Math.Distance.Between(e.obj.x, e.obj.y, r.obj.x, r.obj.y) < e.r + 20) { e.hitAt.rang = now; this.damage(e, r.dmg, 180, r.obj.x, r.obj.y, 'rang'); }
+        if (Phaser.Math.Distance.Between(e.obj.x, e.obj.y, r.obj.x, r.obj.y) < e.r + r.hitR) { e.hitAt.rang = now; this.damage(e, r.dmg, 140, r.obj.x, r.obj.y, 'rang'); }
       }
     }
     this.rangs = this.rangs.filter(r => { if (r.t < 1.1) return true; r.obj.destroy(); return false; });
@@ -1324,15 +1331,33 @@ export class BattleScene extends Phaser.Scene {
   }
 }
 
+// せまい 画面（タブレットなど）は すこし ひいて うつす: みじかい ほうの 辺で VIEW_MIN px ぶんは 見える。ちいさく しすぎない
+export const VIEW_MIN = 900;
+export const ZOOM_MIN = 0.72;
+export const viewZoom = (w: number, h: number) => Math.min(1, Math.max(ZOOM_MIN, Math.min(w, h) / VIEW_MIN));
+
 export function startBattle(parent: HTMLElement, cfg: BattleConfig): Phaser.Game {
+  const w = parent.clientWidth, h = parent.clientHeight, z = viewZoom(w, h);
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
     backgroundColor: WORLDS[stageSpec(cfg.stage).world].bg,
-    scale: { mode: Phaser.Scale.RESIZE, width: parent.clientWidth, height: parent.clientHeight },
+    scale: { mode: Phaser.Scale.NONE, width: w / z, height: h / z, zoom: z },
     input: { activePointers: 3 },
     banner: false,
   });
+  // 画面の大きさが かわったら（タブレットを たてにした など）、ひきかたも かえる
+  const fit = () => {
+    const w = parent.clientWidth, h = parent.clientHeight;
+    if (!w || !h) return;
+    const z = viewZoom(w, h);
+    game.scale.zoom = z;
+    game.scale.resize(w / z, h / z);
+    game.canvas.style.width = `${w}px`; game.canvas.style.height = `${h}px`;
+  };
+  const ro = new ResizeObserver(fit);
+  game.events.once(Phaser.Core.Events.READY, () => { fit(); ro.observe(parent); });
+  game.events.once(Phaser.Core.Events.DESTROY, () => ro.disconnect());
   game.scene.add('battle', BattleScene, true, cfg);
   return game;
 }

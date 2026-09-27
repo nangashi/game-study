@@ -4,7 +4,7 @@ import { heroHtml } from '../../art';
 import { assetUrl, spriteEl } from '../../assets/sprite';
 import { h, fromHtml, ico, overlay } from '../../ui/dom';
 import { backButton, playButton, quitButton, resultPanel, spriteChip, upgradePanel, walletBar } from '../kit/ui';
-import { BASE_SLOTS, BASE_WEAPONS, SKILLS, WEAPONS, isWeapon, skillChoices, unlockId, type Art, type Loadout, type ShopItem, type SkillId, type WeaponId } from './skills';
+import { BASE_SLOTS, BASE_WEAPONS, SKILLS, WEAPONS, isWeapon, levelNote, skillChoices, unlockId, type Art, type Loadout, type ShopItem, type SkillId, type WeaponId } from './skills';
 import { BOSS_AT, MAIN_SECONDS, STAGES_PER_WORLD, TRAIT_DESC, SURVIVOR_STAGES, WORLDS, isBossStage, starsOf, type Role } from './stages';
 import { startBattle, type BattleScene, type Reroll, type RunResult, type ShopApi } from './BattleScene';
 import { IMAGES, SHEETS } from './assets.gen';
@@ -184,6 +184,8 @@ function skillCard(id: SkillId, levels: Record<SkillId, number>, evolved: Weapon
     s.tag ? h('span', { class: 'sv-tag', textContent: s.tag }) : null,
     h('small', { textContent: lv === 0 ? 'あたらしい！' : `Lv${lv} → ${next}${next >= s.max ? ' MAX' : ''}` }),
     h('small', { class: 'muted', textContent: s.desc }),
+    // レベルアップで なにが かわるか
+    levelNote(id, next) ? h('small', { class: 'sv-next', textContent: `つぎ: ${levelNote(id, next)}` }) : null,
     // MAX になる ぶきは、たからばこで しんかすることを 見せる
     willMax ? h('small', { class: 'sv-evo-hint' }, spriteEl(SHEETS.items, 'chest', 20), ' で ', artEl(s.evo!.art, 20)) : null,
     extra ?? null,

@@ -3,7 +3,8 @@
 //
 // じゅんび: scripts/playtest.mjs と同じ（playwright）
 // つかいかた:
-//   node scripts/playtest-survivor.mjs [--stage=1] [--up=<数値の強化レベルの合計。省略すると推奨レベル>] [--weapons=all|orbit,frost] [--start=rang] [--reroll=0-3] [--slot=1] [--bot=smart|brave|still] [--grade=1|k] [--out=playtest-out] [--shots=10] [--only=sword]
+//   node scripts/playtest-survivor.mjs [--stage=1] [--up=<数値の強化レベルの合計。省略すると推奨レベル>] [--weapons=all|orbit,frost] [--start=rang] [--reroll=0-3] [--slot=1] [--bot=smart|brave|still] [--grade=1|k] [--out=playtest-out] [--shots=10] [--only=sword] [--view=1024x700]
+//   最後に 与えた ダメージ（dealt）と、なにに やられたか（hurtBy）を 出す
 //   --weapons / --start / --reroll / --slot は 解放（docs/03 4.）。つけたぶんは --up から へらさない
 //   --bot=brave: 敵に ちかづいて たたかう（ちかい ぶきを くらべる。smart は にげつづける）
 //   --only=<ぶき>: その ぶき1つだけで あそぶ（ぶきごとの 強さを くらべる）
@@ -44,7 +45,9 @@ const server = await createServer({ server: { port, strictPort: true }, logLevel
 await server.listen();
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
 try {
-  const page = await browser.newPage({ viewport: { width: 1024, height: 700 } });
+  // --view=1024x700: 画面の大きさ（タブレットの よこむき くらい）
+  const [vw, vh] = (opt.view ?? '1024x700').split('x').map(Number);
+  const page = await browser.newPage({ viewport: { width: vw, height: vh } });
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => { if (m.type() === 'error' && !m.text().includes('Failed to load resource')) errors.push(m.text()); });
@@ -134,7 +137,7 @@ try {
     const st = await page.evaluate(() => {
       const s = window.__survivor;
       return {
-        t: Math.round(s.t), medals: s.medals, hp: `${s.hp}/${s.maxHp}`, lv: s.level, kills: s.kills, enemies: s.enemies.length,
+        t: Math.round(s.t), medals: s.medals, hp: `${s.hp}/${s.maxHp}`, lv: s.level, kills: s.kills, enemies: s.enemies.length, shots: s.shots.length,
         skill: Object.entries(s.skill).filter(([, v]) => v).map(([k, v]) => k + v).join(','),
         evo: s.evolved.join(','), boss: s.boss ? Math.round(s.boss.hp) + '/' + Math.round(s.boss.maxHp) : '-', ended: s.ended,
       };
@@ -151,6 +154,7 @@ try {
   console.log(log.join('\n'));
   console.log('result:', res.replace(/\s+/g, ' '));
   console.log('dealt:', JSON.stringify(await page.evaluate(() => Object.fromEntries(Object.entries(window.__survivor.dealt ?? {}).map(([k, v]) => [k, Math.round(v)])))));
+  console.log('hurtBy:', JSON.stringify(await page.evaluate(() => window.__survivor.hurtBy ?? {})));
   console.log(errors.length ? `errors:\n${errors.join('\n')}` : 'no errors');
 } finally {
   await browser.close();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BOSS_AT, ENEMY_POWER_PER_LEVEL, MAIN_SECONDS, SURVIVOR_STAGES, TRAIT_DESC, WORLDS, enemyPower, isBossStage, stageSpec, starsOf } from './stages';
-import { BASE_SLOTS, BASE_WEAPONS, SKILLS, WEAPONS, chestReward, emptyLevels, openSkills, shopOffers, skillChoices, type Loadout, type SkillId } from './skills';
+import { BASE_SLOTS, BASE_WEAPONS, LEVEL_NOTES, SKILLS, WEAPONS, levelNote, chestReward, emptyLevels, openSkills, shopOffers, skillChoices, type Loadout, type SkillId } from './skills';
 import { SURVIVOR_UPGRADES } from './upgrades';
 import { recommendedLevel } from '../../state/economy';
 
@@ -21,8 +21,9 @@ describe('サバイバーのステージ', () => {
     expect(stageSpec(3).power).toBe(1);
     expect(stageSpec(1).roles.length).toBeLessThan(stageSpec(3).roles.length);
     expect(stageSpec(1).density).toBeLessThan(stageSpec(3).density);
-    expect(stageSpec(1).shooterCap).toBe(3);
-    expect(stageSpec(15).shooterCap).toBeLessThanOrEqual(9);
+    expect(stageSpec(1).shooterCap).toBe(2);
+    expect(stageSpec(2).shooterCap).toBe(3);
+    expect(stageSpec(15).shooterCap).toBeLessThanOrEqual(8);
   });
 
   it('敵の強さは推奨強化レベルにそろえて足し算で上がる', () => {
@@ -104,5 +105,16 @@ describe('サバイバーの おみせ', () => {
     expect(offers.map(o => o.kind)).toContain('heal');
     expect(offers.map(o => o.kind)).toContain('chest');
     expect(Math.max(...offers.map(o => o.price))).toBeLessThanOrEqual(30);
+  });
+});
+
+describe('レベルアップで かわること', () => {
+  it('ぶきは どの レベルでも かならず なにかが かわる（カードに「つぎ」を出す）', () => {
+    for (const w of WEAPONS) {
+      expect(LEVEL_NOTES[w].length).toBe(SKILLS[w].max - 1);
+      for (let lv = 2; lv <= SKILLS[w].max; lv++) expect(levelNote(w, lv)).toBeTruthy();
+      expect(levelNote(w, 1)).toBeNull();
+    }
+    expect(levelNote('heart', 2)).toBeNull();
   });
 });

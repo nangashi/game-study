@@ -42,6 +42,20 @@ export const SKILLS: Record<SkillId, SkillDef> = {
   magnet:  { art: icons('magnet'), name: 'すいよせ', desc: 'ジェムを あつめやすい', max: 5 },
 };
 
+// レベルアップで かわること（カードに「つぎ: 〜」と出す）。[Lv2, Lv3, Lv4, Lv5]。どの レベルでも かならず なにかが かわる
+// BattleScene.ts の すうじと あわせる
+export const LEVEL_NOTES: Record<WeaponId, string[]> = {
+  bolt:    ['かず +1', 'かず +1', 'かず +1', 'かず +1'],
+  rang:    ['かず +1', 'とおく・おおきく', 'かず +1', 'とおく・おおきく'],
+  boom:    ['おおきく・はやく', 'かず +1', 'おおきく・はやく', 'かず +1'],
+  orbit:   ['かず +1', 'かず +1', 'かず +1', 'かず +1'],
+  frost:   ['かず +1', 'はやく・ながく のろく', 'かず +1', 'はやく・ながく のろく'],
+  thunder: ['つながる +1', 'つながる +1', 'つながる +1', 'つながる +2'],
+  sword:   ['はやく・ひろく', 'はやく・ひろく', 'はやく・ひろく', 'はやく・ひろく'],
+};
+export const levelNote = (id: SkillId, next: number): string | null =>
+  isWeapon(id) && next >= 2 ? LEVEL_NOTES[id][next - 2] ?? null : null;
+
 export const isWeapon = (id: SkillId): id is WeaponId => (WEAPONS as string[]).includes(id);
 export const emptyLevels = (): Record<SkillId, number> =>
   ({ bolt: 0, rang: 0, boom: 0, orbit: 0, frost: 0, thunder: 0, sword: 0, shoes: 0, heart: 0, magnet: 0 });
