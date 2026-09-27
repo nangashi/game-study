@@ -21,6 +21,8 @@ describe('サバイバーのステージ', () => {
     expect(stageSpec(3).power).toBe(1);
     expect(stageSpec(1).roles.length).toBeLessThan(stageSpec(3).roles.length);
     expect(stageSpec(1).density).toBeLessThan(stageSpec(3).density);
+    expect(stageSpec(1).shooterCap).toBe(3);
+    expect(stageSpec(15).shooterCap).toBeLessThanOrEqual(9);
   });
 
   it('敵の強さは推奨強化レベルにそろえて足し算で上がる', () => {
