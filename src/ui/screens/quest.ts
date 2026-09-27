@@ -45,7 +45,8 @@ export function showQuest(id: string, sel: Selection): void {
         // まちがえた問題は、さいごにもう一度（1回だけ。コインなし）
         if (!good && !retry && !retried.has(q.card)) {
           retried.add(q.card);
-          items.push({ cat, q: cat.make(q.card, Math.random, p), retry: true });
+          // 計算のわくは、作りなおすと数が変わるので同じ問題を出す
+          items.push({ cat, q: cat.varied ? q : cat.make(q.card, Math.random, p), retry: true });
         }
         save();
         step(i + 1);

@@ -12,6 +12,8 @@ export interface Category {
   quiz?: boolean;    // すぐ答えられる3択にできる（ゲームの中のクイズで使う）
   // ドリル（けいさんりょく）: 時間を計り、遅い問題を先に出す。まぜこぜには入れない
   drill?: { length: number };
+  // 計算のわく: カードは「要素のわく」で、出すたびに数が変わる（docs/03-rewards-and-games.md）
+  varied?: boolean;
   cards(): readonly string[];  // 問題プール。まだやっていない問題はこの順に出す（やさしい順）
   make(card: string, rng: Rng, p: Profile): Question;
 }
