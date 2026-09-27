@@ -13,6 +13,19 @@ describe('StrokeJudge', () => {
       expect(j.finished).toBe(true);
     }
   });
+  it('前の画がずれて合格していても、手本どおりに書いた画は合格', () => {
+    // 牛: 1画目を右に細く、2画目を左上に短く書くと、3画目の補正がずれて手本どおりでも落ちていた
+    const around = (pts: Pt[], dx: number, dy: number, sx: number): Pt[] => {
+      const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length;
+      return pts.map(([x, y]) => [(x - cx) * sx + cx + dx, y + dy]);
+    };
+    const p = S['牛'].map(d => pathToPoints(d));
+    const j = new StrokeJudge(S['牛'], TOLERANCE.normal);
+    expect(j.judge(around(p[0], 5, 0, 0.8)).ok).toBe(true);
+    expect(j.judge(around(p[1], -6, -3, 0.7)).ok).toBe(true);
+    expect(j.judge(p[2]).ok).toBe(true);
+    expect(j.judge(p[3]).ok).toBe(true);
+  });
   it('書き順ちがい・逆向き・別の形を見分ける', () => {
     const p = S['右'].map(d => pathToPoints(d));
     // 右: 1画目はノ、2画目は横棒
