@@ -166,7 +166,10 @@ export class BattleScene extends Phaser.Scene {
     // 足元のかげ（草の上でもキャラが見やすくなる）
     const g = this.make.graphics({}, false);
     g.fillStyle(0x000000, 0.28).fillEllipse(32, 12, 64, 24);
-    g.generateTexture('shadow', 64, 24); g.destroy();
+    g.generateTexture('shadow', 64, 24);
+    // ばくはつの まるい はんい（図形より 画像のほうが まとめて かけて かるい。タブレットで はなびが おもかった）
+    g.clear().fillStyle(0xffffff).fillCircle(64, 64, 64);
+    g.generateTexture('disc', 128, 128); g.destroy();
     this.playerShadow = this.add.image(0, 0, 'shadow').setDepth(3).setScale(1.2);
 
     this.anims.create({ key: 'walk', frames: this.anims.generateFrameNumbers('hero', { start: 0, end: 3 }), frameRate: 9, repeat: -1 });
@@ -838,7 +841,7 @@ export class BattleScene extends Phaser.Scene {
   }
 
   private blast(x: number, y: number, R: number, dmg: number, fx: boolean) {
-    const ring = this.add.circle(x, y, R, 0xf97316, 0.25).setDepth(7);
+    const ring = this.add.image(x, y, 'disc').setScale(R / 64).setTint(0xf97316).setAlpha(0.25).setDepth(6);
     const burst = fx
       ? this.item('firework', x, y, R * 1.8).setDepth(7).setAlpha(0.9)
       : this.icon('boom', x, y, R * 1.6).setDepth(7).setAlpha(0.85);
