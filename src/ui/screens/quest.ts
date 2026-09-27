@@ -1,11 +1,13 @@
 import { applyAnswer, buildSet, setLength, type SetItem } from '../../learn/engine';
 import { questReward } from '../../state/economy';
+import { dailyMissions, noteCorrect } from '../../state/missions';
 import { save, store, today } from '../../state/store';
 import { studyDef } from '../../studies/registry';
 import type { Selection } from '../../studies/types';
 import { chip, h, ico, mount } from '../dom';
 import { renderQuestion } from '../question';
 import { showHome, topbar } from './home';
+import { showMissions } from './missions';
 import { showStudy } from './study';
 
 export const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}びょう`;
@@ -38,8 +40,11 @@ export function showQuest(id: string, sel: Selection): void {
       drill ? h('p', { class: 'note' }, ico('clock'), ` ${seconds(time)}`) : null,
       retry ? h('p', { class: 'note' }, 'もう いちど！') : null,
       renderQuestion(q, p, a => {
+        const before = p.cards[q.card];
         answerCoins += applyAnswer(p, q, a, day, { retry, slowMs });
         const good = a.correct && !a.helped;
+        // ミッションのため、カテゴリごとの正解と復習の正解を数える
+        if (good && !retry) noteCorrect(p, sel.study, cat, !!before && before.due <= day, day);
         marks.push(!good ? 'ng' : slowMs != null && (a.ms ?? 0) > slowMs ? 'slow' : 'ok');
         if (!retry) time += a.ms ?? 0;
         // まちがえた問題は、さいごにもう一度（1回だけ。コインなし）
@@ -60,8 +65,14 @@ export function showQuest(id: string, sel: Selection): void {
     const best = p.best?.[sel.category!];
     const newBest = !!drill && perfect && (best == null || time < best);
     if (newBest) (p.best ??= {})[sel.category!] = time;
-    const r = questReward(p, store.settings, sel, answerCoins, day);
+    const s = store.settings;
+    const r = questReward(p, s, sel, answerCoins, day);
     save();
+    const ready = r.achieved.length > 0 || r.pending > 0 || dailyMissions(p, day).some(m => m.done && !m.claimed);
+    const why = sel.drill ? ['けいさんりょく では ', ico('ticket'), ' は もらえないよ']
+      : !p.daily.subjects.includes(sel.study) ? ['したの がくねんでは ', ico('ticket'), ' は もらえないよ']
+      : p.daily.ticketsEarned >= s.ticketsPerDay ? ['きょうの ', ico('ticket'), ' は ぜんぶ もらったよ']
+      : ['きょうの ', ico('ticket'), ' は もう もらったよ。ほかの きょうかや ミッションも やってみよう'];
     mount(h('div', { class: 'screen scenic' },
       h('h1', { class: 'title' }, ico(perfect ? 'trophy' : 'star', 64), newBest ? ' ベスト こうしん！' : perfect ? ' パーフェクト！' : ' クエスト クリア！'),
       drill ? h('p', { class: 'note bubble' }, ico('clock'), ` タイム ${seconds(time)}`, best != null ? `（ベスト ${seconds(Math.min(best, time))}）` : '') : null,
@@ -69,9 +80,9 @@ export function showQuest(id: string, sel: Selection): void {
         chip('coin', `+${r.coins}`),
         r.tickets ? chip('ticket', `+${r.tickets}`) : null,
       ),
-      r.tickets ? null : h('p', { class: 'note bubble' }, ...(p.daily.subjects.includes(sel.study)
-        ? ['きょうの ', ico('ticket'), ' は もう もらったよ。ほかの きょうかも やってみよう']
-        : ['したの がくねんでは ', ico('ticket'), ' は もらえないよ'])),
+      r.pending ? h('p', { class: 'note bubble' }, ico('ticket'), ' が まんたん！ ミッションで うけとってね')
+        : r.tickets ? null : h('p', { class: 'note bubble' }, ...why),
+      ready ? h('button', { class: 'pill-btn primary', onclick: () => showMissions(id) }, ico('trophy'), ' ミッション たっせい！') : null,
       h('div', { class: 'row' },
         h('button', { class: 'pill-btn', onclick: back }, ico('back', 26), ' もどる'),
         h('button', { class: 'pill-btn primary', textContent: 'もういっかい', onclick: () => showQuest(id, sel) }),

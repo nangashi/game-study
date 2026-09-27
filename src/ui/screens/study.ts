@@ -1,6 +1,7 @@
 import { mastery, planSet, selectedCategories, setLength, type Mastery } from '../../learn/engine';
 import { cardCoins } from '../../learn/srs';
 import { isLowerGrade, questCoins, selectionRate, studyGivesTicket } from '../../state/economy';
+import { suggestedCats } from '../../state/missions';
 import { store, today } from '../../state/store';
 import { GRADES, type Grade, type Profile } from '../../state/types';
 import { studyDef } from '../../studies/registry';
@@ -9,7 +10,7 @@ import { chip, h, ico, mount } from '../dom';
 import { showHome, topbar } from './home';
 import { seconds, showQuest } from './quest';
 
-const GRADE_NAMES: Record<Grade, string> = { k: 'ねんちょう', 1: '1ねん', 2: '2ねん', 3: '3ねん' };
+export const GRADE_NAMES: Record<Grade, string> = { k: 'ねんちょう', 1: '1ねん', 2: '2ねん', 3: '3ねん' };
 
 // 始める前に見せる、もらえるコイン（全問正解したとき）と、問題のうちわけ
 export function preview(study: StudyDef, p: Profile, sel: Selection) {
@@ -52,6 +53,7 @@ export function showStudy(id: string, studyId: string, grade?: Grade): void {
   const day = today();
   const gradeMastery = (x: Grade) => mastery(p, selectedCategories(study, { study: study.id, grade: x }), day);
   const all = gradeMastery(g);
+  const hisa = new Set(suggestedCats(p, day).map(x => x.cat));
 
   mount(h('div', { class: 'screen scenic' },
     topbar(p, () => showHome(id)),
@@ -86,6 +88,7 @@ export function showStudy(id: string, studyId: string, grade?: Grade): void {
       const done = m.learned === m.total;
       return h('button', { class: `cat-btn${done ? ' done' : ''}`, style: `--study:${study.color}`, onclick: () => showQuest(id, sel) },
         m.due ? h('span', { class: 'due-badge', textContent: `ふくしゅう ${m.due}` }) : null,
+        hisa.has(c) ? h('span', { class: 'hisa-badge', textContent: 'ひさしぶり' }) : null,
         h('span', { class: 'cat-name' }, c.name, done ? ico('trophy', 26) : null),
         h('span', { class: 'cat-progress' },
           meter(m),
