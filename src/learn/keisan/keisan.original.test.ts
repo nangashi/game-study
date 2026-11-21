@@ -19,8 +19,29 @@ describe('ステージと問題の作り方が元と同じ', () => {
   it('47ステージの id・名前・テーマ・例・色・まとめ・筆算', () => {
     const orig = O.run('STAGES') as any[];
     expect(orig.length).toBe(47);
+    // 名前は13件だけ、まなびランドで見やすい名前に変えた（承認済み）。ほかは元のまま
+    const RENAMED: Record<string, string> = {
+      s3: 'たし算 くり上がり入門 11〜13',
+      s7: 'まとめ① たし・ひき 〜20',
+      s15: 'まとめ② たし・ひき（2けた＋1けたまで）',
+      s22: 'ひき算 2回かりる くり下がり',
+      s23: 'くふう③ 100になる ペア',
+      s24: 'まとめ③ たし・ひき（2けたまで）',
+      s25: 'たし算 3けた＋3けた①',
+      s26: 'ひき算 3けた−3けた①',
+      s27: 'たし算 3けた＋3けた②',
+      s28: 'ひき算 3けた−3けた②',
+      s29: 'まとめ④ たし・ひき（3けたまで）',
+      s43: 'まとめ⑤ たし・ひき・かけ',
+      s47: 'まとめ⑥ 全部の ふくしゅう',
+    };
     expect(STAGES.map(s => ({ id: s.id, num: s.num, name: s.name, theme: s.theme, sample: s.sample, color: s.color, matome: !!s.matome, paper: !!s.paper })))
-      .toEqual(orig.map(s => ({ id: s.id, num: s.num, name: s.name, theme: s.theme, sample: s.sample, color: s.color, matome: !!s.matome, paper: !!s.paper })));
+      .toEqual(orig.map(s => ({ id: s.id, num: s.num, name: RENAMED[s.id] ?? s.name, theme: s.theme, sample: s.sample, color: s.color, matome: !!s.matome, paper: !!s.paper })));
+    // テーマ（内部のメタ情報）は残している
+    expect(STAGES.filter(s => ['s25', 's26', 's27', 's28', 's44', 's45'].includes(s.id)).map(s => s.theme)).toEqual([
+      'くり上がり 0〜1回', 'くり下がり 0〜1回', 'くり上がり 2回以上', 'くり下がり 2回以上',
+      '2・5・3・1の段の ぎゃく', '4・6・7・8・9の段の ぎゃく',
+    ]);
   });
 
   it('同じ乱数なら、全ステージで同じ問題（問題文と答え）になる', () => {

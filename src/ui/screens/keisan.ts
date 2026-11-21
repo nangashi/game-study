@@ -77,9 +77,10 @@ export function showKeisanMap(): void {
       },
     },
     h('span', { class: 'num', style: `background:${playable || cleared ? stage.color : 'var(--lock)'}`, textContent: String(stage.num) }),
+    // カードは2行（タイトル／例題＋状態）。theme は出さない
     h('span', { class: 'smeta' },
       h('span', { class: 'sname', textContent: stage.name }), h('br'),
-      h('span', { class: 'ssample', textContent: `テーマ：${stage.theme}　／　${stage.sample}` }), h('br'),
+      h('span', { class: 'ssample', textContent: stage.sample }),
       h('span', { class: 'state-note', textContent: note })),
     );
     b.insertAdjacentHTML('beforeend', right);

@@ -205,7 +205,7 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .stage.future .sname { color: #5f7d88; }
 .stage.future .ssample { color: var(--lock); }
 .stage.matome { border-color: #ffd3df; background: #fff7fa; }
-.stage .state-note { font-size: .8rem; font-weight: 800; color: var(--teal-dark); }
+.stage .state-note { font-size: .8rem; font-weight: 800; color: var(--teal-dark); margin-left: .8em; }
 .stage.future .state-note { color: var(--lock); }
 
 /* ---------- バナー（重ねるカード） ---------- */

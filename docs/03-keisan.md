@@ -9,7 +9,7 @@
 | ファイル | 中身 |
 |---|---|
 | `src/learn/keisan/generators.ts` | 問題の作り方（全ジェネレータ） |
-| `src/learn/keisan/stages.ts` | 47ステージ（id・名前・テーマ・例・色・まとめ・筆算） |
+| `src/learn/keisan/stages.ts` | 47ステージ（id・名前・テーマ・例・色・まとめ・筆算）。名前は13件だけ元から変えた。テーマは内部のメタ情報で、カードには出さない |
 | `src/learn/keisan/session.ts` | 10問セット、星とクリア、記録の更新、どこまで遊べるか、入力の決まり、答えたあとの待ち時間 |
 | `src/learn/keisan/ladder.ts` | ちからだめし（純粋関数。状態を受け取り、新しい状態と「次に何をするか」を返す） |
 | `src/learn/keisan/keisan.test.ts` | 性質テスト（ステージごとに3000問作って答え・条件・4けた以内を確かめる、10問の重複） |
