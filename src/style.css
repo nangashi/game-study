@@ -374,9 +374,6 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .seg-btn { flex: 1; border: none; border-radius: 999px; background: none; font-weight: 800; font-size: 1.125rem; color: var(--ink-soft); }
 .seg-btn.on { background: var(--teal); color: #fff; box-shadow: 0 3px 0 var(--teal-dark); }
 
-@media (min-width: 700px) {
-  .prof-list { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-}
 /* 高さが足りないときも、キーは 56px より小さくしない */
 @media (max-height: 720px) {
   .mascot-box { width: 62px; height: 62px; }
