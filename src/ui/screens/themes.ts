@@ -7,7 +7,7 @@ import { showChildren } from './children';
 import { showHiraMap } from './hira';
 import { showKeisanMap } from './keisan';
 
-// テーマ選択（合意モックどおり。中身があるのは けいさん と ひらがな・カタカナ だけ）
+// テーマ選択（合意モックどおり。中身があるのは けいさん と ひらがな だけ）
 const MARK_COLOR: Record<ThemeId, string> = { hira: '#e11d48', keisan: '#0891b2' };
 
 export function showThemes(): void {

@@ -2,7 +2,7 @@ import { STAGES } from './learn/keisan';
 import { HIRA_UNITS } from './learn/hiragana';
 import type { ChildRecord } from './records';
 
-// 教科 → テーマ。中身があるのは「ひらがな・カタカナ」（ひらがなを かく）と「けいさん」だけ。ほかは「あとで ふえる」
+// 教科 → テーマ。中身があるのは「ひらがな」（ひらがなを かく）と「けいさん」だけ。ほかは「あとで ふえる」
 
 export type ThemeId = 'hira' | 'keisan';
 
@@ -22,7 +22,7 @@ export interface SubjectDef {
 export const SUBJECTS: SubjectDef[] = [
   {
     id: 'kokugo', name: 'こくご', themes: [
-      { id: 'hira', name: 'ひらがな・カタカナ', mark: 'ひ', desc: `ひらがなを かく ・ ${HIRA_UNITS.length}たんげん` },
+      { id: 'hira', name: 'ひらがな', mark: 'ひ', desc: `ひらがなを かく ・ ${HIRA_UNITS.length}たんげん` },
       { id: null, name: 'かんじ', mark: 'か', desc: 'かんじを おぼえる・かく' },
       { id: null, name: 'ことば', mark: 'こ', desc: 'ことばの れんしゅう' },
       { id: null, name: 'よむ', mark: 'よ', desc: 'ぶんを よむ' },
