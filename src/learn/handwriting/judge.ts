@@ -69,6 +69,26 @@ function sameDirection(u: Pt[], t: Pt[]): boolean {
 
 const meanDist = (a: Pt[], b: Pt[]) => a.reduce((m, p, i) => m + Math.hypot(p[0] - b[i][0], p[1] - b[i][1]), 0) / a.length;
 
+// 形の特徴チェック（検証元: ひらがな手書き判定 Space）。
+// 平均が許容内でも、続けて RUN_N 点が手本から大きく外れていたら形ちがいとみなす（ループを省いた「す」など）。
+// 許容度によらず固定
+export const RUN_N = 4;
+export const RUN_TOL = 18;
+
+// 対応する点の距離について、RUN_N 点ずつの平均の最大
+export function worstRunAvg(a: Pt[], b: Pt[]): number {
+  const len = Math.min(a.length, b.length);
+  if (len < RUN_N) return 0;
+  const ds = Array.from({ length: len }, (_, i) => Math.hypot(a[i][0] - b[i][0], a[i][1] - b[i][1]));
+  let worst = 0;
+  for (let s = 0; s + RUN_N <= len; s++) {
+    let sum = 0;
+    for (let k = 0; k < RUN_N; k++) sum += ds[s + k];
+    worst = Math.max(worst, sum / RUN_N);
+  }
+  return worst;
+}
+
 // すでに合格した画（対応が分かっている）から、子どもの字の「位置ずれ・大きさ」を推定する
 // 一様スケール + 平行移動の最小二乗。
 // 1画だけだと大きさが大きくぶれる（途中で止めただけで倍率が上限に張り付く）ので、2画書くまでは補正しない。
@@ -116,6 +136,7 @@ export class StrokeJudge {
     const dist = meanDist(uu, this.tpl[i]);
     if (dist < tol) {
       if (!sameDirection(uu, this.tpl[i])) return { ok: false, reason: 'direction', dist };
+      if (worstRunAvg(uu, this.tpl[i]) > RUN_TOL) return { ok: false, reason: 'shape', dist };
       this.done.push(u);
       return { ok: true, reason: 'ok', dist };
     }
