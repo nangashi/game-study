@@ -34,11 +34,11 @@ npm run build      # 型検査 + ビルド
 家族共有の API（`/api/family`）も動かすときは、別のターミナルで Worker を手元で動かす。`npm run dev` の `/api` は :8787 へ回る:
 
 ```bash
-npm run build && npx wrangler dev   # http://localhost:8787 （dist の配信 + /api、KV は手元の偽物）
+npm run build && npm run dev:worker   # http://localhost:8787 （dist の配信 + /api、KV は手元の偽物）
 ```
 
 Worker を動かしていないときは同期が失敗するだけで、記録は端末に残り、遊びは止まらない。
-`ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` が空のときは localhost への API だけ認証なしで通す（`worker/access.ts`）。
+`dev:worker` は `ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` を空にして動かす。2つとも空のときは localhost への API だけ認証なしで通す（`worker/access.ts`）。ふつうの `npx wrangler dev` は本番の値で検証するので、`/api` は 401 になる。
 
 構成: TypeScript + Vite + vite-plugin-pwa。
 
@@ -67,15 +67,14 @@ KANJIVG_DIR=/path/to/kanjivg/kanji npm run gen:strokes
 
 ## Cloudflare に置く
 
-家族だけが開けるように、独自ドメインに置いて Cloudflare Access（メールのワンタイムコード）の内側にする。workers.dev とプレビュー URL は無効（`wrangler.jsonc`）。Worker の中でも Access の証明（`Cf-Access-Jwt-Assertion`）を確かめる。
+家族だけが開けるように、workers.dev の URL（`manabi-survivor.<サブドメイン>.workers.dev`）に Cloudflare Access のアプリ（メールのワンタイムコード、家族のポリシー）をかけている。playland・cookbook と同じ形。プレビュー URL は Access の外になるので無効（`wrangler.jsonc`）。Worker の中でも Access の証明（`Cf-Access-Jwt-Assertion`）を確かめる。
 
-はじめて置くとき:
+設定（`wrangler.jsonc`、済み）:
 
-1. KV を作る: `npx wrangler kv namespace create FAMILY` → 出てきた id を `wrangler.jsonc` の `kv_namespaces` に入れる
-2. 独自ドメインを Worker につなぐ（`wrangler.jsonc` に `routes`（`custom_domain: true`）を足すか、ダッシュボードで）
-3. Zero Trust → Access → Applications で、そのドメインの Self-hosted アプリを作る（ログイン方法: One-time PIN、ポリシー: 家族のメールアドレスだけ Allow、セッションは長め）
-4. アプリの AUD タグとチームのドメインを `wrangler.jsonc` の `vars`（`ACCESS_AUD`・`ACCESS_TEAM_DOMAIN`）に入れる。空のまま置くと API は 500 で断る
-5. `npx wrangler login`（CI からなら `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID`）→ `npm run deploy`
+- KV: 名前空間「manabi-family」を `FAMILY` につなぐ
+- `vars`: `ACCESS_TEAM_DOMAIN`（チームのドメイン）・`ACCESS_AUD`（manabi-survivor 用 Access アプリの AUD タグ）。空のまま置くと API は 500 で断る
+
+置き方: main に push すると、CI（`.github/workflows/ci.yml`）がテストとビルドのあとに `wrangler deploy` する。PR では置かない。認証は GitHub Secrets の `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID`。手元からなら `npx wrangler login` → `npm run deploy`。
 
 ## ライセンス
 

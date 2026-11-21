@@ -9,6 +9,7 @@
     "preview": "vite preview --host",
     "test": "vitest run",
     "gen:strokes": "node scripts/gen-strokes.mjs",
+    "dev:worker": "wrangler dev --var ACCESS_TEAM_DOMAIN: --var ACCESS_AUD:",
     "deploy": "npm run build && wrangler deploy"
   },
   "devDependencies": {

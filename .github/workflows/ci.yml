@@ -28,3 +28,11 @@ jobs:
       - run: npm test
 
       - run: npm run build
+
+      # main への push のときだけ、テストとビルドが通ったら Cloudflare に置く（PR では置かない）
+      - name: Deploy
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

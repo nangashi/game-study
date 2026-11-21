@@ -77,7 +77,7 @@ ChildRecord {
 
 ### 認証（worker/access.ts）
 
-- 入口は Cloudflare Access をかけた独自ドメインだけ（`workers_dev: false`・`preview_urls: false`）。Worker の中でも `Cf-Access-Jwt-Assertion` を確かめる: RS256 の署名（公開鍵は `<チームのドメイン>/cdn-cgi/access/certs`、1時間控える）、`exp`・`nbf`（60秒の許し）、`iss` = `ACCESS_TEAM_DOMAIN`、`aud` に `ACCESS_AUD`。
+- 入口は Cloudflare Access のアプリをかけた workers.dev の URL だけ（`workers_dev: true`・`preview_urls: false`）。Worker の中でも `Cf-Access-Jwt-Assertion` を確かめる: RS256 の署名（公開鍵は `<チームのドメイン>/cdn-cgi/access/certs`、1時間控える）、`exp`・`nbf`（60秒の許し）、`iss` = `ACCESS_TEAM_DOMAIN`、`aud` に `ACCESS_AUD`。
 - ヘッダーがなければ 401、証明がおかしければ 403。
 - **`ACCESS_TEAM_DOMAIN` と `ACCESS_AUD` が2つとも空で、しかもリクエスト先が `localhost`・`127.0.0.1`・`[::1]` のときだけ**、確かめずに通す（wrangler dev 用）。片方だけ空・本番のドメインで空のときは 500 で断る（設定ミスで API が開いたままにならないように）。
 

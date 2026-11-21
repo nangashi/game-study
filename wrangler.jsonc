@@ -4,8 +4,9 @@
   "main": "worker/index.ts",
   "compatibility_date": "2026-09-01",
 
-  // 入口は Cloudflare Access をかけた独自ドメインだけにする（workers.dev とプレビュー URL は使わない）
-  "workers_dev": false,
+  // 入口は workers.dev の URL（manabi-survivor.<サブドメイン>.workers.dev）。
+  // そこに Cloudflare Access のアプリ（家族のポリシー）をかけている。プレビュー URL は Access の外になるので使わない
+  "workers_dev": true,
   "preview_urls": false,
 
   "assets": {
@@ -16,18 +17,18 @@
     "run_worker_first": ["/api", "/api/*"]
   },
 
-  // 家族で1つのデータ（キー family:v2）。
-  // id はデプロイの前に `npx wrangler kv namespace create FAMILY` で作った値に書きかえる（wrangler dev は id なしでも手元の偽 KV で動く）
+  // 家族で1つのデータ（キー family:v2）。KV 名前空間「manabi-family」
+  // （wrangler dev は手元の偽 KV で動く）
   "kv_namespaces": [
-    { "binding": "FAMILY" }
+    { "binding": "FAMILY", "id": "d77e114ef6ba40d4a48846eb926dcce6" }
   ],
 
-  // Cloudflare Access の検証（worker/access.ts）。デプロイ前に入れる:
-  //   ACCESS_TEAM_DOMAIN … https://<team>.cloudflareaccess.com
-  //   ACCESS_AUD         … Access アプリケーションの AUD タグ
-  // 2つとも空のときは localhost（wrangler dev）だけ検証なしで通し、それ以外は 500 で断る
+  // Cloudflare Access の検証（worker/access.ts）
+  //   ACCESS_TEAM_DOMAIN … チームのドメイン
+  //   ACCESS_AUD         … manabi-survivor 用 Access アプリの AUD タグ
+  // localhost（wrangler dev）も同じ値で検証するので、手元で API を試すときは2つを空にする
   "vars": {
-    "ACCESS_TEAM_DOMAIN": "",
-    "ACCESS_AUD": ""
+    "ACCESS_TEAM_DOMAIN": "https://patient-hill-b5d0.cloudflareaccess.com",
+    "ACCESS_AUD": "e8742e0c6e0d62364b825ad5893f1fe4908c6c282dd8786326f93ec45c2fe43d"
   }
 }
