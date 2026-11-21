@@ -3,7 +3,7 @@ import { gradeRank } from '../state/types';
 import type { Category, Selection, StudyDef } from '../studies/types';
 import type { Answer, Question } from './types';
 import { shuffle, type Rng } from './random';
-import { cardCoins, updateCard } from './srs';
+import { updateCard } from './srs';
 
 // 問題の選び方（Anki と同じ考え方。docs/03-rewards-and-games.md）
 // 1. 復習の日が来た問題（定着していないもの・期限が古いものから）
@@ -29,7 +29,7 @@ export function setLength(study: StudyDef, sel: Selection, questLength: number):
 export function planSet(study: StudyDef, p: Profile, sel: Selection, length: number, today: string, slowMs = Infinity): Pick[] {
   const cats = selectedCategories(study, sel);
   const mixed = !sel.category;
-  // 自分の学年のまぜこぜには、下の学年の「始めていて、復習の日が来た問題」もまぜる（コインは減らさない）
+  // 自分の学年のまぜこぜには、下の学年の「始めていて、復習の日が来た問題」もまぜる
   const reviewCats = mixed && sel.grade === p.grade
     ? [...cats, ...study.categories.filter(c => gradeRank(c.grade) < gradeRank(p.grade))]
     : cats;
@@ -128,16 +128,13 @@ export function firstBox(q: Question): number | undefined {
   return q.kind === 'choice' ? 4 : 5;
 }
 
-// 答えを記録する。もどり値はこの問題のコイン（倍率をかける前。docs/03-rewards-and-games.md）
-// retry: まちがえた問題を、同じセットの最後にもう一度出したもの（コインなし）
+// 答えを記録する
 // slowMs: ドリルのとき。これより遅い正解は「まだ速くない」とみなし、答えた時間も記録する
-export function applyAnswer(p: Profile, q: Question, a: Answer, today: string, opts: { retry?: boolean; slowMs?: number } = {}): number {
+export function applyAnswer(p: Profile, q: Question, a: Answer, today: string, opts: { slowMs?: number } = {}): void {
   const drill = opts.slowMs != null;
   const slow = drill && a.correct && !a.helped && (a.ms ?? 0) > opts.slowMs!;
   const good = a.correct && !a.helped && !slow;
-  const coins = opts.retry ? 0 : good ? cardCoins(p.cards[q.card], today) : a.correct ? 1 : 0;
   const jumpTo = good && !p.cards[q.card] ? firstBox(q) : undefined;
   updateCard(p, q.card, good ? 'good' : slow ? 'slow' : 'bad', today, drill ? a.ms : undefined, jumpTo);
   if (a.correct) p.stats.correct++;
-  return coins;
 }

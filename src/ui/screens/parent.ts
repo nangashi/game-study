@@ -1,5 +1,4 @@
 import { newProfile, save, store } from '../../state/store';
-import { GAMES } from '../../games/registry';
 import type { Grade, Profile } from '../../state/types';
 import type { Tolerance } from '../../learn/handwriting/judge';
 import { h, hero, ico, mount, overlay } from '../dom';
@@ -57,14 +56,11 @@ function profileSection(p: Profile): HTMLElement {
     h('label', {}, '手書きの判定', select(TOLS, p.tolerance, v => { p.tolerance = v; save(); })),
     h('table', {},
       h('tr', {}, h('th', { textContent: 'クエスト' }), h('td', { textContent: `${p.stats.quests}回（正解 ${p.stats.correct}問）` })),
-      ...GAMES.filter(g => p.games[g.id]).map(g => h('tr', {}, h('th', { textContent: g.name }),
-        h('td', { textContent: `${p.games[g.id].plays}回（クリア ${p.games[g.id].clears}回、ステージ ${p.games[g.id].stage}）` }))),
       h('tr', {}, h('th', { textContent: '覚えた字（2回以上連続で正解）' }), h('td', { textContent: `ひらがな ${learned('hira')} / カタカナ ${learned('kata')} / 漢字 ${learned('kanji')}` })),
       h('tr', {}, h('th', { textContent: '問題' }), h('td', { textContent: `${cards.length}問に挑戦（定着 ${cards.filter(c => c.box >= 3).length}問）` })),
       h('tr', {}, h('th', { textContent: '連続日数' }), h('td', { textContent: `${p.streak.count}日` })),
     ),
     h('div', { class: 'row', style: 'justify-content:flex-start' },
-      h('button', { class: 'pill-btn', onclick: () => { p.tickets++; save(); showParent(); } }, ico('ticket'), ' ゲーム券を1枚あげる'),
       h('button', { class: 'pill-btn', textContent: '削除', onclick: () => {
         if (confirm(`${p.name} のデータを削除しますか？（元に戻せません）`)) { store.removeProfile(p.id); showParent(); }
       } }),
@@ -119,9 +115,6 @@ export function showParent(): void {
     addProfileSection(),
     h('section', {},
       h('h2', { textContent: 'ルール（全員共通）' }),
-      numberField('持てるゲーム券の上限', s.ticketMax, 1, 20, v => { s.ticketMax = v; save(); }),
-      numberField('その日はじめての教科でもらえるゲーム券', s.playsPerSubject, 0, 5, v => { s.playsPerSubject = v; save(); }),
-      numberField('1日にもらえるゲーム券の上限（教科＋きょうのミッション。たっせいミッションはのぞく）', s.ticketsPerDay, 0, 20, v => { s.ticketsPerDay = v; save(); }),
       numberField('1クエストの問題数', s.questLength, 3, 10, v => { s.questLength = v; save(); }),
       numberField('けいさんりょく: この秒数より遅い正解は、もう一度練習する', s.drillSlowSec, 2, 15, v => { s.drillSlowSec = v; save(); }),
     ),

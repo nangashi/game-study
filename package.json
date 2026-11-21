@@ -11,9 +11,6 @@
     "gen:strokes": "node scripts/gen-strokes.mjs",
     "deploy": "npm run build && wrangler deploy"
   },
-  "dependencies": {
-    "phaser": "^4.2.1"
-  },
   "devDependencies": {
     "pngjs": "^7.0.0",
     "sharp": "^0.35.4",

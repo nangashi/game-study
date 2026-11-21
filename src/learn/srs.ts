@@ -17,12 +17,3 @@ export function updateCard(p: Profile, key: string, result: Result, today: strin
   if (time != null) next.ms = time;
   p.cards[key] = next;
 }
-
-// 正解したときのコイン（答える前のカードの状態で決める）。定着していない問題ほど多い
-// はじめて: 4 / 復習の日が来た: 連続正解 0〜1回 4、2〜3回 3、4回以上 2 / 復習の日より前のくり返し: 1
-const DUE_COINS = [4, 4, 3, 3, 2, 2, 2];
-export function cardCoins(card: CardState | undefined, today: string): number {
-  if (!card) return 4;
-  if (card.due > today) return 1;
-  return DUE_COINS[card.box];
-}

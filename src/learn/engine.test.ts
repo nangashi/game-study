@@ -126,18 +126,21 @@ describe('問題の選び方（planSet）', () => {
 });
 
 describe('applyAnswer', () => {
-  it('はじめて・苦手な問題ほどコインが多く、同じ日のくり返しとやりなおしは少ない', () => {
+  it('正解で段が上がり、まちがい・おてほんつきの正解ははじめからになる', () => {
     const p = newProfile('t', 'wizard', 2);
     const q = studyDef('sansu')!.categories[0].make('kazu:3', Math.random, p);
-    expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(4);             // はじめて
-    expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(1);             // 同じ日にもう一度
-    expect(applyAnswer(p, q, { correct: false }, DAY)).toBe(0);
-    expect(applyAnswer(p, q, { correct: true }, DAY, { retry: true })).toBe(0);       // やりなおし
+    applyAnswer(p, q, { correct: true }, DAY);             // はじめて
+    applyAnswer(p, q, { correct: true }, DAY);             // 同じ日にもう一度
+    applyAnswer(p, q, { correct: false }, DAY);
+    expect(p.cards['kazu:3']).toEqual({ box: 0, due: DAY });
+    applyAnswer(p, q, { correct: true }, DAY);             // やりなおし
     expect(p.cards['kazu:3']).toEqual({ box: 1, due: '2026-09-27' });
-    expect(applyAnswer(p, q, { correct: true, helped: true }, DAY)).toBe(1);
+    applyAnswer(p, q, { correct: true, helped: true }, DAY);
     expect(p.cards['kazu:3'].due).toBe(DAY);
+    expect(p.stats.correct).toBe(4);
     p.cards['kazu:3'] = { box: 4, due: DAY };
-    expect(applyAnswer(p, q, { correct: true }, DAY)).toBe(2);             // よく覚えている
+    applyAnswer(p, q, { correct: true }, DAY);             // よく覚えている
+    expect(p.cards['kazu:3']).toEqual({ box: 5, due: '2026-10-10' });
   });
 
   it('はじめてで正解した問題は「おぼえた」にして当面出さない（3択はひかえめ、手書きは飛ばさない）', () => {
@@ -145,7 +148,7 @@ describe('applyAnswer', () => {
     const sansu = studyDef('sansu')!;
     const num = sansu.categories.find(c => c.id === 'add-10')!.make('keisan:4+5', Math.random, p);
     expect(num.kind).toBe('number');
-    expect(applyAnswer(p, num, { correct: true }, DAY)).toBe(4);
+    applyAnswer(p, num, { correct: true }, DAY);
     expect(p.cards['keisan:4+5']).toEqual({ box: 5, due: '2026-10-10' });
     expect(mastery(p, [sansu.categories.find(c => c.id === 'add-10')!], DAY).learned).toBe(1);
     // 2年のドリルでも、日が来るまでは出さない
@@ -193,7 +196,7 @@ describe('けいさんりょく（ドリル）', () => {
     const cat = sansu.categories.find(c => c.id === 'drill-2')!;
     const q = cat.make('keisan:7×8', Math.random, p);
     p.cards['keisan:7×8'] = { box: 3, due: DAY };
-    expect(applyAnswer(p, q, { correct: true, ms: 9000 }, DAY, { slowMs: 5000 })).toBe(1);
+    applyAnswer(p, q, { correct: true, ms: 9000 }, DAY, { slowMs: 5000 });
     expect(p.cards['keisan:7×8']).toEqual({ box: 3, due: '2026-09-27', ms: 9000 });
     // 次の日より前でも、遅かった問題を新しい問題より先に出す
     p.cards['keisan:3×4'] = { box: 3, due: '2026-10-10', ms: 1200 };

@@ -2,7 +2,6 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  build: { chunkSizeWarningLimit: 1600 }, // Phaser は約1.2MB（バトル画面を開いたときだけ読む）
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',

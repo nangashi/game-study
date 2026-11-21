@@ -1,4 +1,4 @@
-// 土台（プラットフォーム）の画像。ゲームの画像は src/games/<id>/assets.gen.ts
+// 土台（プラットフォーム）の画像
 // 元の生成画像と並べ方は art/common/art.json（docs/02-asset-generation.md）
 import { SHEETS } from './assets/common.gen';
 import { spriteHtml, spriteStyle } from './assets/sprite';

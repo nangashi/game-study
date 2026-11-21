@@ -64,7 +64,7 @@ export function hisashiburiCats(p: Profile, today: string): CatRef[] {
 export const hisashiburiBest = (p: Profile, cats: CatRef[]) =>
   Math.max(0, ...cats.map(x => p.daily.cats[catKey(x.study.id, x.cat.id)] ?? 0));
 
-// ミッションの画面とえらぶ画面で すすめる ひさしぶりのカテゴリ（たっせいしたら出さない）
+// えらぶ画面で すすめる ひさしぶりのカテゴリ（たっせいしたら出さない）
 export function suggestedCats(p: Profile, today: string): CatRef[] {
   rollDaily(p, today);
   const cats = hisashiburiCats(p, today);
