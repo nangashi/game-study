@@ -223,7 +223,7 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 /* ---------- プレイ（けいさんの問題・書き取り） ---------- */
 .play-screen {
   display: flex; flex-direction: column; height: 100svh; height: 100dvh; max-width: 560px; margin: 0 auto; width: 100%;
-  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px calc(32px + env(safe-area-inset-bottom, 0px));
 }
 .play-top { display: flex; align-items: center; gap: 10px; }
 .play-theme {
