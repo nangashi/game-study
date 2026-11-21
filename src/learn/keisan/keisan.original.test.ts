@@ -35,8 +35,13 @@ describe('ステージと問題の作り方が元と同じ', () => {
       s43: 'まとめ⑤ たし・ひき・かけ',
       s47: 'まとめ⑥ 全部の ふくしゅう',
     };
+    // 例は s47 だけ変えた（元は s43 と同じ例だったため。承認済み）
+    const RESAMPLED: Record<string, string> = {
+      s47: '56 ÷ 8 / 478 ＋ 586',
+    };
+    expect(orig.find(s => s.id === 's47').sample).toBe('7 × 6 / 45 ＋ 38');
     expect(STAGES.map(s => ({ id: s.id, num: s.num, name: s.name, theme: s.theme, sample: s.sample, color: s.color, matome: !!s.matome, paper: !!s.paper })))
-      .toEqual(orig.map(s => ({ id: s.id, num: s.num, name: RENAMED[s.id] ?? s.name, theme: s.theme, sample: s.sample, color: s.color, matome: !!s.matome, paper: !!s.paper })));
+      .toEqual(orig.map(s => ({ id: s.id, num: s.num, name: RENAMED[s.id] ?? s.name, theme: s.theme, sample: RESAMPLED[s.id] ?? s.sample, color: s.color, matome: !!s.matome, paper: !!s.paper })));
     // テーマ（内部のメタ情報）は残している
     expect(STAGES.filter(s => ['s25', 's26', 's27', 's28', 's44', 's45'].includes(s.id)).map(s => s.theme)).toEqual([
       'くり上がり 0〜1回', 'くり下がり 0〜1回', 'くり上がり 2回以上', 'くり下がり 2回以上',

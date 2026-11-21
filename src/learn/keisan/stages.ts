@@ -4,6 +4,7 @@ import type { Gen } from './generators';
 // けいさんの道（1本の道・全47ステージ）。算数練習アプリの STAGES をそのまま移したもの
 // id は保存データのキーになるので変えない。num は道の上の番号（1〜47）
 // name は13件（s3・s7・s15・s22〜s29・s43・s47）だけ見やすい名前に変えた。ほかは元のまま
+// sample は s47 だけ変えた（元は s43 と同じ例だったため）
 
 export interface KeisanStage {
   id: string;        // 's1'〜's47'
@@ -67,7 +68,7 @@ const DEFS: Def[] = [
   { id: 's44', name: 'わり算① やさしい段', theme: '2・5・3・1の段の ぎゃく', sample: '10 ÷ 5', gen: g.gDivEasy, color: C_MUL },
   { id: 's45', name: 'わり算② むずかしい段', theme: '4・6・7・8・9の段の ぎゃく', sample: '24 ÷ 6', gen: g.gDivHard, color: C_MUL },
   { id: 's46', name: 'くふう④ 3つの数の 混合', theme: 'くふう 総合', sample: '37 ＋ 28 ＋ 63', gen: g.gKufuMix, color: C_KUFU },
-  { id: 's47', name: 'まとめ⑥ 全部の ふくしゅう', theme: '全部の ふくしゅう', sample: '7 × 6 / 45 ＋ 38', gen: g.gMatome6, color: C_MAT, matome: true },
+  { id: 's47', name: 'まとめ⑥ 全部の ふくしゅう', theme: '全部の ふくしゅう', sample: '56 ÷ 8 / 478 ＋ 586', gen: g.gMatome6, color: C_MAT, matome: true },
 ];
 
 export const STAGES: readonly KeisanStage[] = DEFS.map((d, i) => ({ ...d, num: i + 1 }));
