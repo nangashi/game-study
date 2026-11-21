@@ -12,6 +12,7 @@ import {
   BATSU_SVG, LOCK_SVG, MARU_SVG, PLAY_SVG, SOUND_OFF_SVG, SOUND_ON_SVG, avatarOf, mascotSVG, starsHTML, type Mood,
 } from '../mascot';
 import { ensureAudio, sndClear, sndCorrect, sndTap, sndWrong, tap } from '../sound';
+import { burst } from '../widgets/burst';
 import { showChildren } from './children';
 import { showThemes } from './themes';
 
@@ -257,27 +258,6 @@ function showMark(s: Session, ok: boolean) {
   s.v.mark.classList.add('show');
 }
 
-// 紙吹雪（見た目だけなので Math.random のまま）
-function burst(s: Session) {
-  if (REDUCED) return;
-  const box = s.v.burst;
-  box.replaceChildren();
-  const colors = ['#2a9d8f', '#ffb703', '#ef476f', '#4a90d9', '#9b5de5', '#fb8500'];
-  const n = s.combo >= 5 ? 26 : s.combo >= 3 ? 18 : 12;
-  for (let i = 0; i < n; i++) {
-    const el = h('i', { style: `background:${colors[Math.floor(Math.random() * colors.length)]}` });
-    if (Math.random() < 0.4) el.style.borderRadius = '50%';
-    box.append(el);
-    const ang = Math.random() * Math.PI * 2, dist = 60 + Math.random() * 110;
-    const dx = Math.cos(ang) * dist, dy = Math.sin(ang) * dist - 30;
-    el.animate?.([
-      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
-      { transform: `translate(${dx}px,${dy + 70}px) rotate(${Math.random() * 360 - 180}deg)`, opacity: 0 },
-    ], { duration: 480 + Math.random() * 220, easing: 'cubic-bezier(.17,.67,.35,1)' });
-  }
-  setTimeout(() => box.replaceChildren(), 800);
-}
-
 function submitAnswer(s: Session) {
   if (s.input === '') return;
   s.locked = true;
@@ -290,7 +270,7 @@ function submitAnswer(s: Session) {
     s.v.answer.classList.add('good');
     showMark(s, true);
     setMascot(s, 'happy');
-    burst(s);
+    burst(s.v.burst, s.combo);
     sndCorrect(s.combo);
   } else {
     s.combo = 0;

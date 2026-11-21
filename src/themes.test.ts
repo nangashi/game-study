@@ -12,4 +12,20 @@ describe('テーマ', () => {
     c = recordUnitResult(c, 'hira:e5', 2, true);
     expect(themeStars(c, 'hira')).toEqual({ stars: 5, max: 45 });
   });
+
+  it('かずが選べるようになり、単元数（7）と星の最大（21）が出る。ほかの「あとで ふえる」はそのまま', () => {
+    const sansu = SUBJECTS[1].themes;
+    const kazu = sansu.find(t => t.name === 'かず')!;
+    expect(kazu.id).toBe('kazu');
+    expect(kazu.desc).toBe('かず・ぶんすう・しょうすう ・ 7たんげん');
+    expect(sansu.filter(t => t.id === null).map(t => t.name)).toEqual(['はかる', 'かたちと グラフ', 'ぶんしょうだい']);
+    expect(SUBJECTS[0].themes.filter(t => t.id === null).map(t => t.name)).toEqual(['かんじ', 'ことば', 'よむ']);
+    let c = newChild('a', { name: 'はなこ' }, 0);
+    expect(themeStars(c, 'kazu')).toEqual({ stars: 0, max: 21 });
+    c = recordUnitResult(c, 'kazu:n100', 3, true);
+    c = recordUnitResult(c, 'kazu:shosu', 1, true);
+    c = recordUnitResult(c, 'hira:a', 2, true); // ほかのテーマの星は入らない
+    expect(themeStars(c, 'kazu')).toEqual({ stars: 4, max: 21 });
+    expect(themeStars(c, 'hira')).toEqual({ stars: 2, max: 45 });
+  });
 });

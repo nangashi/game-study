@@ -23,7 +23,7 @@ FamilyRecords { version: 2, resetAt, children: { [子どもの id]: ChildRecord 
 ChildRecord {
   id, createdAt,                       // createdAt はならび順
   settings: { value: { name, avatar, tolerance, sound, removed }, at },
-  units: { [単元 id]: { stars, cleared } },          // けいさん以外
+  units: { [単元 id]: { stars, cleared } },          // けいさん以外（'hira:a'・'kazu:n100' など）
   keisan: {
     stages: { [ステージ id]: { cleared, stars, bestScore, bestTime } },  // 算数練習アプリと同じ
     playableThrough, testDone,
@@ -70,7 +70,7 @@ ChildRecord {
 - `GET /api/family`: KV（キー `family:v2`）のデータ。なければ空。
 - `PUT /api/family`: 送られたデータ（`version: 2` でなければ 400、512KB まで）を KV のデータと `mergeFamily` で合わせて保存し、合わせた結果を返す。合わせても変わらなければ KV に書かない。
   - KV には「読んで・合わせて・書く」の排他がないので、同時に2台が送ると片方の分がサーバーに残らないことがある。端末は自分の記録を持ったまま次の結果画面でまた全部を送るので、そのときに戻る。
-- 端末: 起動時に GET して合わせる（最初の画面のままなら描きなおす）。送るのは **結果画面（けいさんのステージ・ちからだめし・ひらがな）と全消しのときだけ**（KV の書き込み上限のため）。名前の変更・子どもの登録・ちからだめしの休けいは、端末に保存して次の結果画面で一緒に送る。サーバーと同じなら送らない。送っている間に次の結果が来たら、終わってから1回だけ送る。自動の再送はしない。
+- 端末: 起動時に GET して合わせる（最初の画面のままなら描きなおす）。送るのは **結果画面（けいさんのステージ・ちからだめし・かず・ひらがな）と全消しのときだけ**（KV の書き込み上限のため）。名前の変更・子どもの登録・ちからだめしの休けいは、端末に保存して次の結果画面で一緒に送る。サーバーと同じなら送らない。送っている間に次の結果が来たら、終わってから1回だけ送る。自動の再送はしない。
 - 失敗（オフライン・ログイン切れ・サーバーのエラー）しても遊びは止めず、画面の下のすみに小さく出す（`src/ui/sync-note.ts`）。ログイン切れ（401・403・ログイン画面への転送・HTML が返る）はタップで読み込みなおし（Access のログインへ）。
 - テスト: `worker/api.test.ts`（偽の KV で GET・PUT・サーバーでの合わせ方・全消し）、`worker/access.test.ts`（自前で署名した JWT）、`src/records/sync.test.ts`（端末2台とサーバーをつないで）。
 - PWA: `/api` は Service Worker のキャッシュにも、画面遷移のフォールバック（index.html）にも入れない。

@@ -1,10 +1,11 @@
 import { STAGES } from './learn/keisan';
 import { HIRA_UNITS } from './learn/hiragana';
+import { KAZU_UNITS } from './learn/kazu';
 import type { ChildRecord } from './records';
 
-// 教科 → テーマ。中身があるのは「ひらがな」（ひらがなを かく）と「けいさん」だけ。ほかは「あとで ふえる」
+// 教科 → テーマ。中身があるのは「ひらがな」（ひらがなを かく）・「かず」・「けいさん」。ほかは「あとで ふえる」
 
-export type ThemeId = 'hira' | 'keisan';
+export type ThemeId = 'hira' | 'kazu' | 'keisan';
 
 export interface ThemeDef {
   id: ThemeId | null;  // null は中身がまだない
@@ -30,7 +31,7 @@ export const SUBJECTS: SubjectDef[] = [
   },
   {
     id: 'sansu', name: 'さんすう', themes: [
-      { id: null, name: 'かず', mark: 'か', desc: 'かずを かぞえる' },
+      { id: 'kazu', name: 'かず', mark: 'か', desc: `かず・ぶんすう・しょうすう ・ ${KAZU_UNITS.length}たんげん` },
       { id: 'keisan', name: 'けいさん', mark: 'け', desc: `たしざん・ひきざん・かけざん ・ ${STAGES.length}ステージ` },
       { id: null, name: 'はかる', mark: 'は', desc: 'ながさ・じかん・かさ' },
       { id: null, name: 'かたちと グラフ', mark: 'か', desc: 'かたち・グラフを よむ' },
@@ -44,5 +45,6 @@ export function themeStars(c: ChildRecord, id: ThemeId): { stars: number; max: n
   if (id === 'keisan') {
     return { stars: STAGES.reduce((n, s) => n + (c.keisan.stages[s.id]?.stars ?? 0), 0), max: STAGES.length * 3 };
   }
-  return { stars: HIRA_UNITS.reduce((n, u) => n + (c.units[u.id]?.stars ?? 0), 0), max: HIRA_UNITS.length * 3 };
+  const units = id === 'kazu' ? KAZU_UNITS : HIRA_UNITS;
+  return { stars: units.reduce((n, u) => n + (c.units[u.id]?.stars ?? 0), 0), max: units.length * 3 };
 }

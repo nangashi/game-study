@@ -12,13 +12,14 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 - できているもの
   - 新しい画面（`src/ui/screens/`）: 子ども選択 → テーマ → 道 → 問題／書き取り → 結果、設定（子ども選択の歯車）
   - 算数「けいさん」の道（47ステージ）とちからだめし: 算数練習アプリから移植（`src/learn/keisan/`）。仕様は [docs/03-keisan.md](docs/03-keisan.md)
+  - 算数「かず」の道（7単元）。問題形式は「かず 問題形式モック」のまま（`src/learn/kazu/`）。仕様は [docs/05-kazu.md](docs/05-kazu.md)
   - 国語「ひらがなを かく」（`src/learn/hiragana.ts`、判定は `src/learn/handwriting/`）
   - 記録（`src/records/`、キー `manabi:v2`）と、Worker + KV での家族共有（`worker/`）。仕様は [docs/04-records.md](docs/04-records.md)
 - これから: Cloudflare への実際のデプロイ（KV の作成・Access の設定・GitHub Secrets）
 
 ### MVP でやること
 
-- 教科 → テーマ → 一本道の単元。中身は算数「けいさん」と国語「ひらがなを かく」の2つ。ほかのテーマは「あとで ふえる」
+- 教科 → テーマ → 一本道の単元。中身は算数「けいさん」「かず」と国語「ひらがなを かく」の3つ。ほかのテーマは「あとで ふえる」
 - 何をやるかは子どもが自分で選ぶ。道の単元はどれでも選べる（先の単元は警告つき）
 - 結果は星（0〜3）とクリア。けいさんはベストタイムも残す
 
@@ -48,6 +49,7 @@ src/
   records/        記録（形・合わせ方 mergeFamily・端末への保存・Worker との同期）
   learn/
     keisan/       けいさんの道（ステージ・問題の作り方・10問セット・星とクリア・ちからだめし）
+    kazu/         かずの道（7単元・問題の作り方・10問セット）
     handwriting/  手書きの判定と筆順データ（KanjiVG）
     math.ts kokugo.ts   旧まなびランドの問題（ほかのテーマを足すときの材料。いまは画面から使っていない）
   studies/        旧まなびランドの教科・カテゴリ

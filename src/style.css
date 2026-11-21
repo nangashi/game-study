@@ -393,3 +393,55 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
   text-align: left; cursor: pointer;
 }
 .sync-note.auth { background: rgba(163, 18, 58, .9); }
+
+/* ---------- かず（問題形式は「かず 問題形式モック」のまま。色はこのアプリのもの） ---------- */
+.kz-screen { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+.kz-area { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
+.kz-card .mascot-row { min-height: 70px; }
+.kz-card .mascot-box { width: 70px; height: 70px; }
+.kz-body { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.kz-fig { max-width: 100%; }
+.kz-fig svg { max-width: 100%; height: auto; }
+.kz-line {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 10px;
+  font-size: 1.6rem; font-weight: 800; line-height: 1.5; font-variant-numeric: tabular-nums;
+}
+.kz-small { font-size: 1rem; font-weight: 700; color: var(--ink-soft); }
+.kz-field {
+  min-width: 88px; height: 60px; min-height: 60px; padding: 0 12px; border-radius: 14px;
+  background: var(--teal-soft); border: 3px dashed var(--teal); color: var(--teal-dark);
+  font-size: 1.9rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; justify-content: center; vertical-align: middle;
+}
+.kz-field.active { border-style: solid; border-color: var(--orange-dark); background: var(--orange-soft); box-shadow: 0 0 0 4px rgba(255,183,3,.35); }
+.kz-field.good { border-style: solid; border-color: var(--teal); background: var(--teal); color: #fff; animation: pop .3s ease; }
+.kz-field.bad { border-style: solid; border-color: var(--red); background: var(--red-soft); color: var(--red); animation: shake .4s ease; }
+.kz-frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.25; font-weight: 800; }
+.kz-fnum { padding: 0 8px 3px; border-bottom: 3px solid currentColor; display: flex; justify-content: center; }
+.kz-fden { padding: 3px 8px 0; display: flex; justify-content: center; }
+.kz-frac .kz-field { min-width: 72px; height: 52px; min-height: 56px; font-size: 1.6rem; }
+.kz-choices { display: flex; flex-wrap: wrap; gap: 12px; width: 100%; margin-top: 4px; }
+.kz-choice {
+  flex: 1 1 120px; min-width: 0; min-height: 76px; padding: 10px; border-radius: 18px; background: #fff;
+  border: 3px solid #cfe4e9; box-shadow: 0 4px 0 rgba(23,50,62,.12); color: var(--ink);
+  font-size: 1.9rem; font-weight: 800; font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; justify-content: center;
+}
+.kz-choice:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(23,50,62,.12); }
+.kz-choice.words { font-size: 1.5rem; }
+.kz-choice.figure { padding: 8px; }
+.kz-choice .kz-ofig svg { max-width: 100%; height: auto; }
+.kz-choice.good { background: var(--teal-soft); border-color: var(--teal); color: var(--teal-dark); }
+.kz-choice.bad { background: var(--red-soft); border-color: var(--red); color: var(--red); animation: shake .4s ease; }
+.kz-choice.dim { opacity: .45; }
+.kz-note-ans { display: inline-flex; vertical-align: middle; font-size: 1.6rem; }
+.kz-pad { flex: none; background: #fff; border-radius: 22px 22px 0 0; margin: 0 -14px; padding: 8px 14px 0; box-shadow: 0 -6px 18px rgba(23,50,62,.10); }
+.kz-pad[hidden] { display: none; }
+.kz-pad .keypad { margin-top: 0; padding-top: 4px; }
+.kz-pad-head { display: flex; align-items: center; justify-content: space-between; }
+.kz-pad-title { font-weight: 800; color: var(--ink-soft); font-size: 1rem; }
+.kz-pad-close { border: 2px solid #cfe4e9; background: #f7fcfd; border-radius: 999px; padding: 2px 16px; font-weight: 800; font-size: 1rem; }
+.kz-dot { visibility: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .kz-field.good, .kz-field.bad, .kz-choice.bad { animation: none; }
+}

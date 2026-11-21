@@ -5,10 +5,12 @@ import { avatarOf } from '../mascot';
 import { tap } from '../sound';
 import { showChildren } from './children';
 import { showHiraMap } from './hira';
+import { showKazuMap } from './kazu';
 import { showKeisanMap } from './keisan';
 
-// テーマ選択（合意モックどおり。中身があるのは けいさん と ひらがな だけ）
-const MARK_COLOR: Record<ThemeId, string> = { hira: '#e11d48', keisan: '#0891b2' };
+// テーマ選択（合意モックどおり。中身があるのは ひらがな・かず・けいさん）
+const MARK_COLOR: Record<ThemeId, string> = { hira: '#e11d48', kazu: '#0891b2', keisan: '#0891b2' };
+const OPEN: Record<ThemeId, () => void> = { hira: showHiraMap, kazu: showKazuMap, keisan: showKeisanMap };
 
 export function showThemes(): void {
   const c = current();
@@ -33,7 +35,7 @@ export function showThemes(): void {
       `★${stars}`, h('span', { class: 'off', textContent: `/${max}` }));
     return h('button', {
       class: 'theme-btn', type: 'button',
-      onclick: () => { tap(); if (id === 'keisan') showKeisanMap(); else showHiraMap(); },
+      onclick: () => { tap(); OPEN[id](); },
     },
     h('span', { class: 'dot', style: `background:${MARK_COLOR[id]}`, textContent: t.mark }),
     meta(t),
