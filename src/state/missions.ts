@@ -3,14 +3,10 @@ import { GRADES, gradeRank, type Grade } from './types';
 import { mastery, selectedCategories } from '../learn/engine';
 import { STUDIES } from '../studies/registry';
 import type { Category, StudyDef } from '../studies/types';
-import { addDays, rollDaily } from './store';
+import { rollDaily } from './store';
+import { HISASHIBURI_GOAL, hisashiburiBest, hisashiburiCats, recordCorrect } from './records';
 
 // ミッションとゲーム券の受け取り（docs/03-rewards-and-games.md の「ゲーム券」）
-
-export const HISASHIBURI_DAYS = 3;  // これだけの日数やっていないカテゴリが「ひさしぶり」
-export const HISASHIBURI_GOAL = 2;  // その日に正解する数
-
-export const catKey = (study: string, cat: string) => `${study}:${cat}`;
 
 // 券入れに空きがあるか / きょう、まだ券がもらえるか
 export const hasRoom = (p: Profile, s: Settings) => p.tickets < s.ticketMax;
@@ -20,9 +16,7 @@ export const todayLeft = (p: Profile, s: Settings) => Math.max(0, s.ticketsPerDa
 // review: 答える前に、復習の日が来ていた問題
 export function noteCorrect(p: Profile, study: string, cat: Category, review: boolean, today: string): void {
   if (cat.drill) return;
-  rollDaily(p, today);
-  const key = catKey(study, cat.id);
-  p.daily.cats[key] = (p.daily.cats[key] ?? 0) + 1;
+  recordCorrect(p, study, cat, today);
   if (review) p.daily.reviews++;
 }
 
@@ -30,32 +24,8 @@ export function noteCorrect(p: Profile, study: string, cat: Category, review: bo
 
 export type DailyId = 'hisashiburi' | 'fukushu';
 export interface DailyMission { id: DailyId; progress: number; goal: number; done: boolean; claimed: boolean }
-export interface CatRef { study: StudyDef; cat: Category }
-
-// ひさしぶりのカテゴリ（下の学年・ドリル・ぜんぶ おぼえたカテゴリはのぞく）
-// catLast はきのうまでの記録なので、きょうやっても外れない
-export function isHisashiburi(p: Profile, study: StudyDef, c: Category, today: string): boolean {
-  if (c.drill || gradeRank(c.grade) < gradeRank(p.grade)) return false;
-  const last = p.catLast[catKey(study.id, c.id)];
-  if (last && last > addDays(today, -HISASHIBURI_DAYS)) return false;
-  const m = mastery(p, [c], today);
-  return m.learned < m.total;
-}
-
-// ひさしぶりのカテゴリ。自分の学年 → 上の学年。始めていて やっていない日が長いもの → まだ始めていないもの
-export function hisashiburiCats(p: Profile, today: string): CatRef[] {
-  const all = STUDIES.flatMap(study => study.categories.filter(c => isHisashiburi(p, study, c, today)).map(cat => ({ study, cat })));
-  const last = (x: CatRef) => p.catLast[catKey(x.study.id, x.cat.id)] ?? '9999';
-  return all.sort((a, b) => Number(a.cat.grade !== p.grade) - Number(b.cat.grade !== p.grade) || last(a).localeCompare(last(b)));
-}
-
-// ミッションの画面とえらぶ画面で すすめる ひさしぶりのカテゴリ（たっせいしたら出さない）
-export const HISASHIBURI_SHOW = 3;
-export function suggestedCats(p: Profile, today: string): CatRef[] {
-  return dailyMissions(p, today).some(m => m.id === 'hisashiburi' && !m.done) ? hisashiburiCats(p, today).slice(0, HISASHIBURI_SHOW) : [];
-}
-
 // きょうのミッション。できないもの（ひさしぶりのカテゴリがない・復習がない）は出さない
+// ひさしぶりのカテゴリは records.ts（学習の案内）
 export function dailyMissions(p: Profile, today: string): DailyMission[] {
   rollDaily(p, today);
   const d = p.daily;
@@ -63,7 +33,7 @@ export function dailyMissions(p: Profile, today: string): DailyMission[] {
     ({ id, progress: Math.min(progress, goal), goal, done: progress >= goal, claimed: d.claimed.includes(id) });
   const out: DailyMission[] = [];
   const cats = hisashiburiCats(p, today);
-  if (cats.length) out.push(make('hisashiburi', Math.max(0, ...cats.map(x => d.cats[catKey(x.study.id, x.cat.id)] ?? 0)), HISASHIBURI_GOAL));
+  if (cats.length) out.push(make('hisashiburi', hisashiburiBest(p, cats), HISASHIBURI_GOAL));
   if (d.reviewGoal > 0) out.push(make('fukushu', d.reviews, d.reviewGoal));
   return out;
 }

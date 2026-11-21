@@ -1,8 +1,8 @@
 import type { Profile, Settings } from './types';
-import { gradeRank } from './types';
 import type { Selection } from '../studies/types';
 import type { GameContext, GameDef, GameResult, GameReward, UpgradeDef } from '../games/types';
-import { gameProgress, rollDaily, touchStreak } from './store';
+import { gameProgress } from './store';
+import { finishQuest, isLowerGrade } from './records';
 import { checkAchievements } from './missions';
 
 // ごほうびの決まりは docs/03-rewards-and-games.md
@@ -14,7 +14,6 @@ export const GAME_COINS = { play: 3, firstClear: 25, replayClear: 8 };
 // ドリルは10問で、1問がすぐ終わるので低め（10問ぜんぶ新しい問題でも、まぜこぜ5問より少なくなる）
 export const RATE = { mixed: 1, category: 0.7, drill: 0.5, lower: 0.3 };
 
-export const isLowerGrade = (p: Profile, sel: Selection) => gradeRank(sel.grade) < gradeRank(p.grade);
 export const selectionRate = (p: Profile, sel: Selection) =>
   isLowerGrade(p, sel) ? RATE.lower : sel.drill ? RATE.drill : sel.category ? RATE.category : RATE.mixed;
 
@@ -28,11 +27,10 @@ export interface QuestReward { coins: number; tickets: number; pending: number; 
 // クエストのごほうび。answerCoins は問題ごとのコインの合計（applyAnswer のもどり値）
 // ゲーム券は、その日はじめてやった教科のときだけ。下の学年・ドリルは券なし
 export function questReward(p: Profile, s: Settings, sel: Selection, answerCoins: number, today: string): QuestReward {
-  rollDaily(p, today);
-  touchStreak(p, today);
+  // 記録（きょうの記録・連続日数・回数）は records.ts。newSubject は きょうはじめての教科か
+  const { newSubject } = finishQuest(p, sel, today);
   let tickets = 0, pending = 0;
-  if (!isLowerGrade(p, sel) && !sel.drill && !p.daily.subjects.includes(sel.study)) {
-    p.daily.subjects.push(sel.study);
+  if (newSubject) {
     tickets = Math.max(0, Math.min(s.playsPerSubject, s.ticketsPerDay - p.daily.ticketsEarned));
     pending = Math.min(tickets, Math.max(0, tickets - (s.ticketMax - p.tickets)));
   }
@@ -41,8 +39,6 @@ export function questReward(p: Profile, s: Settings, sel: Selection, answerCoins
   p.tickets += tickets - pending;
   p.daily.pending += pending;
   p.daily.ticketsEarned += tickets;
-  p.daily.quests++;
-  p.stats.quests++;
   return { coins, tickets, pending, achieved: checkAchievements(p, today) };
 }
 

@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { STUDIES } from '../studies/registry';
 import { questReward } from './economy';
 import {
-  checkAchievements, claimAchievement, claimDaily, claimableCount, dailyMissions, hisashiburiCats, isHisashiburi, noteCorrect,
+  checkAchievements, claimAchievement, claimDaily, claimableCount, dailyMissions, noteCorrect,
   streakMilestones,
 } from './missions';
+import { hisashiburiCats, isHisashiburi } from './records';
 import { DEFAULT_SETTINGS, newProfile, rollDaily } from './store';
 
 const kokugo = STUDIES.find(s => s.id === 'kokugo')!;

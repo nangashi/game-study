@@ -1,8 +1,9 @@
 import { mastery } from '../../learn/engine';
 import {
-  achievement, claimAchievement, claimDaily, claimPending, dailyMissions, hasRoom, openAchievements, suggestedCats,
+  achievement, claimAchievement, claimDaily, claimPending, dailyMissions, hasRoom, openAchievements,
   streakMilestones, todayLeft, type Achievement, type DailyMission,
 } from '../../state/missions';
+import { suggestedCats } from '../../state/records';
 import { save, store, today } from '../../state/store';
 import type { Profile } from '../../state/types';
 import { gradeRank } from '../../state/types';

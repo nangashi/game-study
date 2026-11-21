@@ -1,7 +1,7 @@
 import { mastery, planSet, selectedCategories, setLength, type Mastery } from '../../learn/engine';
 import { cardCoins } from '../../learn/srs';
-import { isLowerGrade, questCoins, selectionRate, studyGivesTicket } from '../../state/economy';
-import { suggestedCats } from '../../state/missions';
+import { questCoins, selectionRate, studyGivesTicket } from '../../state/economy';
+import { isLowerGrade, suggestedCats } from '../../state/records';
 import { store, today } from '../../state/store';
 import { GRADES, type Grade, type Profile } from '../../state/types';
 import { studyDef } from '../../studies/registry';
