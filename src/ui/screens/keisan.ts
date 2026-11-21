@@ -134,7 +134,7 @@ let sess: Session | null = null;
 interface PlayView {
   root: HTMLElement; theme: HTMLElement; dots: HTMLElement; num: HTMLElement; ladder: HTMLElement;
   mascot: HTMLElement; combo: HTMLElement; paper: HTMLElement; problem: HTMLElement; answer: HTMLElement;
-  note: HTMLElement; noteAns: HTMLElement; mark: HTMLElement; burst: HTMLElement; toast: HTMLElement;
+  note: HTMLElement; noteAns: HTMLElement; mark: HTMLElement; burst: HTMLElement;
 }
 
 function playView(): PlayView {
@@ -151,7 +151,6 @@ function playView(): PlayView {
     noteAns: h('b'),
     mark: h('div', { class: 'mark-overlay' }),
     burst: h('div', { class: 'burst' }),
-    toast: h('div', { class: 'levelup-toast', textContent: 'レベルアップ！' }),
   };
   const note = h('div', { class: 'correct-note' }, 'こたえは ', v.noteAns);
   const key = (k: string, label: string, cls = 'key') => {
@@ -175,7 +174,7 @@ function playView(): PlayView {
         h('div', { class: 'mascot-row' }, v.mascot, v.combo),
         v.paper, v.problem,
         h('div', { class: 'answer-row' }, h('span', { class: 'eq', textContent: '＝' }), v.answer),
-        note, v.mark, v.burst, v.toast)),
+        note, v.mark, v.burst)),
     keypad);
   return { ...v, note, root };
 }
@@ -442,10 +441,7 @@ function testAfterAnswer(s: Session, ok: boolean) {
 
 function handleOutcome(s: Session, o: TestOutcome) {
   if (o.type === 'question') {
-    if (o.levelUp && !REDUCED) {
-      s.v.toast.classList.add('show');
-      setTimeout(() => { s.v.toast.classList.remove('show'); if (sess === s) testAsk(s); }, 850);
-    } else testAsk(s);
+    testAsk(s);
     return;
   }
   if (o.type === 'end') return endTest(s, o.result);

@@ -67,7 +67,7 @@ export interface TestResult {
 
 export type NextAfterSystem = { type: 'break'; nextSys: number } | { type: 'end'; result: TestResult };
 export type TestOutcome =
-  // 次の問題を出す。levelUp: 段が上がった（「レベルアップ」を出してから）
+  // 次の問題を出す。levelUp: 段が上がった（いまの画面では使わない）
   | { type: 'question'; levelUp: boolean }
   // 系統が終わった（「ここまで登れた！」/「ここは これから」）。そのあと next へ
   | { type: 'systemDone'; sys: number; climbed: number; next: NextAfterSystem }

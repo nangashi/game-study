@@ -308,13 +308,6 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .test-ladder .tl-dots i.done { background: var(--teal); }
 .test-ladder .tl-dots i.now { background: var(--orange); }
 .test-ladder .tl-count { color: var(--teal-dark); white-space: nowrap; font-size: .92rem; }
-.levelup-toast {
-  position: absolute; top: 10px; left: 50%; transform: translateX(-50%) scale(.6);
-  background: var(--orange); color: #5b3a00; font-weight: 800; font-size: 1.25rem;
-  border-radius: 999px; padding: .35em 1.1em; box-shadow: 0 4px 0 var(--orange-dark);
-  opacity: 0; pointer-events: none; z-index: 7; white-space: nowrap;
-}
-.levelup-toast.show { opacity: 1; transform: translateX(-50%) scale(1); animation: pop .3s ease; }
 .test-result-list { display: grid; gap: 10px; margin-top: 14px; }
 .test-result-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
 .test-result-item .tdot { width: 16px; height: 16px; border-radius: 5px; flex: none; }
