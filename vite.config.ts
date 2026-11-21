@@ -13,7 +13,7 @@ export default defineConfig({
         name: 'まなびランド',
         short_name: 'まなびランド',
         lang: 'ja',
-        display: 'fullscreen',
+        display: 'standalone',
         orientation: 'any',
         background_color: '#fff7e6',
         theme_color: '#fff7e6',
