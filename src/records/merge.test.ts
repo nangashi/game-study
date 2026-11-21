@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../learn/keisan/__original__/harness';
 import type { Rng } from '../learn/random';
 import { mergeFamily, mergeStamped } from './merge';
-import { finishKeisanStage, newChild, normalizeFamily, updateSettings } from './model';
+import { emptyFamily, finishKeisanStage, newChild, normalizeFamily, recordUnitResult, resetFamily, updateSettings } from './model';
 import { stageByNum } from '../learn/keisan';
 import type { ChildRecord, FamilyRecords, Stamped } from './types';
 import { RECORDS_VERSION } from './types';
@@ -40,11 +40,16 @@ function randChild(r: Rng, id: string): ChildRecord {
 
 function randFamily(r: Rng): FamilyRecords {
   const ids = some(r, ['a', 'b', 'c']);
-  return { version: RECORDS_VERSION, children: Object.fromEntries(ids.map(id => [id, randChild(r, id)])) };
+  // 全消しの印は、たいてい同じ（0）で、ときどき新しい
+  const resetAt = r() < 0.7 ? 0 : int(r, 1, 2);
+  return { version: RECORDS_VERSION, resetAt, children: Object.fromEntries(ids.map(id => [id, randChild(r, id)])) };
 }
 
-// m が a 以上（進み具合が減っていない、更新時刻が戻っていない）
+// m が a 以上（進み具合が減っていない、更新時刻が戻っていない）。
+// ただし m の全消しの印が a より新しいときは、a は全消しより前の控えなので比べない
 function expectAtLeast(m: FamilyRecords, a: FamilyRecords) {
+  expect(m.resetAt).toBeGreaterThanOrEqual(a.resetAt);
+  if (m.resetAt > a.resetAt) return;
   for (const [id, ca] of Object.entries(a.children)) {
     const cm = m.children[id];
     expect(cm, id).toBeDefined();
@@ -101,6 +106,8 @@ describe('mergeFamily の性質（ばらばらな記録 500 組）', () => {
       const m = mergeFamily(a, b);
       expectAtLeast(m, a);
       expectAtLeast(m, b);
+      expect(m.resetAt).toBe(Math.max(a.resetAt, b.resetAt));
+      if (a.resetAt !== b.resetAt) continue;
       expect(Object.keys(m.children).sort()).toEqual([...new Set([...Object.keys(a.children), ...Object.keys(b.children)])].sort());
     }
   });
@@ -115,7 +122,7 @@ describe('mergeFamily の性質（ばらばらな記録 500 組）', () => {
 
 describe('mergeFamily の合わせ方', () => {
   const s1 = stageByNum(1), s2 = stageByNum(2);
-  const base = { version: RECORDS_VERSION, children: { a: newChild('a', { name: 'たろう' }, 100) } } as FamilyRecords;
+  const base: FamilyRecords = { version: RECORDS_VERSION, resetAt: 0, children: { a: newChild('a', { name: 'たろう' }, 100) } };
 
   it('古い控えから保存しても、新しい記録は消えない', () => {
     // 端末A: s1 を 10問正解 40秒でクリア。端末B（古い控え）: s1 を 8問 30秒、s2 は 5問
@@ -155,5 +162,52 @@ describe('mergeFamily の合わせ方', () => {
     const x = { value: { p: 1, q: 2 }, at: 5 }, y = { value: { q: 2, p: 1 }, at: 5 }, z = { value: { p: 2, q: 0 }, at: 5 };
     expect(mergeStamped(x, z).value).toEqual(mergeStamped(z, x).value);
     expect(mergeStamped(x, y).value).toEqual(mergeStamped(y, x).value);
+  });
+});
+
+describe('全消し（リセット印 resetAt）', () => {
+  const s1 = stageByNum(1);
+  // 端末A と 端末B が同じ家族のデータを持っている（たろう が s1 をクリア、ひらがな1 も星3）
+  let taro = newChild('a', { name: 'たろう' }, 100);
+  taro = finishKeisanStage(taro, s1, 10, 40, 200).child;
+  taro = recordUnitResult(taro, 'hira:1', 3, true);
+  const shared: FamilyRecords = { version: RECORDS_VERSION, resetAt: 0, children: { a: taro } };
+
+  it('全消しは進み具合と子どもを空にし、印を今にする', () => {
+    const r = resetFamily(shared, 1000);
+    expect(r).toEqual({ version: RECORDS_VERSION, resetAt: 1000, children: {} });
+    // 時計が戻っていても、印は前より新しくなる
+    expect(resetFamily(r, 500).resetAt).toBe(1001);
+  });
+
+  it('ほかの端末の古い控えから、消した記録が戻ってこない（どちらから合わせても）', () => {
+    const reset = resetFamily(shared, 1000);
+    expect(mergeFamily(reset, shared)).toEqual(reset);
+    expect(mergeFamily(shared, reset)).toEqual(reset);
+  });
+
+  it('古い控えで全消しの前に進めた分も持ち込まない', () => {
+    const stale = { ...shared, children: { a: finishKeisanStage(taro, stageByNum(2), 10, 30, 900).child } };
+    const m = mergeFamily(stale, resetFamily(shared, 1000));
+    expect(m.children).toEqual({});
+  });
+
+  it('全消しのあとに進めた記録は、ほかの端末と合わせて残る', () => {
+    const reset = resetFamily(shared, 1000);
+    // 端末A: 全消しのあと はなこ を登録して s1 をクリア。端末B: 全消しを受け取ってから じろう を登録
+    let hana = newChild('h', { name: 'はなこ' }, 1100);
+    hana = finishKeisanStage(hana, s1, 9, 50, 1200).child;
+    const a = { ...reset, children: { h: hana } };
+    const b = { ...reset, children: { j: newChild('j', { name: 'じろう' }, 1300) } };
+    const m = mergeFamily(mergeFamily(a, shared), b); // 途中で古い控えがまざっても
+    expect(m.resetAt).toBe(1000);
+    expect(Object.keys(m.children).sort()).toEqual(['h', 'j']);
+    expect(m.children.h.keisan.stages.s1).toMatchObject({ cleared: true, bestScore: 9 });
+  });
+
+  it('リセット印は保存・読み込みしても残る。古い形（印なし）は 0 として読む', () => {
+    const reset = resetFamily(shared, 1000);
+    expect(normalizeFamily(JSON.parse(JSON.stringify(reset)))).toEqual(reset);
+    expect(normalizeFamily({ version: 2, children: {} })).toEqual(emptyFamily());
   });
 });

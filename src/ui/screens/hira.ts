@@ -1,7 +1,7 @@
 import { HIRA_UNITS, hiraItems, judgeHira, type HiraUnit, type HiraWriteResult } from '../../learn/hiragana';
 import { loadStrokes } from '../../learn/handwriting/strokes';
 import { recordUnitResult, type ChildRecord } from '../../records';
-import { REDUCED, current, updateCurrent } from '../app';
+import { REDUCED, current, pushFamily, updateCurrent } from '../app';
 import { banner } from '../banner';
 import { h, mount, svgEl, wait } from '../dom';
 import { LOCK_SVG, MARU_SVG, avatarOf, mascotSVG, starsHTML } from '../mascot';
@@ -143,6 +143,7 @@ function startHira(u: HiraUnit) {
 function finishHira(u: HiraUnit, results: HiraWriteResult[], color: string) {
   const r = judgeHira(results);
   updateCurrent(c => recordUnitResult(c, u.id, r.stars, r.cleared));
+  pushFamily();
   const next = HIRA_UNITS[u.num] ?? null; // num は 1〜。つぎの単元
   const starBox = h('div', { class: 'result-stars', html: starsHTML(r.stars) });
   const msgs: Record<number, string> = { 3: 'ぜんぶ じぶんで かけた！ すごい！', 2: 'あと すこし！ よく がんばった！', 1: 'クリア！ つぎへ すすめるよ' };

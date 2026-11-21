@@ -10,10 +10,11 @@ Android タブレットのブラウザで動く PWA で、Cloudflare の無料�
 旧まなびランド（勉強するとゲームが強くなるアプリ）から、ゲームとごほうびを外し、学習と記録だけのアプリに作り替えている。
 
 - できているもの
-  - 算数「けいさん」の道（47ステージ）・10問セット・星とクリアの判定・ちからだめし: 算数練習アプリから TypeScript に移植（`src/learn/keisan/`、画面はまだ）。仕様は [docs/03-keisan.md](docs/03-keisan.md)
-  - 手書きの判定（`src/learn/handwriting/`）と書き取りの画面部品（`src/ui/widgets/writepad.ts`）
-- まだ旧まなびランドのままのもの: 画面（`src/ui/screens/`）、学年・カテゴリえらびと間隔反復（`src/learn/engine.ts`・`srs.ts`）、端末だけの保存（`src/state/`）
-- これから: 新しい画面（子ども選択 → テーマ → 道 → 問題／書き取り → 結果）、新しい記録（星・クリア・ベストタイム）、Worker + KV での家族共有と Cloudflare Access
+  - 新しい画面（`src/ui/screens/`）: 子ども選択 → テーマ → 道 → 問題／書き取り → 結果、設定（子ども選択の歯車）
+  - 算数「けいさん」の道（47ステージ）とちからだめし: 算数練習アプリから移植（`src/learn/keisan/`）。仕様は [docs/03-keisan.md](docs/03-keisan.md)
+  - 国語「ひらがなを かく」（`src/learn/hiragana.ts`、判定は `src/learn/handwriting/`）
+  - 記録（`src/records/`、キー `manabi:v2`）と、Worker + KV での家族共有（`worker/`）。仕様は [docs/04-records.md](docs/04-records.md)
+- これから: Cloudflare への実際のデプロイ（KV の作成・Access の設定・GitHub Secrets）
 
 ### MVP でやること
 
@@ -30,16 +31,26 @@ npm test
 npm run build      # 型検査 + ビルド
 ```
 
+家族共有の API（`/api/family`）も動かすときは、別のターミナルで Worker を手元で動かす。`npm run dev` の `/api` は :8787 へ回る:
+
+```bash
+npm run build && npx wrangler dev   # http://localhost:8787 （dist の配信 + /api、KV は手元の偽物）
+```
+
+Worker を動かしていないときは同期が失敗するだけで、記録は端末に残り、遊びは止まらない。
+`ACCESS_TEAM_DOMAIN`・`ACCESS_AUD` が空のときは localhost への API だけ認証なしで通す（`worker/access.ts`）。
+
 構成: TypeScript + Vite + vite-plugin-pwa。
 
 ```
+worker/           Worker（/api/family と Cloudflare Access の検証）。それ以外は dist をそのまま配信
 src/
+  records/        記録（形・合わせ方 mergeFamily・端末への保存・Worker との同期）
   learn/
     keisan/       けいさんの道（ステージ・問題の作り方・10問セット・星とクリア・ちからだめし）
     handwriting/  手書きの判定と筆順データ（KanjiVG）
-    math.ts kokugo.ts engine.ts srs.ts   旧まなびランドの問題と間隔反復（作り替えで整理する）
+    math.ts kokugo.ts   旧まなびランドの問題（ほかのテーマを足すときの材料。いまは画面から使っていない）
   studies/        旧まなびランドの教科・カテゴリ
-  state/          保存データ（旧形式）
   assets/ art.ts  画像（スプライト）の扱いと、生成画像の対応表
   ui/             画面（DOM）と部品（writepad・kanapad）
   data/           文字セット・漢字のことば・問題バンク
@@ -56,12 +67,15 @@ KANJIVG_DIR=/path/to/kanjivg/kanji npm run gen:strokes
 
 ## Cloudflare に置く
 
-```bash
-npx wrangler login
-npm run deploy
-```
+家族だけが開けるように、独自ドメインに置いて Cloudflare Access（メールのワンタイムコード）の内側にする。workers.dev とプレビュー URL は無効（`wrangler.jsonc`）。Worker の中でも Access の証明（`Cf-Access-Jwt-Assertion`）を確かめる。
 
-家族だけが開けるように Cloudflare Access（メールのワンタイムコード）の内側に置く。Access の設定と、Worker + KV での記録の共有は、作り替えの中で整える。
+はじめて置くとき:
+
+1. KV を作る: `npx wrangler kv namespace create FAMILY` → 出てきた id を `wrangler.jsonc` の `kv_namespaces` に入れる
+2. 独自ドメインを Worker につなぐ（`wrangler.jsonc` に `routes`（`custom_domain: true`）を足すか、ダッシュボードで）
+3. Zero Trust → Access → Applications で、そのドメインの Self-hosted アプリを作る（ログイン方法: One-time PIN、ポリシー: 家族のメールアドレスだけ Allow、セッションは長め）
+4. アプリの AUD タグとチームのドメインを `wrangler.jsonc` の `vars`（`ACCESS_AUD`・`ACCESS_TEAM_DOMAIN`）に入れる。空のまま置くと API は 500 で断る
+5. `npx wrangler login`（CI からなら `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_ACCOUNT_ID`）→ `npm run deploy`
 
 ## ライセンス
 

@@ -1,9 +1,33 @@
 {
-  // 静的ファイルだけを配信する Worker（無料プランで動く）
+  // 静的ファイル（dist）の配信 ＋ /api/* だけを処理する Worker（無料プランで動く）
   "name": "manabi-survivor",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-09-01",
+
+  // 入口は Cloudflare Access をかけた独自ドメインだけにする（workers.dev とプレビュー URL は使わない）
+  "workers_dev": false,
+  "preview_urls": false,
+
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // /api だけ Worker を通す。ほかは今までどおり静的ファイルをそのまま返す
+    "run_worker_first": ["/api", "/api/*"]
+  },
+
+  // 家族で1つのデータ（キー family:v2）。
+  // id はデプロイの前に `npx wrangler kv namespace create FAMILY` で作った値に書きかえる（wrangler dev は id なしでも手元の偽 KV で動く）
+  "kv_namespaces": [
+    { "binding": "FAMILY" }
+  ],
+
+  // Cloudflare Access の検証（worker/access.ts）。デプロイ前に入れる:
+  //   ACCESS_TEAM_DOMAIN … https://<team>.cloudflareaccess.com
+  //   ACCESS_AUD         … Access アプリケーションの AUD タグ
+  // 2つとも空のときは localhost（wrangler dev）だけ検証なしで通し、それ以外は 500 で断る
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
   }
 }

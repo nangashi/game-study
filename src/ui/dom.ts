@@ -18,8 +18,13 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
 
 const app = () => document.getElementById('app')!;
 
+let mounts = 0;
+// 画面を入れかえた回数（起動時の同期のあと、まだ最初の画面のままかを見る）
+export const mountCount = () => mounts;
+
 // 画面を入れかえる（重ねていたダイアログも消す）
 export function mount(...nodes: Node[]): void {
+  mounts++;
   document.querySelectorAll('.banner-overlay').forEach(el => el.remove());
   app().replaceChildren(...nodes);
   window.scrollTo(0, 0);

@@ -11,7 +11,12 @@ import {
 // 記録を作る・更新する関数。どれも元の記録は書きかえず、新しい記録を返す。
 // now は更新時刻（ms）。端末どうしで合わせるときの後勝ちの判定に使う
 
-export const emptyFamily = (): FamilyRecords => ({ version: RECORDS_VERSION, children: {} });
+export const emptyFamily = (): FamilyRecords => ({ version: RECORDS_VERSION, resetAt: 0, children: {} });
+
+// 全消し。進み具合と子どもを空にし、リセット印を今にする（ほかの端末の古い控えから戻ってこないように）。
+// 端末の時計がずれていても、印は前の印より必ず新しくする
+export const resetFamily = (fam: FamilyRecords, now: number): FamilyRecords =>
+  ({ version: RECORDS_VERSION, resetAt: Math.max(now, fam.resetAt + 1), children: {} });
 
 export const emptyKeisan = (): KeisanRecord => ({
   stages: {},
@@ -194,5 +199,5 @@ export function normalizeFamily(raw: unknown): FamilyRecords {
   if (!isObj(raw) || raw.version !== RECORDS_VERSION || !isObj(raw.children)) return emptyFamily();
   const children: Record<string, ChildRecord> = {};
   for (const [id, c] of Object.entries(raw.children)) children[id] = normChild(id, c);
-  return { version: RECORDS_VERSION, children };
+  return { version: RECORDS_VERSION, resetAt: Math.max(0, num(raw.resetAt)), children };
 }

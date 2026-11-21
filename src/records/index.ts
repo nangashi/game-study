@@ -3,3 +3,4 @@ export * from './types';
 export * from './model';
 export * from './merge';
 export * from './storage';
+export * from './sync';

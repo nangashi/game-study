@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // npm run dev のとき、/api は wrangler dev（npx wrangler dev、:8787）へ回す
+  server: { proxy: { '/api': 'http://localhost:8787' } },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
@@ -24,7 +26,12 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,json,webp}'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        // /api は Worker が返す。画面遷移のフォールバック（index.html）にもキャッシュにも入れない
+        navigateFallbackDenylist: [/^\/api(\/|$)/],
         runtimeCaching: [{
+          urlPattern: ({ url }) => url.origin === self.location.origin && /^\/api(\/|$)/.test(url.pathname),
+          handler: 'NetworkOnly',
+        }, {
           urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
           handler: 'CacheFirst',
           options: { cacheName: 'google-fonts', expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 } },

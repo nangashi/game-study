@@ -388,3 +388,12 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
   .combo-badge.show, .answer-box.good, .result-stars .star-ic.earn, .mark-overlay .mark { animation: none; }
   .answer-box.shake { animation: none; }
 }
+
+/* 同期の小さな表示 */
+.sync-note {
+  position: fixed; left: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 50;
+  max-width: min(92vw, 420px); padding: 6px 12px; border: none; border-radius: 12px;
+  background: rgba(23, 50, 62, .82); color: #fff; font: inherit; font-size: 13px; font-weight: 700; line-height: 1.4;
+  text-align: left; cursor: pointer;
+}
+.sync-note.auth { background: rgba(163, 18, 58, .9); }

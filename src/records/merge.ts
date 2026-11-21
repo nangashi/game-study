@@ -6,10 +6,11 @@ import { RECORDS_VERSION } from './types';
 // - 単元の進み具合: 星は大きい方、クリアはどちらかで残す、ベストタイムは速い方
 // - playableThrough は大きい方、ちからだめしをやったか（testDone）はどちらかで残す
 // - 名前などの設定・ちからだめしの途中の記録・lastStage は、あとから保存した方が勝つ
+// - 全消しの印（resetAt）がちがうときは、新しい印の方だけを使う（古い印の控えは全消しより前のものとして持ち込まない）
 // どちらから合わせても同じ結果になり（交換法則）、同じものを合わせても変わらない（冪等）
 
 // キーの並びによらない文字列（後勝ちで更新時刻が同じときの決め手）
-function stableKey(v: unknown): string {
+export function stableKey(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(stableKey).join(',')}]`;
   if (typeof v === 'object' && v !== null) {
     return `{${Object.keys(v).sort().map(k => `${JSON.stringify(k)}:${stableKey((v as Record<string, unknown>)[k])}`).join(',')}}`;
@@ -59,5 +60,8 @@ export const mergeChild = (a: ChildRecord, b: ChildRecord): ChildRecord => ({
   keisan: mergeKeisan(a.keisan, b.keisan),
 });
 
-export const mergeFamily = (a: FamilyRecords, b: FamilyRecords): FamilyRecords =>
-  ({ version: RECORDS_VERSION, children: mergeMaps(a.children, b.children, mergeChild) });
+export function mergeFamily(a: FamilyRecords, b: FamilyRecords): FamilyRecords {
+  // 全消しの前の控えは、子どもも進み具合もまとめて捨てる（単元ごとの時刻を持たないので、印より前と後を分けられない）
+  if (a.resetAt !== b.resetAt) return a.resetAt > b.resetAt ? a : b;
+  return { version: RECORDS_VERSION, resetAt: a.resetAt, children: mergeMaps(a.children, b.children, mergeChild) };
+}

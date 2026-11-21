@@ -42,5 +42,7 @@ export interface ChildRecord {
 
 export interface FamilyRecords {
   version: typeof RECORDS_VERSION;
+  // 全消しの印（ms、0 は一度も消していない）。合わせるときは、これより古い控えの進み具合を持ち込まない
+  resetAt: number;
   children: Record<string, ChildRecord>; // 子どもの id → 記録
 }

@@ -5,7 +5,7 @@ import {
   type KeisanQuestion, type KeisanStage, type NextAfterSystem, type TestOutcome, type TestResult, type TestState,
 } from '../../learn/keisan';
 import { finishKeisanStage, finishTest, setTestProgress, startKeisanStage, updateSettings, type ChildRecord } from '../../records';
-import { REDUCED, current, now, updateCurrent } from '../app';
+import { REDUCED, current, now, pushFamily, updateCurrent } from '../app';
 import { banner } from '../banner';
 import { h, mount, svgEl } from '../dom';
 import {
@@ -342,6 +342,7 @@ function finishStage(s: Session) {
   const correct = s.correct;
   const r = finishKeisanStage(c, stage, correct, elapsed, now());
   updateCurrent(() => r.child);
+  pushFamily();
   sess = null;
   const { cleared, stars, faster } = r;
 
@@ -482,6 +483,7 @@ function afterSystem(s: Session, next: NextAfterSystem) {
 
 function endTest(s: Session, result: TestResult) {
   updateCurrent(x => finishTest(x, result, now()));
+  pushFamily();
   sess = null;
   banner({
     color: s.color, title: 'すごい！', text: `ぜんぶで ${result.total}だん のぼれたね！`,

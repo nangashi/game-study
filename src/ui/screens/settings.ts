@@ -1,9 +1,9 @@
 import type { Tolerance } from '../../learn/handwriting/judge';
 import {
-  RECORDS_VERSION, activeChildren, clearRecords, emptyFamily, mergeFamily, normalizeFamily, removeChild, updateChild, updateSettings,
+  RECORDS_VERSION, activeChildren, mergeFamily, normalizeFamily, removeChild, resetFamily, updateChild, updateSettings,
   type ChildRecord, type ChildSettings,
 } from '../../records';
-import { app, now, save } from '../app';
+import { app, now, pushFamily, save } from '../app';
 import { h, mount } from '../dom';
 import { ensureAudio, sndTap, tap } from '../sound';
 import { avatarPicker, showChildren, showRegister } from './children';
@@ -109,7 +109,8 @@ export function showSettings(note = ''): void {
     try {
       const raw = JSON.parse(text) as { version?: unknown };
       if (raw?.version !== RECORDS_VERSION) throw new Error('version');
-      app.family = mergeFamily(app.family, normalizeFamily(raw));
+      // 書き出したあとに全消しをしていても読み込めるように、いまの全消しの印にそろえて合わせる
+      app.family = mergeFamily(app.family, { ...normalizeFamily(raw), resetAt: app.family.resetAt });
       save();
       showSettings('読み込みました（いまの記録と合わせました）');
       return;
@@ -146,13 +147,13 @@ export function showSettings(note = ''): void {
 
     h('div', { class: 'card set-card' },
       h('h2', { textContent: '記録をすべて消す' }),
-      h('p', { class: 'set-note', textContent: 'この端末に保存している記録（子どもの登録もふくむ）をすべて消します。' }),
-      // TODO(次の弾): 家族で共有する記録（Worker + KV）ができたら、ほかの端末の控えから合わせ戻ってこないよう、
-      // 家族のデータごと消す手順を決める。いまは端末内の記録だけを消す（docs/04-records.md「決めていないこと」）
+      h('p', { class: 'set-note', textContent: '家族の記録（子どもの登録もふくむ）をすべて消します。ほかの端末の記録も、つながったときに消えます。' }),
+      // 全消しの印（resetAt）を今にして送る。ほかの端末の古い控えは、合わせるときに持ち込まれない
       h('div', { class: 'set-row' },
         confirmButton('すべて消す', '本当に消しますか？ もう一度押すとすべて消えます', () => {
-          clearRecords();
-          app.family = emptyFamily();
+          app.family = resetFamily(app.family, now());
+          save();
+          pushFamily();
           showChildren();
         }))),
   )));
