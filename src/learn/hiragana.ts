@@ -1,6 +1,6 @@
 // 国語「ひらがなを かく」の道。
 // 旧まなびランドの「ひらがなを かく」（年長・1年。どちらも46字で、はじめは なぞる → なれたら おてほんを みて かく）を、
-// 間隔反復なしで回せるように 行ごとの単元にした。1回の中で、1字ずつ「なぞる → みて かく」の順に書く。
+// 間隔反復なしで回せるように 行ごとの単元にした。1回の中で、まず全字を「なぞる」で一周し、つぎに全字を「みて かく」で一周する。
 // 結果は星とクリアだけ（時間は競わない）
 
 export type HiraGuide = 'trace' | 'model'; // trace: うすい字をなぞる / model: 横のおてほんを見て書く
@@ -33,9 +33,9 @@ export const hiraUnitById = (id: string) => HIRA_UNITS.find(u => u.id === id);
 
 export interface HiraItem { char: string; guide: HiraGuide }
 
-// 1回で書く字の並び（1字ずつ なぞる → みて かく）
+// 1回で書く字の並び（全字を なぞる → 全字を みて かく）
 export const hiraItems = (u: HiraUnit): HiraItem[] =>
-  [...u.chars].flatMap(char => [{ char, guide: 'trace' as const }, { char, guide: 'model' as const }]);
+  (['trace', 'model'] as const).flatMap(guide => [...u.chars].map(char => ({ char, guide })));
 
 // 1字の結果。helped: おてほん（書きじゅんアニメ）を見た、または3回以上まちがえた（writepad の helped）
 export interface HiraWriteResult { helped: boolean }

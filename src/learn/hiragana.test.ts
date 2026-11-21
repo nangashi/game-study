@@ -16,13 +16,14 @@ describe('ひらがなを かく', () => {
     for (const c of CHAR_SETS.hira) expect(all[c]?.length, c).toBeGreaterThan(0);
   });
 
-  it('1字ずつ なぞる → みて かく の順', () => {
-    expect(hiraItems(HIRA_UNITS[0]).slice(0, 4)).toEqual([
-      { char: 'あ', guide: 'trace' }, { char: 'あ', guide: 'model' },
-      { char: 'い', guide: 'trace' }, { char: 'い', guide: 'model' },
+  it('全字を なぞる → 全字を みて かく の順', () => {
+    const a = hiraItems(HIRA_UNITS[0]);
+    expect(a.map(it => it.char).join('')).toBe('あいうえおあいうえお');
+    expect(a.map(it => it.guide)).toEqual([...Array(5).fill('trace'), ...Array(5).fill('model')]);
+    expect(hiraItems(hiraUnitById('hira:ya')!)).toEqual([
+      { char: 'や', guide: 'trace' }, { char: 'ゆ', guide: 'trace' }, { char: 'よ', guide: 'trace' },
+      { char: 'や', guide: 'model' }, { char: 'ゆ', guide: 'model' }, { char: 'よ', guide: 'model' },
     ]);
-    expect(hiraItems(HIRA_UNITS[0])).toHaveLength(10);
-    expect(hiraItems(hiraUnitById('hira:ya')!)).toHaveLength(6);
   });
 
   it('星: おてつだいなしの数で決まる（2つ足りないまでクリア）', () => {
