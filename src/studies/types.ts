@@ -1,34 +1,31 @@
-import type { IconName } from '../art';
 import type { Question } from '../learn/types';
 import type { Rng } from '../learn/random';
-import type { Grade, Profile } from '../state/types';
+
+// 学年（'k' = 年長）。道のならびの参考にだけ使い、画面には出さない
+export type Grade = 'k' | 1 | 2 | 3;
 
 // 問題の種類（カテゴリ）。問題プール（カード）を持ち、カードから1問を作る
+// けいさん（src/learn/keisan/）以外のテーマを足すときの材料として残している
 export interface Category {
   id: string;        // 教科の中で一意。後から変えない
   name: string;      // ひらがな
   grade: Grade;
-  write?: boolean;   // 手書き（まぜこぜでは1回に出す数をおさえる）
-  quiz?: boolean;    // すぐ答えられる3択にできる（ゲームの中のクイズで使う）
-  // ドリル（けいさんりょく）: 時間を計り、遅い問題を先に出す。まぜこぜには入れない
+  write?: boolean;   // 手書き
+  // ドリル（けいさんりょく）: 時間を計る
   drill?: { length: number };
   // 計算のわく: カードは「要素のわく」で、出すたびに数が変わる
   varied?: boolean;
-  cards(): readonly string[];  // 問題プール。まだやっていない問題はこの順に出す（やさしい順）
-  make(card: string, rng: Rng, p: Profile): Question;
+  cards(): readonly string[];  // 問題プール（やさしい順）
+  // level: その問題になれた度合い（0 = はじめて）。書き取りのおてほんの出し方などに使う
+  make(card: string, rng: Rng, level?: number): Question;
 }
 
-// 勉強（教科）。ホームのボタンと、ゲーム券の「きょうはじめての教科」の単位になる
+// 勉強（教科）
 export interface StudyDef {
-  id: string;        // 保存データのキーになるので後から変えない
+  id: string;        // 後から変えない
   name: string;      // ひらがな
-  icon: IconName;
-  color: string;     // ボタンの色
   categories: Category[];
 }
-
-// えらんだ勉強。category がないときは、その学年の「まぜこぜ」。drill: けいさんりょく（ドリル）のカテゴリ
-export interface Selection { study: string; grade: Grade; category?: string; drill?: boolean }
 
 // くり返し呼ばれるので、問題プールは1回だけ作る
 export function once<T>(f: () => T): () => T {

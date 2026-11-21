@@ -1,6 +1,5 @@
-import type { Grade, Profile } from '../state/types';
 import type { Question } from './types';
-import type { Category } from '../studies/types';
+import type { Category, Grade } from '../studies/types';
 import { once } from '../studies/types';
 import { CHAR_SETS } from '../data/char-sets.js';
 import { YOMI_EXTRA, parseWord, parseYomi } from '../data/kanji-words';
@@ -9,7 +8,6 @@ import { makeChoices, pick, shuffle, type Rng } from './random';
 
 // 国語の問題の作り方。カテゴリの一覧は src/studies/kokugo.ts
 
-const box = (p: Profile, card: string) => p.cards[card]?.box ?? 0;
 const after = (card: string) => card.slice(card.indexOf(':') + 1);
 const blank = (s: string) => s.replace('＿', '<span class="blank">？</span>');
 const toKatakana = (s: string) => s.replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60));
@@ -29,10 +27,10 @@ function choice(card: string, rng: Rng, prompt: string, correct: string, wrong: 
 }
 
 // 問題データ（はじめの選択肢が正解）から作るカテゴリ
-function bankCategory(id: string, name: string, grade: Grade, items: B.ChoiceItem[], quiz = false): Category {
+function bankCategory(id: string, name: string, grade: Grade, items: B.ChoiceItem[]): Category {
   const byId = new Map(items.map(x => [`${id}:${x.id}`, x]));
   return {
-    id, name, grade, quiz,
+    id, name, grade,
     cards: once(() => [...byId.keys()]),
     make(card, rng) {
       const x = byId.get(card)!;
@@ -49,19 +47,19 @@ function bankCategory(id: string, name: string, grade: Grade, items: B.ChoiceIte
 export const hiraWrite = (grade: Grade): Category => ({
   id: grade === 'k' ? 'hira-write' : 'hira-write-1', name: 'ひらがなを かく', grade, write: true,
   cards: once(() => [...CHAR_SETS.hira].map(c => `hira:${c}`)),
-  make(card, _rng, p) {
+  make(card, _rng, level = 0) {
     const char = after(card);
-    return { kind: 'write', card, char, guide: box(p, card) >= 2 ? 'model' : 'trace', prompt: `<span class="big-char">${char}</span>` };
+    return { kind: 'write', card, char, guide: level >= 2 ? 'model' : 'trace', prompt: `<span class="big-char">${char}</span>` };
   },
 });
 
 export const kataWrite: Category = {
   id: 'kata-write', name: 'カタカナを かく', grade: 1, write: true,
   cards: once(() => [...CHAR_SETS.kata].map(c => `kata:${c}`)),
-  make(card, _rng, p) {
+  make(card, _rng, level = 0) {
     const char = after(card);
     return {
-      kind: 'write', card, char, guide: box(p, card) === 0 ? 'model' : 'none',
+      kind: 'write', card, char, guide: level === 0 ? 'model' : 'none',
       prompt: `<span class="big-char">${toHiragana(char)}</span> を カタカナで`,
     };
   },
@@ -70,11 +68,11 @@ export const kataWrite: Category = {
 export const kanjiWrite = (grade: 1 | 2): Category => ({
   id: `kanji-write-${grade}`, name: 'かんじを かく', grade, write: true,
   cards: once(() => [...KANJI[grade]!].map(c => `kanji:${c}`)),
-  make(card, _rng, p) {
+  make(card, _rng, level = 0) {
     const char = after(card);
     const w = parseWord(char);
     return {
-      kind: 'write', card, char, guide: box(p, card) === 0 ? 'model' : 'none',
+      kind: 'write', card, char, guide: level === 0 ? 'model' : 'none',
       prompt: `<span class="word">${w.before}<em>${w.reading}</em>${w.after}</span>`,
     };
   },
@@ -118,13 +116,13 @@ const LOOKALIKE = ['あおめぬ', 'さきちら', 'はほまよ', 'るろ', '�
 
 // 同じ字をさがす（字が読めなくても解ける）。一度正解した字は、形のにた字をまぜる
 export const hiraMatch: Category = {
-  id: 'hira-match', name: 'おなじ じ さがし', grade: 'k', quiz: true,
+  id: 'hira-match', name: 'おなじ じ さがし', grade: 'k',
   cards: once(() => [...CHAR_SETS.hira].map(c => `match:${c}`)),
-  make(card, rng, p) {
+  make(card, rng, level = 0) {
     const char = after(card);
     const all = [...CHAR_SETS.hira].filter(c => c !== char);
     const group = LOOKALIKE.find(g => g.includes(char));
-    const near = box(p, card) >= 1 && group ? shuffle(rng, [...group].filter(c => c !== char)) : [];
+    const near = level >= 1 && group ? shuffle(rng, [...group].filter(c => c !== char)) : [];
     const choices = shuffle(rng, [char, ...[...near, ...shuffle(rng, all)].slice(0, 2)]);
     return { kind: 'choice', card, prompt: `<span class="big-char">${char}</span>`, choices, answer: choices.indexOf(char) };
   },
@@ -155,7 +153,7 @@ export function tokushuWrong(word: string): string[] {
 }
 
 export const tokushu: Category = {
-  id: 'tokushu', name: 'ちいさい じ・のばす おと', grade: 1, quiz: true,
+  id: 'tokushu', name: 'ちいさい じ・のばす おと', grade: 1,
   cards: once(() => B.TOKUSHU.map(([, w]) => `tokushu:${w}`)),
   make(card, rng) {
     const word = after(card);
@@ -164,10 +162,10 @@ export const tokushu: Category = {
   },
 };
 
-export const joshi = bankCategory('joshi', 'は・を・へ', 1, B.JOSHI, true);
+export const joshi = bankCategory('joshi', 'は・を・へ', 1, B.JOSHI);
 
 export const katago: Category = {
-  id: 'katago', name: 'カタカナの ことば', grade: 1, quiz: true,
+  id: 'katago', name: 'カタカナの ことば', grade: 1,
   cards: once(() => B.KATAGO.map(w => `katago:${w}`)),
   make(card, rng) {
     const word = after(card);
@@ -204,7 +202,7 @@ export function okuriWrong(kanji: string, reading: string, okuri: string): strin
 }
 
 export const okuri: Category = {
-  id: 'okuri', name: 'おくりがな', grade: 2, quiz: true,
+  id: 'okuri', name: 'おくりがな', grade: 2,
   cards: once(() => B.OKURI.map(([k, , o]) => `okuri:${k}${o}`)),
   make(card, rng) {
     const [k, r, o] = B.OKURI.find(([k, , o]) => `okuri:${k}${o}` === card)!;
@@ -213,7 +211,7 @@ export const okuri: Category = {
 };
 
 export const kanazukai: Category = {
-  id: 'kanazukai', name: 'かなづかい', grade: 2, quiz: true,
+  id: 'kanazukai', name: 'かなづかい', grade: 2,
   cards: once(() => B.KANAZUKAI.map(([, w]) => `kanazukai:${w}`)),
   make(card, rng) {
     const [pic, w, ...wrong] = B.KANAZUKAI.find(([, w]) => `kanazukai:${w}` === card)!;
@@ -221,8 +219,8 @@ export const kanazukai: Category = {
   },
 };
 
-export const hantai = bankCategory('hantai', 'はんたいの ことば', 2, B.HANTAI, true);
-export const yousu = bankCategory('yousu', 'ようすの ことば', 2, B.YOUSU, true);
+export const hantai = bankCategory('hantai', 'はんたいの ことば', 2, B.HANTAI);
+export const yousu = bankCategory('yousu', 'ようすの ことば', 2, B.YOUSU);
 export const hanashi = bankCategory('hanashi', 'おはなしを よもう', 2, B.HANASHI);
 
 // ---- 3年 ----
@@ -251,7 +249,7 @@ function romajiWrong(rng: Rng, w: string): string[] {
 }
 
 export const romaji: Category = {
-  id: 'romaji', name: 'ローマ字', grade: 3, quiz: true,
+  id: 'romaji', name: 'ローマ字', grade: 3,
   cards: once(() => B.ROMAJI_WORDS.flatMap(w => [`romaji:${w}`, `romaji-r:${w}`])),
   make(card, rng) {
     const w = after(card);
@@ -271,7 +269,7 @@ export const jisho: Category = {
 };
 
 export const bushu: Category = {
-  id: 'bushu', name: 'かんじの ぶしゅ', grade: 3, quiz: true,
+  id: 'bushu', name: 'かんじの ぶしゅ', grade: 3,
   cards: once(() => {
     const out: string[] = [];
     for (let i = 0; B.BUSHU.some(([, , , ks]) => i < ks.length); i++) for (const [, , , ks] of B.BUSHU) if (i < ks.length) out.push(`bushu:${ks[i]}`);

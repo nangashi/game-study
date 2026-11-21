@@ -1,4 +1,3 @@
-import { heroHtml, iconHtml, type HeroId, type IconName } from '../art';
 type Child = Node | string | null | undefined | false;
 type Props = Record<string, unknown> & { class?: string; html?: string };
 
@@ -19,28 +18,23 @@ export function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Props = 
 
 const app = () => document.getElementById('app')!;
 
+// 画面を入れかえる（重ねていたダイアログも消す）
 export function mount(...nodes: Node[]): void {
+  document.querySelectorAll('.banner-overlay').forEach(el => el.remove());
   app().replaceChildren(...nodes);
   window.scrollTo(0, 0);
 }
 
 export const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-// 画面の上に重ねるダイアログ。close() で消す
+// 画面の上に重ねるカード（算数練習アプリのバナー）。close() で消す
 export function overlay(...children: Child[]) {
-  const el = h('div', { class: 'overlay' }, h('div', { class: 'overlay-card' }, ...children));
+  const el = h('div', { class: 'banner-overlay' }, h('div', { class: 'banner-card' }, ...children));
   document.body.append(el);
   return { el, close: () => el.remove() };
 }
 
-export function fromHtml(html: string): HTMLElement {
-  const t = document.createElement('template');
-  t.innerHTML = html.trim();
-  return t.content.firstElementChild as HTMLElement;
+// 自前の SVG 文字列を要素にする
+export function svgEl(html: string, cls = ''): HTMLElement {
+  return h('span', { class: cls ? `svg-box ${cls}` : 'svg-box', html, 'aria-hidden': 'true' });
 }
-
-export const ico = (name: IconName, size?: number | string) => fromHtml(iconHtml(name, size));
-export const hero = (id: HeroId, size: number | string, walk = false) => fromHtml(heroHtml(id, size, walk));
-
-// アイコン + 文字のチップ
-export const chip = (name: IconName, text: string | number) => h('span', { class: 'chip' }, ico(name), ` ${text}`);

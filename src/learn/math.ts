@@ -1,6 +1,5 @@
 import type { Question } from './types';
-import type { Grade, Profile } from '../state/types';
-import type { Category } from '../studies/types';
+import type { Category, Grade } from '../studies/types';
 import { once } from '../studies/types';
 import { makeChoices, pick, shuffle, type Rng } from './random';
 import { iconHtml, type IconName } from '../art';
@@ -57,8 +56,8 @@ function choice(card: string, rng: Rng, prompt: string, correct: string, wrong: 
 }
 const number = (card: string, prompt: string, answer: number): Question => ({ kind: 'number', card, prompt, answer });
 
-function category(id: string, name: string, grade: Grade, cards: () => string[], make: (card: string, rng: Rng, p: Profile) => Question, quiz = true): Category {
-  return { id, name, grade, quiz, cards: once(cards), make };
+function category(id: string, name: string, grade: Grade, cards: () => string[], make: (card: string, rng: Rng) => Question): Category {
+  return { id, name, grade, cards: once(cards), make };
 }
 
 // ---- 年長: 絵をかぞえる → 絵のたし算・ひき算（字が読めなくても解ける） ----
@@ -157,7 +156,7 @@ const part = (id: string, slots: number, op: Op, d: Draw): Part => ({ id, slots,
 function variedCategory(id: string, name: string, grade: Grade, parts: Part[], show: (card: string, rng: Rng, part: Part, n: number[]) => Question): Category {
   const byId = new Map(parts.map(x => [x.id, x]));
   return {
-    id, name, grade, quiz: true, varied: true,
+    id, name, grade, varied: true,
     cards: once(() => parts.flatMap(x => range(1, x.slots).map(i => `${id}:${x.id}:${i}`))),
     make(card, rng) {
       const x = byId.get(card.split(':')[1])!;
@@ -246,7 +245,7 @@ function drillCategory(grade: 1 | 2 | 3, own: Category[], lower: Category[]): Ca
   return {
     id: `drill-${grade}`, name: 'けいさんりょく', grade, drill: { length: 10 },
     cards: once(() => interleave([own.flatMap(c => c.cards()), lower.flatMap(c => c.cards())].filter(l => l.length))),
-    make: (card, rng, p) => add10.make(card, rng, p),   // どれも 'keisan:' のカードなので同じ作り方
+    make: (card, rng) => add10.make(card, rng),   // どれも 'keisan:' のカードなので同じ作り方
   };
 }
 const FACTS1 = [add10, sub10, addCarry, subBorrow];
@@ -342,7 +341,7 @@ function bunCategory(id: string, grade: Grade, templates: BunTemplate[], per: nu
     const ans = m.up ? q + 1 : q;
     return choice(card, rng, `<div class="passage">${m.text(a, b)}</div>`, `${ans}${m.unit}`,
       [m.up ? q : q + 1, r, ans + 1, ans + 2].map(x => `${x}${m.unit}`), `${a} ÷ ${b} ＝ ${q} あまり ${r}`);
-  }, false);
+  });
 }
 
 // 式をえらぶ問題なので、数を変えても練習にならない。文の型ごとに数問
@@ -655,7 +654,7 @@ export const bouGraph = category('bou-graph', 'ぼうグラフ', 3, () => range(
   const bars = vals.map((v, i) => `<rect x="${55 + i * 52}" y="${y(v)}" width="${bw}" height="${(v / max) * H}" fill="${i === k ? '#e11d48' : '#38bdf8'}"/><text x="${55 + i * 52 + bw / 2}" y="${top + H + 16}" font-size="12" text-anchor="middle" fill="#1f2937">${names[i]}</text>`).join('');
   const svg = `<svg class="fig" viewBox="0 0 ${W + 10} ${H + 30}" width="${W + 10}">${grid}${bars}</svg>`;
   return number(card, stack(svg, sentence(`すきな どうぶつ しらべ。${names[k]}は なん人？`)), vals[k]);
-}, false);
+});
 
 // アナログ時計の絵
 export function clockSvg(h: number, m: number): string {
@@ -671,11 +670,4 @@ export function clockSvg(h: number, m: number): string {
   const hand = (a: number, len: number, w: number, c: string) =>
     `<line x1="50" y1="50" x2="${50 + Math.sin(a) * len}" y2="${50 - Math.cos(a) * len}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
   return `<svg class="clock" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#fff" stroke="#334155" stroke-width="2"/>${ticks}${nums}${hand(ha, 22, 4, '#dc2626')}${hand(ma, 38, 2.5, '#1d4ed8')}<circle cx="50" cy="50" r="2.5" fill="#1f2937"/></svg>`;
-}
-
-// ゲームの中のクイズ用: テンキーの問題を3択に変える
-export function numberToChoice(rng: Rng, q: Extract<Question, { kind: 'number' }>): Question {
-  const spread = q.answer >= 10 ? [-10, -2, -1, 1, 2, 10] : [-2, -1, 1, 2];
-  const [choices, answer] = makeChoices(rng, q.answer, spread.map(d => q.answer + d).filter(n => n >= 0));
-  return { kind: 'choice', card: q.card, prompt: q.prompt, choices: choices.map(String), answer };
 }

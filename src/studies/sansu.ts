@@ -1,12 +1,10 @@
 import type { StudyDef } from './types';
 import * as M from '../learn/math';
 
-// カテゴリは学年ごと。ならびは画面の順（学年の中で、習う順）
+// カテゴリは学年ごと（学年の中で、習う順）。けいさん以外のテーマを足すときの材料
 export const SANSU: StudyDef = {
   id: 'sansu',
   name: 'さんすう',
-  icon: 'abacus',
-  color: 'var(--sansu)',
   categories: [
     M.kazuCount, M.kazuAdd, M.kazuSub, M.kurabe,
     M.drill1, M.ikutsu, M.narabi, M.add10, M.sub10, M.addCarry, M.subBorrow, M.mittsu, M.nanjuu, M.tokei1, M.tokei2, M.nagasa, M.bun1,

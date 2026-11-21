@@ -5,9 +5,11 @@
 ## いまの状態（2026-11-21〜、作り替え中）
 
 - 旧まなびランド（ゲーム × 学習）から、学習と記録だけのアプリへ作り替えている。ブランチ `feat/integrated-app`。
-- 画面（`src/ui/`）と学習の仕組み（`src/learn/engine.ts`・`srs.ts` の間隔反復、`src/state/` の記録）は、まだ旧まなびランドのまま。新しい画面・記録に置きかえる予定なので、ここを広げる変更はしない。
-- 算数「けいさん」の道（47ステージ）とちからだめしは、算数練習アプリから `src/learn/keisan/` に移植済み（画面はまだ）。仕様は [docs/03-keisan.md](docs/03-keisan.md)。
-- 新しい記録の層（`src/records/`、保存キー `manabi:v2`、端末どうしの合わせ方）は作成済みで、画面にはまだつないでいない。仕様は [docs/04-records.md](docs/04-records.md)。旧記録（`src/state/`）は画面の作り替えのときに消す。
+- 画面は新しくした（`src/ui/screens/`: 子ども選択・テーマ選択・けいさん・ひらがな・設定）。旧画面・旧記録（`src/state/`）・間隔反復（engine/srs）は外した。
+- 算数「けいさん」の道（47ステージ）とちからだめしは `src/learn/keisan/`、画面は `src/ui/screens/keisan.ts`。仕様は [docs/03-keisan.md](docs/03-keisan.md)。
+- 国語「ひらがなを かく」は行ごとの10単元（`src/learn/hiragana.ts`）、画面は `src/ui/screens/hira.ts`。
+- 記録は `src/records/`（保存キー `manabi:v2`）で、いまは端末の中だけ。Worker + KV で家族のデータを合わせるのは次の弾。仕様は [docs/04-records.md](docs/04-records.md)。
+- `src/learn/math.ts`・`kokugo.ts`・`src/studies/`・`src/data/` は、ほかのテーマを足すときの材料として残している（いまは画面から使っていない）。
 
 ## 設計の決まり（作業の前に読む）
 

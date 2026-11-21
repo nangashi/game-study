@@ -1,19 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { SANSU } from '../studies/sansu';
-import { newProfile } from '../state/store';
-import { numberToChoice } from './math';
 
 const seeded = (seed = 1) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 const cat = (id: string) => SANSU.categories.find(c => c.id === id)!;
 
 describe('さんすうの問題', () => {
-  const p = newProfile('t', 'wizard', 2);
-
   it('どのカードでも式と答えが合っていて、答えは0以上', () => {
     const rng = seeded();
     for (const c of SANSU.categories) {
       for (const card of c.cards()) {
-        const q = c.make(card, rng, p);
+        const q = c.make(card, rng);
         if (q.kind !== 'number' || !card.startsWith('keisan:')) continue;
         const [, a, op, b] = card.match(/^keisan:(\d+)(.)(\d+)$/)!;
         expect(q.answer, card).toBe(op === '+' ? +a + +b : op === '−' ? +a - +b : op === '×' ? +a * +b : +a / +b);
@@ -27,7 +23,7 @@ describe('さんすうの問題', () => {
   it('答えは0以上の整数', () => {
     for (const c of SANSU.categories) {
       for (const card of c.cards()) {
-        const q = c.make(card, Math.random, p);
+        const q = c.make(card, Math.random);
         if (q.kind === 'number') expect(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < 100000, card).toBe(true);
       }
     }
@@ -69,7 +65,7 @@ describe('さんすうの問題', () => {
       for (const card of c.cards()) {
         const prompts = new Set<string>();
         for (let i = 0; i < 30; i++) {
-          const q = c.make(card, rng, p);
+          const q = c.make(card, rng);
           expect(q.card).toBe(card);
           prompts.add(q.prompt);
           if (q.kind !== 'number') continue;
@@ -85,23 +81,10 @@ describe('さんすうの問題', () => {
     }
   });
 
-  it('3択の選択肢に正解がちょうど1つあり、重複しない', () => {
-    const rng = seeded(7);
-    for (const c of SANSU.categories) {
-      for (const card of c.cards().slice(0, 40)) {
-        let q = c.make(card, rng, p);
-        if (q.kind === 'number') q = numberToChoice(rng, q);
-        if (q.kind !== 'choice') throw new Error();
-        expect(new Set(q.choices).size, card).toBe(3);
-        expect(q.answer).toBeGreaterThanOrEqual(0);
-      }
-    }
-  });
-
   it('かぞえる問題の絵の数が正解と一致する', () => {
     const rng = seeded(3);
     for (const card of cat('kazu-count').cards()) {
-      const q = cat('kazu-count').make(card, rng, p);
+      const q = cat('kazu-count').make(card, rng);
       if (q.kind !== 'choice') throw new Error();
       expect(Number(q.choices[q.answer])).toBe((q.prompt.match(/class="ico"/g) ?? []).length);
     }

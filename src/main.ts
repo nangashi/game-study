@@ -1,6 +1,6 @@
 import './style.css';
 import { registerSW } from 'virtual:pwa-register';
-import { showProfiles } from './ui/screens/profiles';
+import { showChildren } from './ui/screens/children';
 
 registerSW({ immediate: true });
-showProfiles();
+showChildren();
