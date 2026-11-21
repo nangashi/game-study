@@ -1,8 +1,9 @@
 # 画像の作り方（Codex の画像生成 → 切り出し → 並べ直し）
 
-作成日: 2026-09-26 / 更新: 2026-09-26（ゲームごとに画像を分けた。どのゲームでも同じ手順で作れるようにした）
+作成日: 2026-09-26 / 更新: 2026-11-21（ゲームを外したので、スコープを `common` だけにした）
 
-どのゲームでもこの手順で作る。ゲームごとの画像の一覧は、各ゲームの設計書（`docs/games/<id>.md`）に書く。
+アプリで使う絵（子どものアバター・アイコン・かぞえる絵など）を作るときの手順。
+（新しい見た目は算数練習アプリの UI に合わせる方針なので、今後もこの生成画像を使い続けるかは画面の実装のときに決める）
 
 ## 全体の流れ
 
@@ -12,21 +13,17 @@
 ③ 使い方を書く            art/<スコープ>/art.json（切り方・名前・どのシートに入れるか）
 ④ 切り出して並べ直す      node scripts/art/build.mjs [<スコープ>]    → public/assets/<スコープ>/*.webp
                                                                       + 対応表 *.gen.ts（フレーム名 → 番号）
-⑤ コードで使う            DOM: spriteEl(SHEETS.icons, 'heart') / Phaser: loadSheet(scene, 'icons', SHEETS.icons)
+⑤ コードで使う            spriteEl(SHEETS.icons, 'heart') / iconHtml('apple')
 ```
 
 ## スコープ（画像の持ち主）
 
 | スコープ | 中身 | 出力 | 対応表 |
 |---|---|---|---|
-| `common` | 土台の画像: コイン・券などのアイコン、勉強で使う絵（かぞえる絵）、子どものアバター（`hero_*`）、ホームの背景 | `public/assets/common/` | `src/assets/common.gen.ts`（`src/art.ts` から使う） |
-| `games/<id>` | そのゲームだけの画像: キャラ・敵・アイコン・背景 | `public/assets/games/<id>/` | `src/games/<id>/assets.gen.ts` |
-| `lab` | あそびラボの試作用（ほかのスコープの生成画像を並べ直しただけ） | `public/assets/lab/` | `src/lab/assets.gen.ts`（`src/lab/assets.ts` から使う） |
+| `common` | アプリの画像: アイコン、勉強で使う絵（かぞえる絵）、子どものアバター（`hero_*`）、ホームの背景 | `public/assets/common/` | `src/assets/common.gen.ts`（`src/art.ts` から使う） |
 
-- **ゲームの画像はゲームのスコープに置く。** ゲームのコードは自分の `assets.gen.ts` を使う（型で、ほかのゲームのアイコン名は使えないようになっている）。
-- 土台のアイコン（コイン・券・もどる など）は、土台の通貨や操作を表すときだけゲームの中でも使ってよい（`src/games/kit/ui.ts`）。
-- 子どものアバターをゲームの主人公に使ってもよいし（サバイバー）、ゲームだけのキャラを作ってもよい（ひっぱりアタック）。
-- ほかのスコープの **生成画像** から絵を取り出して、自分のシートに入れてよい（`"common/icons1:bolt"`。1枚絵は `"images": { "ground": { "width": 512, "from": "games/survivor/ground" } }`）。出力は自分のスコープに置くので、ゲームどうしは独立したまま。
+- 仕組み（`scripts/art/`）はスコープをいくつでも持てる作りのまま残している。
+- ほかのスコープの **生成画像** から絵を取り出して、自分のシートに入れてよい（`"common/icons1:bolt"`）。
 
 ## ① プロンプト
 
@@ -40,7 +37,7 @@ Background: fully transparent (real PNG alpha).
 Do NOT post-process, crop, or edit the generated image; save it exactly as generated. Report the path and pixel size.
 ```
 
-絵の集まり（アイコン・キャラ・敵）:
+絵の集まり（アイコン・キャラ）:
 
 ```
 Layout: a strict 4x4 grid on a square canvas, 16 equal cells. One icon per cell, centered, similar visual size, with clear transparent margin so no icon touches or crosses a cell boundary.
@@ -64,7 +61,7 @@ In every frame the character is the same size, horizontally centered in its cell
 ## ② 生成
 
 ```bash
-scripts/art/gen.sh games/hippari chars enemies icons
+scripts/art/gen.sh common icons2 hero_cat
 ```
 
 - 中身は `codex exec --skip-git-repo-check -s workspace-write -C art/<スコープ>/raw "<プロンプト>" -i art/style-ref.png < /dev/null`
@@ -78,7 +75,7 @@ scripts/art/gen.sh games/hippari chars enemies icons
 
 ```jsonc
 {
-  "ts": "src/games/hippari/assets.gen.ts",          // 対応表の出力先
+  "ts": "src/assets/common.gen.ts",                 // 対応表の出力先
   "sources": {                                        // 生成画像の切り方と、絵の名前（読み順）
     "chars": { "grid": "3x2", "names": ["panda", "chick", "penguin", "hamster", "piglet", "bear"] },
     "icons": { "grid": "4x4", "group": "cell", "names": ["glove", "arm", /* ... */] }
@@ -102,7 +99,7 @@ scripts/art/gen.sh games/hippari chars enemies icons
 
 ```bash
 node scripts/art/build.mjs                 # すべて
-node scripts/art/build.mjs games/hippari   # 1つだけ
+node scripts/art/build.mjs common         # 1つだけ
 node scripts/art/sprite-sheet.mjs raw/x.png out.png --grid 4x4 --cell 128 [--group cell]   # ためしに1枚だけ
 ```
 
@@ -121,25 +118,20 @@ node scripts/art/sprite-sheet.mjs raw/x.png out.png --grid 4x4 --cell 128 [--gro
 ## ⑤ コードで使う
 
 ```ts
-import { SHEETS, IMAGES } from './assets.gen';
-import { spriteEl, assetUrl } from '../../assets/sprite';
-import { loadSheet } from '../kit/phaser';
+import { SHEETS } from './assets/common.gen';
+import { spriteEl } from './assets/sprite';
 
-spriteEl(SHEETS.icons, 'heart', 48);                       // DOM（CSS スプライト）。名前は型でしらべられる
-loadSheet(this, 'icons', SHEETS.icons);                    // Phaser の preload
-this.add.image(x, y, 'icons', SHEETS.icons.frames.heart);  // Phaser
-this.load.image('field', assetUrl(IMAGES.field));          // 1枚絵
+spriteEl(SHEETS.icons, 'apple', 48);   // DOM（CSS スプライト）。名前は型でしらべられる
+iconHtml('apple');                     // src/art.ts の近道
 ```
 
 ## スプライトシートにするか
 
 | 画像 | シートにする? | 理由 |
 |---|---|---|
-| アイコン・キャラ・敵（小さい絵がたくさん） | する | 生成は16個まとめての方が速く、絵柄もそろう。読みこみが1回ですみ、Phaser では同じテクスチャなのでまとめて描ける |
+| アイコン・キャラ（小さい絵がたくさん） | する | 生成は16個まとめての方が速く、絵柄もそろう。読みこみが1回ですむ |
 | アニメーション | する（2x2） | コマの大きさと足元をそろえられる |
 | 背景・床（大きい1枚絵） | しない（`images`） | 1枚で大きいので、まとめる得がない |
-
-ゲームのスコープごとに「アイコン1枚・キャラ1枚・敵1枚 + 背景」くらいが目安（1ゲーム 300〜600KB）。
 
 ## 検証で分かったこと
 

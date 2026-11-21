@@ -12,14 +12,13 @@ export interface Category {
   quiz?: boolean;    // すぐ答えられる3択にできる（ゲームの中のクイズで使う）
   // ドリル（けいさんりょく）: 時間を計り、遅い問題を先に出す。まぜこぜには入れない
   drill?: { length: number };
-  // 計算のわく: カードは「要素のわく」で、出すたびに数が変わる（docs/03-rewards-and-games.md）
+  // 計算のわく: カードは「要素のわく」で、出すたびに数が変わる
   varied?: boolean;
   cards(): readonly string[];  // 問題プール。まだやっていない問題はこの順に出す（やさしい順）
   make(card: string, rng: Rng, p: Profile): Question;
 }
 
 // 勉強（教科）。ホームのボタンと、ゲーム券の「きょうはじめての教科」の単位になる
-// 足しかたは docs/03-rewards-and-games.md の「新しい勉強を足すときの手順」
 export interface StudyDef {
   id: string;        // 保存データのキーになるので後から変えない
   name: string;      // ひらがな

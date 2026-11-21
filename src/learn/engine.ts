@@ -5,7 +5,7 @@ import type { Answer, Question } from './types';
 import { shuffle, type Rng } from './random';
 import { updateCard } from './srs';
 
-// 問題の選び方（Anki と同じ考え方。docs/03-rewards-and-games.md）
+// 問題の選び方（Anki と同じ考え方）
 // 1. 復習の日が来た問題（定着していないもの・期限が古いものから）
 // 2. まだやっていない問題（カテゴリの中のやさしい順。まぜこぜではカテゴリを順番に）
 // 3. 足りなければ、復習の日がまだ来ていない問題

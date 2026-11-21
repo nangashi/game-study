@@ -1,6 +1,6 @@
 // 1画ずつの手書き判定（お手本の字が分かっている前提）
 // 座標系はすべて KanjiVG の 109x109 ボックス
-// 検証結果: docs/01-research-and-feasibility.md
+// 検証結果: docs/01-handwriting-feasibility.md
 
 export type Pt = [number, number];
 export type JudgeReason = 'ok' | 'direction' | 'order' | 'shape';

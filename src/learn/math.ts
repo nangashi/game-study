@@ -8,7 +8,7 @@ import { AMARI, BUN1, BUN2, BUN3, type AmariTemplate, type BunOp, type BunTempla
 
 // 算数の問題の作り方。カテゴリの一覧は src/studies/sansu.ts
 // カードは1問ずつ（例: 'keisan:7+8'、'tani2:cm_mm,3,4'）。カードが同じなら同じ問題になる（選択肢のならびだけ変わる）
-// 問題の数は「これだけ解けたら習熟した」と言える量（docs/03-rewards-and-games.md）。やり方を身につけるものは「要素 × 数問」
+// 問題の数は「これだけ解けたら習熟した」と言える量。やり方を身につけるものは「要素 × 数問」
 // 計算（筆算など）は「要素 × わく」をカードにし、出すたびに数を変える（calcCategory）
 
 // ---- 道具 ----
