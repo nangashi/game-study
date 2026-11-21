@@ -17,8 +17,11 @@ export interface WritepadOptions {
   onDone: (r: { helped: boolean; fails: number }) => void;
 }
 
+// pad: 書くマス / side: お手本マスと「おてほん」ボタン（画面側でマスコットの行に置く）
+export interface Writepad { pad: HTMLElement; side: HTMLElement }
+
 // マスに1画ずつ書かせて、その場で判定する
-export function writepad(o: WritepadOptions): HTMLElement {
+export function writepad(o: WritepadOptions): Writepad {
   const judge = new StrokeJudge(o.strokes, TOLERANCE[o.tolerance]);
   const svg = document.createElementNS(NS, 'svg');
   svg.setAttribute('viewBox', `0 0 ${BOX} ${BOX}`);
@@ -30,7 +33,7 @@ export function writepad(o: WritepadOptions): HTMLElement {
 
   const model = h('div', { class: 'model', textContent: o.char });
   const demoBtn = h('button', { class: 'pill-btn', textContent: 'おてほん', onclick: () => demo() });
-  const wrap = h('div', { class: 'writepad-wrap' }, pad, h('div', { class: 'col' }, model, h('div', { style: 'height:10px' }), demoBtn));
+  const side = h('div', { class: 'model-side' }, model, demoBtn);
 
   const el = (tag: string, attrs: Record<string, string | number>) => {
     const e = document.createElementNS(NS, tag);
@@ -136,5 +139,5 @@ export function writepad(o: WritepadOptions): HTMLElement {
 
   new ResizeObserver(resize).observe(canvas);
   drawBase();
-  return wrap;
+  return { pad, side };
 }

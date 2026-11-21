@@ -91,6 +91,7 @@ function startHira(u: HiraUnit) {
   const msg = h('div', { class: 'write-msg' });
   const mark = h('div', { class: 'mark-overlay' });
   const padBox = h('div', { class: 'pad-box' });
+  const sideBox = h('div', { class: 'model-box' });
 
   mount(h('section', { class: 'play-screen write-screen' },
     h('div', { class: 'play-top' },
@@ -100,7 +101,7 @@ function startHira(u: HiraUnit) {
     h('div', { class: 'prog' }, dots, num),
     h('div', { class: 'stage-area' },
       h('div', { class: 'problem-card write-card' },
-        h('div', { class: 'mascot-row' }, mascot, guideNote),
+        h('div', { class: 'mascot-row' }, mascot, guideNote, sideBox),
         msg, padBox, mark)),
   ));
 
@@ -120,9 +121,10 @@ function startHira(u: HiraUnit) {
     guideNote.textContent = it.guide === 'trace' ? 'うすい じを なぞろう' : 'おてほんを みて かこう';
     msg.textContent = '';
     padBox.replaceChildren(h('div', { class: 'write-msg', textContent: '…' }));
+    sideBox.replaceChildren();
     const all = await loadStrokes();
     if (my !== token) return;
-    padBox.replaceChildren(writepad({
+    const wp = writepad({
       strokes: all[it.char], guide: it.guide, char: it.char, tolerance,
       onMessage: t => { msg.textContent = t; },
       onDone: async r => {
@@ -135,7 +137,9 @@ function startHira(u: HiraUnit) {
         await wait(REDUCED ? 400 : 900);
         void show(i + 1);
       },
-    }));
+    });
+    padBox.replaceChildren(wp.pad);
+    sideBox.replaceChildren(wp.side);
   };
   void show(0);
 }

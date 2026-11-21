@@ -327,12 +327,13 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .write-guide { font-weight: 800; font-size: 1.125rem; color: var(--ink-soft); }
 .write-msg { font-weight: 800; font-size: 1.25rem; min-height: 1.5em; color: var(--teal-dark); }
 .pad-box { width: 100%; display: flex; justify-content: center; }
-.writepad-wrap { display: flex; gap: 12px; align-items: center; justify-content: center; width: 100%; }
-.writepad { position: relative; width: min(100% - 112px, 52dvh, 420px); aspect-ratio: 1; background: #fff; border: 5px solid #b45309; border-radius: 16px; touch-action: none; flex: none; }
+.writepad { position: relative; width: min(100%, 52dvh, 420px); aspect-ratio: 1; background: #fff; border: 5px solid #b45309; border-radius: 16px; touch-action: none; flex: none; }
 .writepad svg, .writepad canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.writepad-wrap .col { display: flex; flex-direction: column; align-items: center; }
-.model { width: 100px; aspect-ratio: 1; background: #fff; border: 3px dashed #d6d3d1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 76px; font-family: "Klee One", "UD Digi Kyokasho N-R", serif; }
-.writepad-wrap .pill-btn { padding: 8px 12px; }
+/* お手本マスと「おてほん」ボタンはマスコットの行に置く */
+.model-box { flex: none; }
+.model-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.model { width: 72px; aspect-ratio: 1; background: #fff; border: 3px dashed #d6d3d1; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 54px; font-family: "Klee One", "UD Digi Kyokasho N-R", serif; }
+.model-side .pill-btn { padding: 6px 10px; white-space: nowrap; }
 .stroke-anim { animation: draw .7s ease forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } }
 .flash { animation: flash .9s ease 2; }
