@@ -13,6 +13,7 @@ export interface WritepadOptions {
   guide: 'trace' | 'model' | 'none';
   char: string;
   tolerance: Tolerance;
+  helpLabel?: string;                // 「おてほん」ボタンの文言
   onMessage: (text: string) => void;
   onDone: (r: { helped: boolean; fails: number }) => void;
 }
@@ -32,7 +33,7 @@ export function writepad(o: WritepadOptions): Writepad {
   let helped = false, fails = 0, failsHere = 0, demoRunning = false;
 
   const model = h('div', { class: 'model', textContent: o.char });
-  const demoBtn = h('button', { class: 'pill-btn', textContent: 'おてほん', onclick: () => demo() });
+  const demoBtn = h('button', { class: 'pill-btn', textContent: o.helpLabel ?? 'おてほん', onclick: () => demo() });
   const side = h('div', { class: 'model-side' }, model, demoBtn);
 
   const el = (tag: string, attrs: Record<string, string | number>) => {

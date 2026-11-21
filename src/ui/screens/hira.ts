@@ -1,4 +1,4 @@
-import { HIRA_UNITS, hiraItems, judgeHira, type HiraUnit, type HiraWriteResult } from '../../learn/hiragana';
+import { HIRA_UNITS, blankWord, hiraItems, judgeHira, type HiraUnit, type HiraWriteResult } from '../../learn/hiragana';
 import { loadStrokes } from '../../learn/handwriting/strokes';
 import { recordUnitResult, type ChildRecord } from '../../records';
 import { REDUCED, current, pushFamily, updateCurrent } from '../app';
@@ -55,7 +55,7 @@ export function showHiraMap(): void {
   mount(h('section', { class: 'screen' }, h('div', { class: 'wrap' },
     h('button', { class: 'btn btn-ghost', type: 'button', textContent: '← テーマを えらぶ', onclick: () => { tap(); showThemes(); } }),
     h('div', { class: 'road-head' },
-      h('h2', { textContent: 'ひらがな・カタカナの 道' }),
+      h('h2', { textContent: 'ひらがなの 道' }),
       h('p', { textContent: 'おてほんを みて、ゆびで かいてみよう' })),
     road,
   )));
@@ -88,6 +88,7 @@ function startHira(u: HiraUnit) {
   const num = h('div', { class: 'prog-num' });
   const mascot = h('div', { class: 'mascot-box' });
   const guideNote = h('div', { class: 'write-guide' });
+  const pic = h('div', { class: 'write-pic' }); // えを みて かく: 絵と空欄つきの言葉
   const msg = h('div', { class: 'write-msg' });
   const mark = h('div', { class: 'mark-overlay' });
   const padBox = h('div', { class: 'pad-box' });
@@ -101,6 +102,7 @@ function startHira(u: HiraUnit) {
     h('div', { class: 'prog' }, dots, num),
     h('div', { class: 'stage-area' },
       h('div', { class: 'problem-card write-card' },
+        pic,
         h('div', { class: 'mascot-row' }, mascot, guideNote, sideBox),
         msg, padBox, mark)),
   ));
@@ -118,14 +120,24 @@ function startHira(u: HiraUnit) {
     progress(i);
     mark.classList.remove('show');
     mascot.innerHTML = mascotSVG(color, 'normal');
-    guideNote.textContent = it.guide === 'trace' ? 'うすい じを なぞろう' : 'おてほんを みて かこう';
+    guideNote.textContent = it.guide === 'trace' ? 'うすい じを なぞろう'
+      : it.guide === 'model' ? 'おてほんを みて かこう'
+        : it.char === 'ん' ? 'さいごの じを かこう' : 'えを みて かこう';
+    const p = it.picture;
+    pic.hidden = !p;
+    pic.replaceChildren(...(p ? [
+      h('span', { class: 'write-pic-emoji', textContent: p.emoji, 'aria-hidden': 'true' }),
+      h('span', { class: 'write-pic-word', textContent: blankWord(p) }),
+    ] : []));
     msg.textContent = '';
     padBox.replaceChildren(h('div', { class: 'write-msg', textContent: '…' }));
     sideBox.replaceChildren();
     const all = await loadStrokes();
     if (my !== token) return;
     const wp = writepad({
-      strokes: all[it.char], guide: it.guide, char: it.char, tolerance,
+      // recall は見本なし（writepad の none）。「おてほんを みる」を使うと helped になる
+      strokes: all[it.char], guide: it.guide === 'recall' ? 'none' : it.guide, char: it.char, tolerance,
+      helpLabel: it.guide === 'recall' ? 'おてほんを みる' : undefined,
       onMessage: t => { msg.textContent = t; },
       onDone: async r => {
         results.push({ helped: r.helped });

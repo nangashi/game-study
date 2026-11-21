@@ -324,6 +324,10 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 /* 書き取り */
 .write-card { display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .write-card .mascot-row { align-items: center; }
+.write-pic { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.write-pic[hidden] { display: none; }
+.write-pic-emoji { font-size: 64px; line-height: 1; }
+.write-pic-word { font-weight: 800; font-size: 2.25rem; letter-spacing: .12em; font-family: "Klee One", "UD Digi Kyokasho N-R", serif; }
 .write-guide { font-weight: 800; font-size: 1.125rem; color: var(--ink-soft); }
 .write-msg { font-weight: 800; font-size: 1.25rem; min-height: 1.5em; color: var(--teal-dark); }
 .pad-box { width: 100%; display: flex; justify-content: center; }

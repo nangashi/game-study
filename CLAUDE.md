@@ -7,7 +7,7 @@
 - 旧まなびランド（ゲーム × 学習）から、学習と記録だけのアプリへ作り替えている。ブランチ `feat/integrated-app`。
 - 画面は新しくした（`src/ui/screens/`: 子ども選択・テーマ選択・けいさん・ひらがな・設定）。旧画面・旧記録（`src/state/`）・間隔反復（engine/srs）は外した。
 - 算数「けいさん」の道（47ステージ）とちからだめしは `src/learn/keisan/`、画面は `src/ui/screens/keisan.ts`。仕様は [docs/03-keisan.md](docs/03-keisan.md)。
-- 国語「ひらがなを かく」は行ごとの10単元（`src/learn/hiragana.ts`）、画面は `src/ui/screens/hira.ts`。
+- 国語「ひらがなを かく」は行ごとの10単元（なぞる → みて かく）と、そのあとの「えを みて かく」5単元（見本なしで、絵と空欄つきの言葉から思い出して書く。「を」以外の45字）。データは `src/learn/hiragana.ts`、画面は `src/ui/screens/hira.ts`。
 - 記録は `src/records/`（保存キー `manabi:v2`）。Worker（`worker/`）の `/api/family` に家族で1つのデータを置き、起動時に取って合わせ、結果画面で送る（サーバーでも mergeFamily で合わせる）。全消しはリセット印 `resetAt`。仕様は [docs/04-records.md](docs/04-records.md)。
 - デプロイ: workers.dev の URL に Access のアプリをかける形（playland・cookbook と同じ）。KV・Access の値は `wrangler.jsonc` に入れ済み。main への push で CI が `wrangler deploy` する。
 - `src/learn/math.ts`・`kokugo.ts`・`src/studies/`・`src/data/` は、ほかのテーマを足すときの材料として残している（いまは画面から使っていない）。
