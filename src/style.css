@@ -442,6 +442,11 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .kz-pad-title { font-weight: 800; color: var(--ink-soft); font-size: 1rem; }
 .kz-pad-close { border: 2px solid #cfe4e9; background: #f7fcfd; border-radius: 999px; padding: 2px 16px; font-weight: 800; font-size: 1rem; }
 .kz-dot { visibility: hidden; }
+/* かずのパッド: 白いシートの上なので、枠・影なしのベタ塗りでキーの面を見せる（案A フラット） */
+.kz-pad .key { background: #f1ece2; box-shadow: none; }
+.kz-pad .key:active { transform: none; box-shadow: none; background: #e0d8c8; }
+.kz-pad .key.fn { background: #dcedf0; }
+.kz-pad .key.fn:active { background: #c4dfe4; }
 @media (prefers-reduced-motion: reduce) {
   .kz-field.good, .kz-field.bad, .kz-choice.bad { animation: none; }
 }
