@@ -1,0 +1,9 @@
+# 更新を確実に届けるため、入口・SW・マニフェストは毎回確かめる（ハッシュ付きの assets/* はそのまま）
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache

@@ -5,6 +5,7 @@ import {
 } from '../../records';
 import { app, now, pushFamily, save } from '../app';
 import { h, mount } from '../dom';
+import { updateAppNow } from '../pwa-update';
 import { ensureAudio, sndTap, tap } from '../sound';
 import { avatarPicker, showChildren, showRegister } from './children';
 
@@ -86,6 +87,31 @@ function childCard(c: ChildRecord): HTMLElement {
       })));
 }
 
+// アプリの更新。押すと新しい版を確かめ、あれば切り替える（リロード）
+function updateCard(): HTMLElement {
+  const msg = h('div', { class: 'set-msg', role: 'status' });
+  const btn = h('button', { class: 'btn btn-teal', type: 'button', textContent: 'アプリを さいしんに する' });
+  btn.addEventListener('click', () => {
+    tap();
+    btn.disabled = true;
+    msg.classList.remove('err');
+    msg.textContent = '確かめています…';
+    void updateAppNow().then(r => {
+      if (r === 'reloading') { msg.textContent = '新しい版に切り替えています…'; return; }
+      btn.disabled = false;
+      msg.textContent = r === 'latest' ? 'さいしんの じょうたいです'
+        : r === 'unsupported' ? 'この画面では更新を確かめられません'
+          : '更新を確かめられませんでした。つながっているか確かめてください';
+      msg.classList.toggle('err', r !== 'latest');
+    });
+  });
+  return h('div', { class: 'card set-card' },
+    h('h2', { textContent: 'アプリの更新' }),
+    h('p', { class: 'set-note', textContent: '新しい版が出ているのに画面が古いままのときに押してください。新しい版があれば、読み込みなおして切り替えます。' }),
+    h('div', { class: 'set-row' }, btn),
+    msg);
+}
+
 export function showSettings(note = ''): void {
   app.childId = null;
   const kids = activeChildren(app.family);
@@ -144,6 +170,8 @@ export function showSettings(note = ''): void {
       h('div', { class: 'set-row' },
         h('button', { class: 'btn btn-orange', type: 'button', textContent: '読み込む', onclick: doImport })),
       msg),
+
+    updateCard(),
 
     h('div', { class: 'card set-card' },
       h('h2', { textContent: '記録をすべて消す' }),

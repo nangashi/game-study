@@ -11,6 +11,7 @@
 - 国語「ひらがなを かく」は行ごとの10単元（なぞる → みて かく）と、そのあとの「えを みて かく」5単元（見本なしで、絵と空欄つきの言葉から思い出して書く。「を」以外の45字）。データは `src/learn/hiragana.ts`、画面は `src/ui/screens/hira.ts`。
 - 記録は `src/records/`（保存キー `manabi:v2`）。Worker（`worker/`）の `/api/family` に家族で1つのデータを置き、起動時に取って合わせ、結果画面で送る（サーバーでも mergeFamily で合わせる）。全消しはリセット印 `resetAt`。仕様は [docs/04-records.md](docs/04-records.md)。
 - デプロイ: workers.dev の URL に Access のアプリをかける形（playland・cookbook と同じ）。KV・Access の値は `wrangler.jsonc` に入れ済み。main への push で CI が `wrangler deploy` する。
+- PWA の更新は `src/ui/pwa-update.ts`（起動時・前面復帰で `registration.update()`、新しい SW が制御を取ったら1回だけリロード、設定の「アプリを さいしんに する」）。入口・sw.js・manifest は `public/_headers` で `Cache-Control: no-cache`。
 - `src/learn/math.ts`・`kokugo.ts`・`src/studies/`・`src/data/` は、ほかのテーマを足すときの材料として残している（いまは画面から使っていない）。
 
 ## 設計の決まり（作業の前に読む）
