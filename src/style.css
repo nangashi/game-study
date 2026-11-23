@@ -299,6 +299,15 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
   margin-top: 8px;
 }
 .key-ok:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--orange-dark); }
+/* 数字入力パッド（けいさん・かず 共通）: 画面下の白いシート。シートの上なので、キーは枠・影なしのベタ塗り（案A フラット） */
+.pad-screen { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
+.num-pad { flex: none; margin-top: auto; background: #fff; border-radius: 22px 22px 0 0; margin-left: -14px; margin-right: -14px; padding: 8px 14px 0; box-shadow: 0 -6px 18px rgba(23,50,62,.10); }
+.num-pad[hidden] { display: none; }
+.num-pad .keypad { margin-top: 0; padding-top: 4px; }
+.num-pad .key { background: #f1ece2; box-shadow: none; }
+.num-pad .key:active { transform: none; box-shadow: none; background: #e0d8c8; }
+.num-pad .key.fn { background: #dcedf0; }
+.num-pad .key.fn:active { background: #c4dfe4; }
 
 /* ちからだめし */
 .test-ladder { display: flex; align-items: center; gap: 10px; margin-top: 8px; background: rgba(255,255,255,.9); border-radius: 999px; padding: 6px 14px; box-shadow: 0 3px 0 rgba(23,50,62,.10); font-weight: 800; }
@@ -395,7 +404,6 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .sync-note.auth { background: rgba(163, 18, 58, .9); }
 
 /* ---------- かず（問題形式は「かず 問題形式モック」のまま。色はこのアプリのもの） ---------- */
-.kz-screen { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 .kz-area { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 8px; }
 .kz-card .mascot-row { min-height: 70px; }
 .kz-card .mascot-box { width: 70px; height: 70px; }
@@ -435,9 +443,6 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .kz-choice.bad { background: var(--red-soft); border-color: var(--red); color: var(--red); animation: shake .4s ease; }
 .kz-choice.dim { opacity: .45; }
 .kz-note-ans { display: inline-flex; vertical-align: middle; font-size: 1.6rem; }
-.kz-pad { flex: none; background: #fff; border-radius: 22px 22px 0 0; margin: 0 -14px; padding: 8px 14px 0; box-shadow: 0 -6px 18px rgba(23,50,62,.10); }
-.kz-pad[hidden] { display: none; }
-.kz-pad .keypad { margin-top: 0; padding-top: 4px; }
 /* 数字入力の問題（パッドを いつも出す）: 図は パッドを除いた のこりの高さに おさめる。
    --kz-room は 問題の部分（.kz-body）に使える高さ。600px などは 上の帯・進み・カードの余白・マスコット・パッドの合計 */
 .kz-with-pad { --kz-room: calc(100vh - 600px); --kz-room: calc(100dvh - 600px); }
@@ -461,11 +466,6 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
   .kz-with-pad .kz-q-fracRead .kz-line { font-size: 1.35rem; flex-wrap: nowrap; }
 }
 .kz-dot { visibility: hidden; }
-/* かずのパッド: 白いシートの上なので、枠・影なしのベタ塗りでキーの面を見せる（案A フラット） */
-.kz-pad .key { background: #f1ece2; box-shadow: none; }
-.kz-pad .key:active { transform: none; box-shadow: none; background: #e0d8c8; }
-.kz-pad .key.fn { background: #dcedf0; }
-.kz-pad .key.fn:active { background: #c4dfe4; }
 @media (prefers-reduced-motion: reduce) {
   .kz-field.good, .kz-field.bad, .kz-choice.bad { animation: none; }
 }

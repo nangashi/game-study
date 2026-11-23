@@ -159,11 +159,13 @@ function playView(): PlayView {
     b.addEventListener('pointerdown', e => { e.preventDefault(); pressKey(k); });
     return b;
   };
-  const keypad = h('div', { class: 'keypad' },
-    ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => key(d, d)),
-    key('del', 'けす', 'key fn'), key('0', '0'), key('clear', '全部けす', 'key fn'),
-    key('ok', 'けってい', 'key-ok'));
-  const root = h('section', { class: 'play-screen' },
+  // パッドは かず と同じ（白いシート＋フラットなキー。見た目は style.css の .num-pad）
+  const keypad = h('div', { class: 'num-pad' },
+    h('div', { class: 'keypad' },
+      ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => key(d, d)),
+      key('del', 'けす', 'key fn'), key('0', '0'), key('clear', '全部けす', 'key fn'),
+      key('ok', 'けってい', 'key-ok')));
+  const root = h('section', { class: 'play-screen pad-screen' },
     h('div', { class: 'play-top' },
       h('button', { class: 'quit-btn', type: 'button', textContent: 'やめる', onclick: () => { sess = null; showKeisanMap(); } }),
       v.theme,

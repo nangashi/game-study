@@ -121,7 +121,7 @@ function view(unit: KazuUnit): View {
   };
   const dotKey = key('.', '.', 'key kz-dot');
   // 数字入力の問題では、キーパッドを画面の下に いつも出す（欄のタップは 入力する欄の切り替えだけ）
-  const pad = h('div', { class: 'kz-pad', hidden: true },
+  const pad = h('div', { class: 'num-pad', hidden: true },
     h('div', { class: 'keypad' },
       ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => key(d, d)),
       dotKey, key('0', '0'), key('del', 'けす', 'key fn'),
@@ -130,7 +130,7 @@ function view(unit: KazuUnit): View {
     h('div', { class: 'problem-card kz-card' },
       h('div', { class: 'mascot-row' }, v.mascot, v.combo),
       v.body, note, v.mark, v.burst));
-  const root = h('section', { class: 'play-screen kz-screen' },
+  const root = h('section', { class: 'play-screen pad-screen' },
     h('div', { class: 'play-top' },
       h('button', { class: 'quit-btn', type: 'button', textContent: 'やめる', onclick: () => { sess = null; showKazuMap(); } }),
       h('div', { class: 'play-theme', textContent: unit.name }),
