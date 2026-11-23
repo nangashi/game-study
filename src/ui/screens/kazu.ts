@@ -91,7 +91,7 @@ interface Session {
   inputs: string[];               // 欄ごとの入力
   fields: HTMLButtonElement[];    // 欄（番号順）
   choices: HTMLButtonElement[];
-  active: number;                 // キーパッドで入力中の欄（-1 は とじている）
+  active: number;                 // キーパッドで入力中の欄（-1 は なし）
   v: View;
 }
 let sess: Session | null = null;
@@ -120,11 +120,8 @@ function view(unit: KazuUnit): View {
     return b;
   };
   const dotKey = key('.', '.', 'key kz-dot');
-  // キーパッドは 欄をタップしたときだけ出す（モックのまま）
+  // 数字入力の問題では、キーパッドを画面の下に いつも出す（欄のタップは 入力する欄の切り替えだけ）
   const pad = h('div', { class: 'kz-pad', hidden: true },
-    h('div', { class: 'kz-pad-head' },
-      h('span', { class: 'kz-pad-title', textContent: 'すうじ' }),
-      h('button', { class: 'kz-pad-close', type: 'button', textContent: 'とじる ×', onclick: () => closePad() })),
     h('div', { class: 'keypad' },
       ...['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(d => key(d, d)),
       dotKey, key('0', '0'), key('del', 'けす', 'key fn'),
@@ -184,7 +181,9 @@ function renderQuestion(s: Session) {
   s.locked = false;
   s.fields = []; s.choices = [];
   s.inputs = q.mode === 'input' ? q.answers.map(() => '') : [];
-  closePad();
+  s.active = q.mode === 'input' ? 0 : -1;
+  s.v.pad.hidden = q.mode !== 'input';
+  s.v.root.classList.toggle('kz-with-pad', q.mode === 'input');
   s.v.mark.classList.remove('show');
   s.v.note.classList.remove('show');
   s.v.dotKey.style.visibility = q.mode === 'input' && q.decimal ? 'visible' : 'hidden';
@@ -201,6 +200,7 @@ function renderQuestion(s: Session) {
     }, pieceEl(s, o)));
     parts.push(h('div', { class: 'kz-choices' }, ...s.choices));
   }
+  s.v.body.className = `kz-body kz-q-${q.type}`;
   s.v.body.replaceChildren(...parts);
   drawFields(s);
   updateCombo(s);
@@ -235,18 +235,9 @@ function updateCombo(s: Session) {
 
 function activate(s: Session, i: number) {
   s.active = i;
-  s.v.pad.hidden = false;
   drawFields(s);
-  // 欄がキーパッドの下にかくれないように
+  // 問題が高くて スクロールしているときも、欄が見えるように
   s.fields[i]?.scrollIntoView?.({ block: 'nearest' });
-}
-
-function closePad() {
-  const s = sess;
-  if (!s) return;
-  s.active = -1;
-  s.v.pad.hidden = true;
-  drawFields(s);
 }
 
 function pressKey(k: string) {
@@ -267,18 +258,21 @@ function pressKey(k: string) {
   drawFields(s);
 }
 
-// けってい: 空の欄があれば そこへ動く。全部うまったら判定して、キーパッドを とじる
+// けってい: 空の欄があれば そこへ動く。全部うまったら判定する（キーパッドは出したまま）
 function decide(s: Session, q: InputQuestion) {
   if (s.inputs[s.active] === '') return;
   const empty = s.inputs.findIndex(v => v === '');
   if (empty >= 0) { sndTap(); activate(s, empty); return; }
-  closePad();
+  s.active = -1;
+  drawFields(s);
   const each = checkFields(q, s.inputs);
   const ok = each.every(Boolean);
   s.fields.forEach((f, i) => f.classList.add(each[i] ? 'good' : 'bad'));
   if (!ok) {
     s.v.noteAns.replaceChildren(...answerPieces(q).map(p => pieceEl(s, p)));
     s.v.note.classList.add('show');
+    // 高さが足りない画面でも「こたえは」が パッドの上に見えるように
+    s.v.note.scrollIntoView?.({ block: 'nearest' });
   }
   afterAnswer(s, ok);
 }

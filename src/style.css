@@ -438,9 +438,28 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .kz-pad { flex: none; background: #fff; border-radius: 22px 22px 0 0; margin: 0 -14px; padding: 8px 14px 0; box-shadow: 0 -6px 18px rgba(23,50,62,.10); }
 .kz-pad[hidden] { display: none; }
 .kz-pad .keypad { margin-top: 0; padding-top: 4px; }
-.kz-pad-head { display: flex; align-items: center; justify-content: space-between; }
-.kz-pad-title { font-weight: 800; color: var(--ink-soft); font-size: 1rem; }
-.kz-pad-close { border: 2px solid #cfe4e9; background: #f7fcfd; border-radius: 999px; padding: 2px 16px; font-weight: 800; font-size: 1rem; }
+/* 数字入力の問題（パッドを いつも出す）: 図は パッドを除いた のこりの高さに おさめる。
+   --kz-room は 問題の部分（.kz-body）に使える高さ。600px などは 上の帯・進み・カードの余白・マスコット・パッドの合計 */
+.kz-with-pad { --kz-room: calc(100vh - 600px); --kz-room: calc(100dvh - 600px); }
+.kz-with-pad .kz-fig svg { max-height: max(48px, calc(var(--kz-room) - 74px)); }     /* 数直線・丸・10マス: 下に 答えの行（60px） */
+/* 分数の読み取り: 下に 分数の2欄と説明。円は 140px まで（幅も そろえる） */
+.kz-with-pad .kz-fig-pie { --pie: min(140px, max(96px, calc(var(--kz-room) - 172px))); }
+.kz-with-pad .kz-fig-pie svg { width: var(--pie); height: var(--pie); max-height: none; }
+@media (max-height: 900px) {
+  .kz-with-pad { --kz-room: calc(100vh - 586px); --kz-room: calc(100dvh - 586px); }
+  .kz-with-pad .kz-card .mascot-row { min-height: 56px; }
+  .kz-with-pad .kz-card .mascot-box { width: 56px; height: 56px; }
+}
+@media (max-height: 720px) {
+  .kz-with-pad { --kz-room: calc(100vh - 546px); --kz-room: calc(100dvh - 546px); }
+}
+/* 高さが足りず 幅がある画面（タブレットの横向きなど）: 分数の読み取りは 円と 分数の欄を 横にならべる */
+@media (max-height: 900px) and (min-width: 520px) {
+  .kz-with-pad .kz-q-fracRead { flex-direction: row; flex-wrap: wrap; justify-content: center; column-gap: 14px; }
+  .kz-with-pad .kz-q-fracRead .kz-small { flex-basis: 100%; text-align: center; }
+  .kz-with-pad .kz-q-fracRead .kz-fig-pie { --pie: min(140px, max(96px, calc(var(--kz-room) - 36px))); }
+  .kz-with-pad .kz-q-fracRead .kz-line { font-size: 1.35rem; flex-wrap: nowrap; }
+}
 .kz-dot { visibility: hidden; }
 /* かずのパッド: 白いシートの上なので、枠・影なしのベタ塗りでキーの面を見せる（案A フラット） */
 .kz-pad .key { background: #f1ece2; box-shadow: none; }
