@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../learn/keisan/__original__/harness';
 import { applyTestResult, mergeStageResult, stageByNum, type TestProgress } from '../learn/keisan';
 import {
-  activeChildren, addChild, emptyFamily, finishKeisanStage, finishTest, kanjiCards, makeChildId, newChild, normalizeFamily,
-  recordKanjiResult,
+  activeChildren, addChild, emptyFamily, finishKanjiRun, finishKeisanStage, finishTest, kanjiCards, kanjiProgress, kanjiRunCount,
+  makeChildId, newChild, normalizeFamily, recordKanjiResult,
   recordUnitResult, removeChild, setTestProgress, startKeisanStage, updateChild,
 } from './model';
-import { RECORDS_KEY, clearRecords, loadRecords, saveRecords, type KeyValueStorage } from './storage';
+import { DEVICE_KEY, RECORDS_KEY, clearRecords, deviceId, loadRecords, saveRecords, type KeyValueStorage } from './storage';
 
 const child = () => newChild('a', { name: 'たろう', avatar: 'cat' }, 100);
 
@@ -18,6 +18,7 @@ describe('子ども', () => {
       units: {},
       keisan: { stages: {}, playableThrough: 1, testDone: false, testProgress: { value: null, at: 0 }, lastStage: { value: null, at: 0 } },
       kanji: {},
+      kanjiRuns: {},
     });
   });
 
@@ -114,6 +115,7 @@ describe('読み込んだデータをそろえる', () => {
         testProgress: { value: null, at: 3 }, lastStage: { value: null, at: 0 },
       },
       kanji: {},
+      kanjiRuns: {},
     });
   });
 
@@ -151,6 +153,31 @@ describe('漢字の書き取り', () => {
     const fam = addChild(emptyFamily(), c);
     expect(normalizeFamily(JSON.parse(JSON.stringify(fam)))).toEqual(fam);
   });
+
+  it('進み具合: とけた字は一度でも正解した字（卒業もふくむ）、そつぎょうは卒業した字', () => {
+    let c = recordKanjiResult(child(), '一', 'wrong', '2026-11-25', 1);
+    c = recordKanjiResult(c, '二', 'correct', '2026-11-25', 2);
+    c = recordKanjiResult(c, '三', 'correct', '2026-11-25', 3);
+    c = recordKanjiResult(c, '三', 'correct', '2026-12-09', 4);
+    c = recordKanjiResult(c, '三', 'correct', '2027-02-07', 5); // A のはしごを登りきって卒業
+    expect(c.kanji['三'].value.status).toBe('graduated');
+    expect(kanjiProgress(c)).toEqual({ solved: 2, graduated: 1 });
+    expect(kanjiProgress(child())).toEqual({ solved: 0, graduated: 0 });
+  });
+
+  it('やりきった回: 星1つ・クリアが入り、端末ごとの回数がふえる（合計が回数）', () => {
+    let c = finishKanjiRun(child(), 'dev1');
+    c = finishKanjiRun(c, 'dev1');
+    c = finishKanjiRun(c, 'dev2');
+    expect(c.units['kanji:kakitori']).toEqual({ stars: 1, cleared: true });
+    expect(c.kanjiRuns).toEqual({ dev1: 2, dev2: 1 });
+    expect(kanjiRunCount(c)).toBe(3);
+    expect(kanjiRunCount(child())).toBe(0);
+    // 読み込み: おかしい回数は捨てる。欄がない古い形は空
+    const fam = normalizeFamily({ version: 2, children: { a: { kanjiRuns: { d1: 2, d2: -1, d3: 'x', d4: 1.5 } } } });
+    expect(fam.children.a.kanjiRuns).toEqual({ d1: 2, d4: 1 });
+    expect(normalizeFamily({ version: 2, children: { a: {} } }).children.a.kanjiRuns).toEqual({});
+  });
 });
 
 describe('端末への保存', () => {
@@ -187,5 +214,22 @@ describe('端末への保存', () => {
     expect(() => clearRecords(broken)).not.toThrow();
     expect(saveRecords(emptyFamily(), null)).toBe(false);
     expect(loadRecords(null)).toEqual(emptyFamily());
+  });
+
+  it('端末の id: 一度作ったら同じものを使う。全消しでも変わらない。保存できなくても止まらない', () => {
+    const st = memory();
+    const id = deviceId(mulberry32(1), st);
+    expect(id).toMatch(/^[a-z0-9]{8}$/);
+    expect(st.map.get(DEVICE_KEY)).toBe(id);
+    expect(deviceId(mulberry32(2), st)).toBe(id);
+    clearRecords(st);
+    expect(deviceId(mulberry32(3), st)).toBe(id);
+    const broken: KeyValueStorage = {
+      getItem: () => { throw new Error('denied'); },
+      setItem: () => { throw new Error('quota'); },
+      removeItem: () => { throw new Error('denied'); },
+    };
+    expect(deviceId(mulberry32(1), broken)).toBe(id);
+    expect(deviceId(mulberry32(1), null)).toBe(id);
   });
 });

@@ -1,3 +1,4 @@
+import { kanjiProgress } from '../../records';
 import { SUBJECTS, themeStars, type ThemeDef, type ThemeId } from '../../themes';
 import { current } from '../app';
 import { h, mount } from '../dom';
@@ -5,12 +6,13 @@ import { avatarOf } from '../mascot';
 import { tap } from '../sound';
 import { showChildren } from './children';
 import { showHiraMap } from './hira';
+import { showKanjiMenu } from './kanji';
 import { showKazuMap } from './kazu';
 import { showKeisanMap } from './keisan';
 
-// テーマ選択（合意モックどおり。中身があるのは ひらがな・かず・けいさん）
-const MARK_COLOR: Record<ThemeId, string> = { hira: '#e11d48', kazu: '#0891b2', keisan: '#0891b2' };
-const OPEN: Record<ThemeId, () => void> = { hira: showHiraMap, kazu: showKazuMap, keisan: showKeisanMap };
+// テーマ選択（合意モックどおり。中身があるのは ひらがな・かんじ・かず・けいさん）
+const MARK_COLOR: Record<ThemeId, string> = { hira: '#e11d48', kanji: '#e11d48', kazu: '#0891b2', keisan: '#0891b2' };
+const OPEN: Record<ThemeId, () => void> = { hira: showHiraMap, kanji: showKanjiMenu, kazu: showKazuMap, keisan: showKeisanMap };
 
 export function showThemes(): void {
   const c = current();
@@ -29,10 +31,17 @@ export function showThemes(): void {
         h('span', { class: 'soon', textContent: 'あとで ふえる' }));
     }
     const id = t.id;
-    // 星は単元の星の合計（とれる数は うすい色で）
-    const { stars, max } = themeStars(c, id);
-    const starEl = h('span', { class: 'tstars', 'aria-label': `ほし ${stars} / ${max}` },
-      `★${stars}`, h('span', { class: 'off', textContent: `/${max}` }));
+    let starEl: HTMLElement;
+    if (id === 'kanji') {
+      // かんじは字数（かきとりで とけた字）
+      const { solved } = kanjiProgress(c);
+      starEl = h('span', { class: 'tcount', 'aria-label': `とけた字 ${solved}` }, h('small', { textContent: 'とけた字' }), `${solved}`);
+    } else {
+      // 星は単元の星の合計（とれる数は うすい色で）
+      const { stars, max } = themeStars(c, id);
+      starEl = h('span', { class: 'tstars', 'aria-label': `ほし ${stars} / ${max}` },
+        `★${stars}`, h('span', { class: 'off', textContent: `/${max}` }));
+    }
     return h('button', {
       class: 'theme-btn', type: 'button',
       onclick: () => { tap(); OPEN[id](); },

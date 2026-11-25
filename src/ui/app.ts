@@ -1,4 +1,4 @@
-import { createSync, loadRecords, saveRecords, updateChild, type ChildRecord, type FamilyRecords } from '../records';
+import { createSync, deviceId, loadRecords, saveRecords, updateChild, type ChildRecord, type FamilyRecords } from '../records';
 import { setSoundEnabled } from './sound';
 import { showSyncStatus } from './sync-note';
 
@@ -10,6 +10,10 @@ export const app = {
 };
 
 export const now = () => Date.now();
+
+// この端末の id（書き取りをやりきった回数を端末ごとに数える）
+let dev: string | null = null;
+export const device = (): string => (dev ??= deviceId(Math.random));
 
 export function save(): void {
   saveRecords(app.family);

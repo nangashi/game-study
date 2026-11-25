@@ -31,6 +31,7 @@ ChildRecord {
     lastStage: { value: ステージ id | null, at },
   },
   kanji: { [字]: { value: KanjiCard, at } },          // 漢字の書き取りのカード。出題していない字は持たない
+  kanjiRuns: { [端末 id]: 回数 },                     // 書き取りの回を やりきった回数（端末ごと。合計が回数）
 }
 KanjiCard（src/learn/kanji/srs.ts）
   = { status: 'failed', firstSeen, asked }                          // 出題したが一度も正解していない
@@ -42,6 +43,7 @@ KanjiCard（src/learn/kanji/srs.ts）
 - `bestTime` の 0 は「記録なし」（算数練習アプリでは null）。
 - 子どもを消すときは `removed: true` にして残す（合わせたときに戻ってこないように）。
 - 漢字の結果は `recordKanjiResult(子ども, 字, できた/おしい/できなかった, 今日, 今)` で入れる（状態の遷移は `applyResult`）。読み込みで形のおかしいカードは捨てる（出題していない字になる）。`kanji` がない古いデータは空として読む。
+- 書き取りの回をやりきったら `finishKanjiRun(子ども, 端末 id)`: 単元 `kanji:kakitori` に星1つ・クリアを入れ、`kanjiRuns[端末 id]` を1ふやす。端末 id は記録とは別のキー `manabi:device` に置く（`deviceId`、全消しでも変えない）。回数を端末ごとに持つのは、2台で別々にやった回を合わせても数え落とさないため。`kanjiRuns` がない古いデータは空として読む。
 - けいさんの更新は `src/learn/keisan/` の `mergeStageResult`・`playableAfterClear`・`applyTestResult` をそのまま使う（`startKeisanStage`・`finishKeisanStage`・`setTestProgress`・`finishTest`）。
 
 ## 合わせ方（mergeFamily）
@@ -59,6 +61,7 @@ KanjiCard（src/learn/kanji/srs.ts）
 | 設定（名前・アバター・許容度・音・消した印） | まとめて後勝ち |
 | testProgress、lastStage | それぞれ後勝ち |
 | 漢字のカード | 字ごとに後勝ち（片方にしかない字は残る） |
+| 書き取りをやりきった回数（kanjiRuns） | 端末ごとに大きい方 |
 
 後勝ちで時刻が同じときは、中身を文字列にして大きい方にする（どちらから合わせても同じ結果にするため）。
 
@@ -77,7 +80,7 @@ KanjiCard（src/learn/kanji/srs.ts）
 - `GET /api/family`: KV（キー `family:v2`）のデータ。なければ空。
 - `PUT /api/family`: 送られたデータ（`version: 2` でなければ 400、512KB まで）を KV のデータと `mergeFamily` で合わせて保存し、合わせた結果を返す。合わせても変わらなければ KV に書かない。
   - KV には「読んで・合わせて・書く」の排他がないので、同時に2台が送ると片方の分がサーバーに残らないことがある。端末は自分の記録を持ったまま次の結果画面でまた全部を送るので、そのときに戻る。
-- 端末: 起動時に GET して合わせる（最初の画面のままなら描きなおす）。送るのは **結果画面（けいさんのステージ・ちからだめし・かず・ひらがな）と全消しのときだけ**（KV の書き込み上限のため）。名前の変更・子どもの登録・ちからだめしの休けいは、端末に保存して次の結果画面で一緒に送る。サーバーと同じなら送らない。送っている間に次の結果が来たら、終わってから1回だけ送る。自動の再送はしない。
+- 端末: 起動時に GET して合わせる（最初の画面のままなら描きなおす）。送るのは **結果画面（けいさんのステージ・ちからだめし・かず・ひらがな・かんじの かきとり）と全消しのときだけ**（KV の書き込み上限のため）。名前の変更・子どもの登録・ちからだめしの休けい・かきとりの字ごとの結果（途中でやめたときも）は、端末に保存して次の結果画面で一緒に送る。サーバーと同じなら送らない。送っている間に次の結果が来たら、終わってから1回だけ送る。自動の再送はしない。
 - 失敗（オフライン・ログイン切れ・サーバーのエラー）しても遊びは止めず、画面の下のすみに小さく出す（`src/ui/sync-note.ts`）。ログイン切れ（401・403・ログイン画面への転送・HTML が返る）はタップで読み込みなおし（Access のログインへ）。
 - テスト: `worker/api.test.ts`（偽の KV で GET・PUT・サーバーでの合わせ方・全消し）、`worker/access.test.ts`（自前で署名した JWT）、`src/records/sync.test.ts`（端末2台とサーバーをつないで）。
 - PWA: `/api` は Service Worker のキャッシュにも、画面遷移のフォールバック（index.html）にも入れない。

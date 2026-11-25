@@ -104,7 +104,7 @@ input, textarea { user-select: text; -webkit-user-select: text; }
 
 /* ---------- テーマ選択（合意モックの色・数値のまま。戻るボタンだけ 56px） ---------- */
 .home-top { display: flex; align-items: center; gap: 10px; }
-#screen-theme {
+#screen-theme, #screen-kanji {
   background: #fff7e6; min-height: 100dvh; color: #1f2937;
   font-family: "Zen Maru Gothic", "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", "Hiragino Sans", sans-serif;
 }
@@ -146,6 +146,10 @@ button.theme-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 rgba(3
 .theme-btn .tdesc { font-size: 14px; color: #6b7280; font-weight: 700; }
 .theme-btn .tstars { margin-left: auto; font-size: 16px; color: #f59e0b; letter-spacing: .04em; white-space: nowrap; font-weight: 900; }
 .theme-btn .tstars .off { color: #d1d5db; }
+/* かんじ: 星のかわりに字数・回数 */
+.theme-btn .tcount { margin-left: auto; flex: none; text-align: right; font-size: 18px; font-weight: 900; color: #e11d48; white-space: nowrap; line-height: 1.2; }
+.theme-btn .tcount small { display: block; font-size: 12px; color: #6b7280; }
+.theme-btn .tprog { font-size: 14px; font-weight: 900; color: #e11d48; }
 .theme-btn.is-soon { opacity: .6; box-shadow: none; background: #fdfcf9; cursor: default; }
 button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .theme-btn.is-soon .dot { background: #9ca3af; }
@@ -242,6 +246,7 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 .prog-dots i.done-ok { background: var(--teal); }
 .prog-dots i.done-ng { background: var(--red); }
 .prog-dots i.done-help { background: var(--lock); }
+.prog-dots i.done-close { background: #f4c542; }
 .prog-dots i.now { background: var(--orange); }
 .prog-num { font-weight: 800; font-size: 1rem; background: rgba(255,255,255,.9); border-radius: 99px; padding: .15em .7em; white-space: nowrap; }
 .stage-area { position: relative; margin-top: 10px; }
@@ -469,3 +474,38 @@ button.theme-btn.is-soon:active { transform: none; box-shadow: none; }
 @media (prefers-reduced-motion: reduce) {
   .kz-field.good, .kz-field.bad, .kz-choice.bad { animation: none; }
 }
+
+/* かんじ かきとり（読みを見て紙に書き、答えを見て自己採点） */
+.kj-card { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.kj-card .mascot-row { align-items: center; }
+.kj-badge { font-weight: 900; font-size: .95rem; border-radius: 999px; padding: .2em .8em; }
+.kj-badge.review { background: var(--teal-soft); color: var(--teal-dark); }
+.kj-badge.new { background: var(--red-soft); color: #a3123a; }
+.kj-body { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 6px 0 8px; }
+.kj-word { font-size: clamp(2.4rem, 12vw, 3.4rem); font-weight: 800; letter-spacing: .08em; line-height: 1.3; }
+.kj-word u, .kj-word-small u { text-decoration: underline; text-decoration-thickness: .1em; text-underline-offset: .18em; text-decoration-color: var(--kokugo); }
+.kj-note { font-weight: 800; font-size: 1.125rem; color: var(--ink-soft); }
+.kj-answer { font-family: "Klee One", "UD Digi Kyokasho N-R", serif; font-weight: 600; font-size: clamp(7rem, 38vw, 10rem); line-height: 1.05; }
+.kj-word-small { font-size: 1.6rem; font-weight: 800; letter-spacing: .06em; }
+.kj-word-small u { font-family: "Klee One", "UD Digi Kyokasho N-R", serif; }
+.kj-check { font-weight: 800; font-size: 1.125rem; color: var(--ink-soft); }
+.kj-foot { margin-top: auto; padding-top: 12px; }
+.kj-show {
+  width: 100%; border: none; border-radius: 22px; min-height: 72px; background: var(--orange); color: #5b3a00;
+  font-weight: 900; font-size: 1.5rem; letter-spacing: .1em; box-shadow: 0 5px 0 var(--orange-dark);
+}
+.kj-show:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--orange-dark); }
+.kj-grades { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+.kj-grade { border: none; border-radius: 20px; min-height: 72px; font-weight: 900; font-size: clamp(.95rem, 4.3vw, 1.15rem); padding: 0 2px; white-space: nowrap; }
+.kj-grade:active { transform: translateY(4px); }
+.kj-grade.g-ok { background: var(--teal); color: #fff; box-shadow: 0 5px 0 var(--teal-dark); }
+.kj-grade.g-close { background: #ffd166; color: #5b3a00; box-shadow: 0 5px 0 #e0a800; }
+.kj-grade.g-ng { background: #e3e8ea; color: var(--ink-soft); box-shadow: 0 5px 0 #b9c4c8; }
+.kj-grade:active { box-shadow: none; }
+.kj-sums { display: grid; gap: 10px; margin-top: 14px; text-align: left; }
+.kj-sum { border-radius: 16px; padding: 8px 16px; font-weight: 800; }
+.kj-sum small { display: block; font-size: .85rem; color: var(--ink-soft); font-weight: 700; }
+.kj-sum-chars { font-family: "Klee One", "UD Digi Kyokasho N-R", serif; font-weight: 600; font-size: 1.9rem; letter-spacing: .15em; line-height: 1.3; word-break: break-all; }
+.kj-sum.fresh { background: var(--orange-soft); }
+.kj-sum.review { background: var(--teal-soft); }
+.kj-sum.practice { background: #eef2f3; }

@@ -6,7 +6,7 @@ import { RECORDS_VERSION } from './types';
 // - 単元の進み具合: 星は大きい方、クリアはどちらかで残す、ベストタイムは速い方
 // - playableThrough は大きい方、ちからだめしをやったか（testDone）はどちらかで残す
 // - 名前などの設定・ちからだめしの途中の記録・lastStage は、あとから保存した方が勝つ
-// - 漢字のカードは字ごとに、あとから更新した方が勝つ
+// - 漢字のカードは字ごとに、あとから更新した方が勝つ。書き取りをやりきった回数は端末ごとに大きい方
 // - 全消しの印（resetAt）がちがうときは、新しい印の方だけを使う（古い印の控えは全消しより前のものとして持ち込まない）
 // どちらから合わせても同じ結果になり（交換法則）、同じものを合わせても変わらない（冪等）
 
@@ -60,6 +60,7 @@ export const mergeChild = (a: ChildRecord, b: ChildRecord): ChildRecord => ({
   units: mergeMaps(a.units, b.units, mergeUnit),
   keisan: mergeKeisan(a.keisan, b.keisan),
   kanji: mergeMaps(a.kanji, b.kanji, mergeStamped),
+  kanjiRuns: mergeMaps(a.kanjiRuns, b.kanjiRuns, Math.max),
 });
 
 export function mergeFamily(a: FamilyRecords, b: FamilyRecords): FamilyRecords {

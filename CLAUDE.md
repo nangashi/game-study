@@ -5,11 +5,11 @@
 ## いまの状態（2026-11-21〜、作り替え中）
 
 - 旧まなびランド（ゲーム × 学習）から、学習と記録だけのアプリへ作り替えている。ブランチ `feat/integrated-app`。
-- 画面は新しくした（`src/ui/screens/`: 子ども選択・テーマ選択・けいさん・かず・ひらがな・設定）。旧画面・旧記録（`src/state/`）・間隔反復（engine/srs）は外した。
+- 画面は新しくした（`src/ui/screens/`: 子ども選択・テーマ選択・けいさん・かず・ひらがな・かんじ・設定）。旧画面・旧記録（`src/state/`）・間隔反復（engine/srs）は外した。
 - 算数「けいさん」の道（47ステージ）とちからだめしは `src/learn/keisan/`、画面は `src/ui/screens/keisan.ts`。仕様は [docs/03-keisan.md](docs/03-keisan.md)。
 - 算数「かず」の道（7単元: 100までの かず〜しょうすう）は `src/learn/kazu/`、画面は `src/ui/screens/kazu.ts`、図は `src/ui/kazu-figs.ts`。問題形式は「かず 問題形式モック」（Space）で承認された形式のまま。仕様は [docs/05-kazu.md](docs/05-kazu.md)。
 - 国語「ひらがなを かく」は行ごとの10単元（なぞる → みて かく）と、そのあとの「えを みて かく」5単元（見本なしで、絵と空欄つきの言葉から思い出して書く。「を」以外の45字）。データは `src/learn/hiragana.ts`、画面は `src/ui/screens/hira.ts`。
-- 国語「かんじ」書き取り（間隔反復）は作りかけ。単語データ（1026字）と間隔反復のロジックは `src/learn/kanji/`、カードの記録は `ChildRecord.kanji`。画面はまだない。設計は game-study-design の 07-kanji-srs.md。単語データは `node scripts/gen-kanji-words.mjs <kanji-data>` で作りなおす。
+- 国語「かんじ」はカテゴリ（テーマ選択 → かんじ → 中身の一覧。いまは「かきとり」だけ、`KANJI_TOPICS`）。かきとりは間隔反復で、道なしで回に直行する（読みを見て紙に書き、答えを見て自己採点）。単語データ（1026字）・間隔反復・回の進め方（`run.ts`: できなかった字を最後にもう1回）は `src/learn/kanji/`、画面は `src/ui/screens/kanji.ts`。記録はカード `ChildRecord.kanji` と、やりきった回数 `kanjiRuns`（端末ごと）、単元 `kanji:kakitori` の星1つ。設計は game-study-design の 07-kanji-srs.md。単語データは `node scripts/gen-kanji-words.mjs <kanji-data>` で作りなおす。
 - 記録は `src/records/`（保存キー `manabi:v2`）。Worker（`worker/`）の `/api/family` に家族で1つのデータを置き、起動時に取って合わせ、結果画面で送る（サーバーでも mergeFamily で合わせる）。全消しはリセット印 `resetAt`。仕様は [docs/04-records.md](docs/04-records.md)。
 - デプロイ: workers.dev の URL に Access のアプリをかける形（playland・cookbook と同じ）。KV・Access の値は `wrangler.jsonc` に入れ済み。main への push で CI が `wrangler deploy` する。
 - PWA の更新は `src/ui/pwa-update.ts`（起動時・前面復帰で `registration.update()`、新しい SW が制御を取ったら1回だけリロード、設定の「アプリを さいしんに する」）。入口・sw.js・manifest は `public/_headers` で `Cache-Control: no-cache`。
@@ -18,7 +18,7 @@
 ## 設計の決まり（作業の前に読む）
 
 - 画面の流れ: 子ども選択 → テーマ選択 → 道 → 問題／書き取り → 結果。何をやるかは子どもが自分で選ぶ（自動の割り当てなし）。親専用の画面は作らない（設定は子ども選択画面の歯車から入る最小のもの）。
-- 教科 → テーマ → 一本道の単元。学年は表に出さない。中身があるのは算数「けいさん」「かず」と国語「ひらがなを かく」の3つ。ほかのテーマは「あとで ふえる」。
+- 教科 → テーマ → 一本道の単元。学年は表に出さない。中身があるのは算数「けいさん」「かず」と国語「ひらがなを かく」「かんじ（かきとり）」の4つ。ほかのテーマは「あとで ふえる」。
 - **かずの問題形式はモックで承認されたものにする。** 単元 id（`kazu:n100` など）は記録のキーなので変えない。問題タイプ・入力のしかた（数字入力はキーパッドを画面下に常時表示し欄のタップは入力欄の切り替え、選択はタップで即判定）を変えるときはユーザーに確認し、docs/05-kazu.md も直す。
 - **けいさんは算数練習アプリと同じにする。** ステージの並び・出題ロジック（数値範囲・パターン・全角の演算子・10問の重複チェック）・星とクリア・ちからだめしを変えない。まなびランドの `src/learn/math.ts` で代用しない。変えるときはユーザーに確認し、docs/03-keisan.md も直す。
 - 回答フロー: 間違えたら正解を少し見せて次へ。再入力・ペナルティ・時間ランキングの改善は、決定済みのまま保留（今は入れない）。

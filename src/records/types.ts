@@ -41,6 +41,8 @@ export interface ChildRecord {
   keisan: KeisanRecord;
   // 漢字の書き取りのカード（字 → 状態と更新時刻）。出題していない字は持たない。合わせるときは字ごとに後勝ち
   kanji: Record<string, Stamped<KanjiCard>>;
+  // 漢字の書き取りを やりきった回数。端末ごとに数える（端末 id → 回数）。合わせるときは端末ごとに大きい方、合計が回数
+  kanjiRuns: Record<string, number>;
 }
 
 export interface FamilyRecords {

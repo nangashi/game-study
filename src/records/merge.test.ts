@@ -3,7 +3,7 @@ import { mulberry32 } from '../learn/keisan/__original__/harness';
 import type { Rng } from '../learn/random';
 import { mergeFamily, mergeStamped } from './merge';
 import {
-  emptyFamily, finishKeisanStage, newChild, normalizeFamily, recordKanjiResult, recordUnitResult, resetFamily, updateSettings,
+  emptyFamily, finishKanjiRun, finishKeisanStage, kanjiRunCount, newChild, normalizeFamily, recordKanjiResult, recordUnitResult, resetFamily, updateSettings,
 } from './model';
 import { stageByNum } from '../learn/keisan';
 import type { ChildRecord, FamilyRecords, Stamped } from './types';
@@ -39,6 +39,7 @@ function randChild(r: Rng, id: string): ChildRecord {
       lastStage: stamped(r() < 0.3 ? null : pickOne(r, ['s1', 's2', 's5'])),
     },
     kanji: Object.fromEntries(some(r, ['一', '二', '三']).map(k => [k, stamped(randCard(r))])),
+    kanjiRuns: Object.fromEntries(some(r, ['d1', 'd2', 'd3']).map(d => [d, int(r, 1, 4)])),
   };
 }
 
@@ -90,6 +91,7 @@ function expectAtLeast(m: FamilyRecords, a: FamilyRecords) {
     expect(km.testProgress.at).toBeGreaterThanOrEqual(ka.testProgress.at);
     expect(km.lastStage.at).toBeGreaterThanOrEqual(ka.lastStage.at);
     for (const [k, xa] of Object.entries(ca.kanji)) expect(cm.kanji[k].at).toBeGreaterThanOrEqual(xa.at);
+    for (const [d, n] of Object.entries(ca.kanjiRuns)) expect(cm.kanjiRuns[d]).toBeGreaterThanOrEqual(n);
   }
 }
 
@@ -197,6 +199,17 @@ describe('mergeFamily の合わせ方', () => {
     const oldFam = normalizeFamily(JSON.parse(JSON.stringify({ ...base, children: { a: old } })));
     expect(oldFam.children.a.kanji).toEqual({});
     expect(mergeFamily(oldFam, { ...base, children: { a } }).children.a.kanji).toEqual(a.kanji);
+  });
+
+  it('書き取りをやりきった回数は端末ごとに大きい方。2台で別々にやった回はどちらも数える', () => {
+    const a = finishKanjiRun(finishKanjiRun(base.children.a, 'd1'), 'd1');
+    const b = finishKanjiRun(base.children.a, 'd2');
+    const m = mergeFamily({ ...base, children: { a } }, { ...base, children: { a: b } }).children.a;
+    expect(m.kanjiRuns).toEqual({ d1: 2, d2: 1 });
+    expect(kanjiRunCount(m)).toBe(3);
+    // 古い控え（d1 が 1回）と合わせても減らない
+    const old = finishKanjiRun(base.children.a, 'd1');
+    expect(mergeFamily({ ...base, children: { a: m } }, { ...base, children: { a: old } }).children.a.kanjiRuns).toEqual({ d1: 2, d2: 1 });
   });
 
   it('mergeStamped: 同じ時刻なら中身で決まる（キーの並びによらない）', () => {

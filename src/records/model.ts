@@ -43,6 +43,7 @@ export function newChild(id: string, settings: Partial<ChildSettings>, now: numb
     units: {},
     keisan: emptyKeisan(),
     kanji: {},
+    kanjiRuns: {},
   };
 }
 
@@ -129,6 +130,28 @@ export function recordKanjiResult(c: ChildRecord, kanji: string, grade: SelfGrad
 // 字 → カード（buildSession に渡す形）
 export const kanjiCards = (c: ChildRecord): Record<string, KanjiCard> =>
   Object.fromEntries(Object.entries(c.kanji).map(([k, s]) => [k, s.value]));
+
+// 書き取りの単元 id（星とクリアの記録のキー）
+export const KAKITORI_UNIT = 'kanji:kakitori';
+
+// 回をやりきったとき。星1つ・クリアを入れ、この端末の回数を1ふやす（deviceId: 端末の id）
+export function finishKanjiRun(c: ChildRecord, deviceId: string): ChildRecord {
+  const r = recordUnitResult(c, KAKITORI_UNIT, 1, true);
+  return { ...r, kanjiRuns: { ...r.kanjiRuns, [deviceId]: (r.kanjiRuns[deviceId] ?? 0) + 1 } };
+}
+
+// やりきった回数（端末ごとの回数の合計）
+export const kanjiRunCount = (c: ChildRecord): number => Object.values(c.kanjiRuns).reduce((n, x) => n + x, 0);
+
+// 進み具合: とけた字（一度でも正解した字。卒業もふくむ）と、そつぎょうした字の数
+export function kanjiProgress(c: ChildRecord): { solved: number; graduated: number } {
+  let solved = 0, graduated = 0;
+  for (const { value } of Object.values(c.kanji)) {
+    if (value.status !== 'failed') solved++;
+    if (value.status === 'graduated') graduated++;
+  }
+  return { solved, graduated };
+}
 
 // ---- 読み込んだデータをそろえる ----
 // 形がおかしいところは空・初期値にする。知らない欄は捨てる
@@ -221,7 +244,15 @@ function normChild(id: string, v: unknown): ChildRecord {
     units,
     keisan: normKeisan(c.keisan),
     kanji: normKanji(c.kanji),
+    kanjiRuns: normRuns(c.kanjiRuns),
   };
+}
+
+function normRuns(v: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!isObj(v)) return out;
+  for (const [d, n] of Object.entries(v)) if (typeof n === 'number' && Number.isFinite(n) && n > 0) out[d] = Math.floor(n);
+  return out;
 }
 
 function normKanji(v: unknown): Record<string, { value: KanjiCard; at: number }> {

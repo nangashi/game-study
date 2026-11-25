@@ -3,9 +3,11 @@ import { HIRA_UNITS } from './learn/hiragana';
 import { KAZU_UNITS } from './learn/kazu';
 import type { ChildRecord } from './records';
 
-// 教科 → テーマ。中身があるのは「ひらがな」（ひらがなを かく）・「かず」・「けいさん」。ほかは「あとで ふえる」
+// 教科 → テーマ。中身があるのは「ひらがな」（ひらがなを かく）・「かんじ」・「かず」・「けいさん」。ほかは「あとで ふえる」
+// 「かんじ」はカテゴリ: 開くと中身（KANJI_TOPICS）の一覧になる。進み具合は星でなく字数
 
-export type ThemeId = 'hira' | 'kazu' | 'keisan';
+export type ThemeId = 'hira' | 'kanji' | 'kazu' | 'keisan';
+export type StarThemeId = Exclude<ThemeId, 'kanji'>; // 単元の星で進み具合を出すテーマ
 
 export interface ThemeDef {
   id: ThemeId | null;  // null は中身がまだない
@@ -24,7 +26,7 @@ export const SUBJECTS: SubjectDef[] = [
   {
     id: 'kokugo', name: 'こくご', themes: [
       { id: 'hira', name: 'ひらがな', mark: 'ひ', desc: `ひらがなを かく ・ ${HIRA_UNITS.length}たんげん` },
-      { id: null, name: 'かんじ', mark: 'か', desc: 'かんじを おぼえる・かく' },
+      { id: 'kanji', name: 'かんじ', mark: 'か', desc: 'かんじを おぼえる・かく' },
       { id: null, name: 'ことば', mark: 'こ', desc: 'ことばの れんしゅう' },
       { id: null, name: 'よむ', mark: 'よ', desc: 'ぶんを よむ' },
     ],
@@ -40,8 +42,20 @@ export const SUBJECTS: SubjectDef[] = [
   },
 ];
 
+// 「かんじ」の中身。いまは かきとり だけ（よみ などは あとで足す）
+export type KanjiTopicId = 'kakitori';
+export interface KanjiTopicDef {
+  id: KanjiTopicId | null; // null は中身がまだない
+  name: string;
+  mark: string;
+  desc: string;
+}
+export const KANJI_TOPICS: KanjiTopicDef[] = [
+  { id: 'kakitori', name: 'かきとり', mark: 'か', desc: 'よみを みて かみに かく' },
+];
+
 // テーマの星の合計（単元の星のベストを足す）と、とれる星の数
-export function themeStars(c: ChildRecord, id: ThemeId): { stars: number; max: number } {
+export function themeStars(c: ChildRecord, id: StarThemeId): { stars: number; max: number } {
   if (id === 'keisan') {
     return { stars: STAGES.reduce((n, s) => n + (c.keisan.stages[s.id]?.stars ?? 0), 0), max: STAGES.length * 3 };
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newChild, recordUnitResult } from './records';
-import { SUBJECTS, themeStars } from './themes';
+import { KANJI_TOPICS, SUBJECTS, themeStars } from './themes';
 
 describe('テーマ', () => {
   it('ひらがなの単元数と星の最大は、絵の単元を足した15単元に追随する', () => {
@@ -19,7 +19,7 @@ describe('テーマ', () => {
     expect(kazu.id).toBe('kazu');
     expect(kazu.desc).toBe('かず・ぶんすう・しょうすう ・ 7たんげん');
     expect(sansu.filter(t => t.id === null).map(t => t.name)).toEqual(['はかる', 'かたちと グラフ', 'ぶんしょうだい']);
-    expect(SUBJECTS[0].themes.filter(t => t.id === null).map(t => t.name)).toEqual(['かんじ', 'ことば', 'よむ']);
+    expect(SUBJECTS[0].themes.filter(t => t.id === null).map(t => t.name)).toEqual(['ことば', 'よむ']);
     let c = newChild('a', { name: 'はなこ' }, 0);
     expect(themeStars(c, 'kazu')).toEqual({ stars: 0, max: 21 });
     c = recordUnitResult(c, 'kazu:n100', 3, true);
@@ -27,5 +27,11 @@ describe('テーマ', () => {
     c = recordUnitResult(c, 'hira:a', 2, true); // ほかのテーマの星は入らない
     expect(themeStars(c, 'kazu')).toEqual({ stars: 4, max: 21 });
     expect(themeStars(c, 'hira')).toEqual({ stars: 2, max: 45 });
+  });
+
+  it('こくごに「かんじ」カテゴリがあり、中身は いま かきとり だけ', () => {
+    const kanji = SUBJECTS[0].themes.find(t => t.name === 'かんじ')!;
+    expect(kanji.id).toBe('kanji');
+    expect(KANJI_TOPICS.map(t => [t.id, t.name])).toEqual([['kakitori', 'かきとり']]);
   });
 });
