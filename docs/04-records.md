@@ -42,7 +42,7 @@ KanjiCard（src/learn/kanji/srs.ts）
 - `at` は更新時刻（ms）。後勝ちの判定に使う。
 - `bestTime` の 0 は「記録なし」（算数練習アプリでは null）。
 - 子どもを消すときは `removed: true` にして残す（合わせたときに戻ってこないように）。
-- 漢字の結果は `recordKanjiResult(子ども, 字, できた/おしい/できなかった, 今日, 今)` で入れる（状態の遷移は `applyResult`）。読み込みで形のおかしいカードは捨てる（出題していない字になる）。`kanji` がない古いデータは空として読む。
+- 漢字の結果は `recordKanjiResult(子ども, 字, できた/おしい/できなかった, 回の中で一度でも できなかったか, 今日, 今)` で入れる（状態の遷移は `applyResult`）。読み込みで形のおかしいカードは捨てる（出題していない字になる）。`kanji` がない古いデータは空として読む。
 - 書き取りの回をやりきったら `finishKanjiRun(子ども, 端末 id)`: 単元 `kanji:kakitori` に星1つ・クリアを入れ、`kanjiRuns[端末 id]` を1ふやす。端末 id は記録とは別のキー `manabi:device` に置く（`deviceId`、全消しでも変えない）。回数を端末ごとに持つのは、2台で別々にやった回を合わせても数え落とさないため。`kanjiRuns` がない古いデータは空として読む。
 - けいさんの更新は `src/learn/keisan/` の `mergeStageResult`・`playableAfterClear`・`applyTestResult` をそのまま使う（`startKeisanStage`・`finishKeisanStage`・`setTestProgress`・`finishTest`）。
 

@@ -142,9 +142,9 @@ describe('読み込んだデータをそろえる', () => {
 
 describe('漢字の書き取り', () => {
   it('結果を入れると、カードと更新時刻が入る。kanjiCards で buildSession に渡す形になる', () => {
-    let c = recordKanjiResult(child(), '山', 'wrong', '2026-11-25', 500);
+    let c = recordKanjiResult(child(), '山', 'wrong', false, '2026-11-25', 500);
     expect(c.kanji['山']).toEqual({ value: { status: 'failed', firstSeen: 500, asked: 1 }, at: 500 });
-    c = recordKanjiResult(c, '山', 'correct', '2026-11-26', 900);
+    c = recordKanjiResult(c, '山', 'correct', false, '2026-11-26', 900);
     expect(c.kanji['山']).toEqual({
       value: { status: 'learning', track: 'B', interval: 3, due: '2026-11-29', firstSeen: 500, asked: 2 }, at: 900,
     });
@@ -155,11 +155,11 @@ describe('漢字の書き取り', () => {
   });
 
   it('進み具合: とけた字は一度でも正解した字（卒業もふくむ）、そつぎょうは卒業した字', () => {
-    let c = recordKanjiResult(child(), '一', 'wrong', '2026-11-25', 1);
-    c = recordKanjiResult(c, '二', 'correct', '2026-11-25', 2);
-    c = recordKanjiResult(c, '三', 'correct', '2026-11-25', 3);
-    c = recordKanjiResult(c, '三', 'correct', '2026-12-09', 4);
-    c = recordKanjiResult(c, '三', 'correct', '2027-02-07', 5); // A のはしごを登りきって卒業
+    let c = recordKanjiResult(child(), '一', 'wrong', false, '2026-11-25', 1);
+    c = recordKanjiResult(c, '二', 'correct', false, '2026-11-25', 2);
+    c = recordKanjiResult(c, '三', 'correct', false, '2026-11-25', 3);
+    c = recordKanjiResult(c, '三', 'correct', false, '2026-12-09', 4);
+    c = recordKanjiResult(c, '三', 'correct', false, '2027-02-07', 5); // A のはしごを登りきって卒業
     expect(c.kanji['三'].value.status).toBe('graduated');
     expect(kanjiProgress(c)).toEqual({ solved: 2, graduated: 1 });
     expect(kanjiProgress(child())).toEqual({ solved: 0, graduated: 0 });

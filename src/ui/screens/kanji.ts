@@ -1,6 +1,6 @@
 import {
   ALL_KANJI, answer, buildSession, currentItem, localDate, pendingOnQuit, runSummary, splitWord, startRun,
-  type KanjiRun, type SelfGrade, type SessionItem,
+  type KanjiOutcome, type KanjiRun, type SelfGrade, type SessionItem,
 } from '../../learn/kanji';
 import {
   finishKanjiRun, kanjiCards, kanjiProgress, kanjiRunCount, recordKanjiResult, type ChildRecord,
@@ -74,8 +74,8 @@ function startKakitori(): void {
 }
 
 // 1字の結果を記録する（端末に保存。送るのは結果画面で）
-const record = (kanji: string, grade: SelfGrade) =>
-  updateCurrent(x => recordKanjiResult(x, kanji, grade, today(), now()));
+const record = ({ kanji, grade, missed }: KanjiOutcome) =>
+  updateCurrent(x => recordKanjiResult(x, kanji, grade, missed, today(), now()));
 
 function playView(run: KanjiRun, color: string): void {
   const total = run.items.length;
@@ -88,7 +88,7 @@ function playView(run: KanjiRun, color: string): void {
 
   const quit = () => {
     // 答えた字は記録ずみ。もう1回を待っている字は1回目の結果（できなかった）で記録する
-    if (active === run) for (const p of pendingOnQuit(run)) record(p.kanji, p.grade);
+    if (active === run) for (const p of pendingOnQuit(run)) record(p);
     active = null;
     showKanjiMenu();
   };
@@ -146,7 +146,7 @@ function playView(run: KanjiRun, color: string): void {
         if (active !== run) return;
         tap();
         const r = answer(run, g);
-        if (r) record(r.kanji, r.grade);
+        if (r) record(r);
         ask();
       },
     });

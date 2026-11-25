@@ -13,13 +13,13 @@ describe('書き取りの1回', () => {
     rec.push(answer(run, 'wrong'));
     rec.push(answer(run, 'close'));
     rec.push(answer(run, 'wrong'));
-    expect(rec).toEqual([{ kanji: '一', grade: 'correct' }, null, { kanji: '三', grade: 'close' }, null]);
+    expect(rec).toEqual([{ kanji: '一', grade: 'correct', missed: false }, null, { kanji: '三', grade: 'close', missed: false }, null]);
     // もう1回: 二 → 四 の順
     expect(currentItem(run)).toEqual({ item: item('二'), retry: true });
-    expect(answer(run, 'correct')).toEqual({ kanji: '二', grade: 'correct' });
+    expect(answer(run, 'correct')).toEqual({ kanji: '二', grade: 'correct', missed: true });
     expect(currentItem(run)).toEqual({ item: item('四'), retry: true });
     // もう1回でも できなかった字は、そのまま記録（3回目はない）
-    expect(answer(run, 'wrong')).toEqual({ kanji: '四', grade: 'wrong' });
+    expect(answer(run, 'wrong')).toEqual({ kanji: '四', grade: 'wrong', missed: true });
     expect(isDone(run)).toBe(true);
     expect(answer(run, 'correct')).toBeNull();
     expect(run.first).toEqual(['correct', 'wrong', 'close', 'wrong']);
@@ -31,10 +31,10 @@ describe('書き取りの1回', () => {
     const run = startRun([item('一'), item('二'), item('三')]);
     answer(run, 'wrong');
     answer(run, 'wrong');
-    expect(pendingOnQuit(run)).toEqual([{ kanji: '一', grade: 'wrong' }, { kanji: '二', grade: 'wrong' }]);
+    expect(pendingOnQuit(run)).toEqual([{ kanji: '一', grade: 'wrong', missed: true }, { kanji: '二', grade: 'wrong', missed: true }]);
     answer(run, 'correct');
     answer(run, 'correct'); // 一 のもう1回
-    expect(pendingOnQuit(run)).toEqual([{ kanji: '二', grade: 'wrong' }]);
+    expect(pendingOnQuit(run)).toEqual([{ kanji: '二', grade: 'wrong', missed: true }]);
   });
 
   it('0問の回はすぐ終わる', () => {

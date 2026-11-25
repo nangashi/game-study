@@ -121,9 +121,10 @@ export function finishTest(c: ChildRecord, res: TestResult, now: number): ChildR
 
 // ---- 漢字の書き取り ----
 
-// 1字の結果を入れる（回の中で2回出た字は、最後の結果で1回だけ）。today: 答えた日（ローカル日 YYYY-MM-DD）
-export function recordKanjiResult(c: ChildRecord, kanji: string, grade: SelfGrade, today: string, now: number): ChildRecord {
-  const card = applyResult(c.kanji[kanji]?.value, grade, today, now);
+// 1字の結果を入れる（回の中で2回出た字は、最後の結果で1回だけ）。missed: 回の中で一度でも「できなかった」か。
+// today: 答えた日（ローカル日 YYYY-MM-DD）
+export function recordKanjiResult(c: ChildRecord, kanji: string, grade: SelfGrade, missed: boolean, today: string, now: number): ChildRecord {
+  const card = applyResult(c.kanji[kanji]?.value, grade, missed, today, now);
   return { ...c, kanji: { ...c.kanji, [kanji]: { value: card, at: now } } };
 }
 

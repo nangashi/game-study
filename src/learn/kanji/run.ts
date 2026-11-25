@@ -1,7 +1,8 @@
 import type { SelfGrade, SessionItem } from './srs';
 
 // 書き取りの1回（画面の進め方）。buildSession の10問のあと、「できなかった」字を回の最後にもう1回出す（10問に数えない）。
-// 記録（applyResult）は1字1回だけ。2回目のある字は2回目の結果、ほかは1回目の結果を入れる
+// 記録（applyResult）は1字1回だけ。2回目のある字は2回目の結果、ほかは1回目の結果を入れる。
+// もう1回出した字は「回の中で間違えた」（missed）として渡す
 
 export interface KanjiRun {
   items: readonly SessionItem[];  // 10問（buildSession の結果）
@@ -23,8 +24,11 @@ export function currentItem(run: KanjiRun): { item: SessionItem; retry: boolean 
 
 export const isDone = (run: KanjiRun): boolean => currentItem(run) === null;
 
+// 記録する1字の結果。missed: 回の中で一度でも「できなかった」か
+export interface KanjiOutcome { kanji: string; grade: SelfGrade; missed: boolean }
+
 // 答えた。すぐ記録してよい結果なら返す（1回目の「できなかった」は、もう1回のあとまで待つので null）
-export function answer(run: KanjiRun, grade: SelfGrade): { kanji: string; grade: SelfGrade } | null {
+export function answer(run: KanjiRun, grade: SelfGrade): KanjiOutcome | null {
   const cur = currentItem(run);
   if (!cur) return null;
   run.pos++;
@@ -34,12 +38,12 @@ export function answer(run: KanjiRun, grade: SelfGrade): { kanji: string; grade:
     if (grade === 'wrong') { run.retries.push(cur.item); return null; }
   }
   run.final.set(kanji, grade);
-  return { kanji, grade };
+  return { kanji, grade, missed: cur.retry };
 }
 
 // 途中でやめたとき、まだ記録していない字（もう1回を待っている字）を1回目の結果で返す
-export function pendingOnQuit(run: KanjiRun): { kanji: string; grade: SelfGrade }[] {
-  return run.retries.filter(it => !run.final.has(it.kanji)).map(it => ({ kanji: it.kanji, grade: 'wrong' as const }));
+export function pendingOnQuit(run: KanjiRun): KanjiOutcome[] {
+  return run.retries.filter(it => !run.final.has(it.kanji)).map(it => ({ kanji: it.kanji, grade: 'wrong' as const, missed: true }));
 }
 
 // 結果画面の内訳（最後の結果で分ける）

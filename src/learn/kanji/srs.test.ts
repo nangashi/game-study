@@ -7,7 +7,7 @@ const NOW = 1_000;
 
 // 結果を順に当てる（日付は毎回 today のまま）
 const run = (grades: SelfGrade[], today = T, start?: KanjiCard) =>
-  grades.reduce<KanjiCard | undefined>((c, g) => applyResult(c, g, today, NOW), start)!;
+  grades.reduce<KanjiCard | undefined>((c, g) => applyResult(c, g, false, today, NOW), start)!;
 
 const learningCard = (track: 'A' | 'B', interval: number, due = T): KanjiCard =>
   ({ status: 'learning', track, interval, due, firstSeen: 1, asked: 3 });
@@ -35,20 +35,20 @@ describe('日付', () => {
 
 describe('遷移', () => {
   it('未出題で正解 → トラックA、14日', () => {
-    expect(applyResult(undefined, 'correct', T, NOW)).toEqual(
+    expect(applyResult(undefined, 'correct', false, T, NOW)).toEqual(
       { status: 'learning', track: 'A', interval: 14, due: '2026-12-09', firstSeen: NOW, asked: 1 });
   });
 
   it('未出題で おしい／できなかった → 未正解', () => {
     for (const g of ['close', 'wrong'] as const) {
-      expect(applyResult(undefined, g, T, NOW)).toEqual({ status: 'failed', firstSeen: NOW, asked: 1 });
+      expect(applyResult(undefined, g, false, T, NOW)).toEqual({ status: 'failed', firstSeen: NOW, asked: 1 });
     }
   });
 
   it('未正解で おしい／できなかった → 未正解のまま（はじめて出した時刻は変えない）', () => {
-    const f = applyResult(undefined, 'wrong', T, 5);
-    expect(applyResult(f, 'close', T, 99)).toEqual({ status: 'failed', firstSeen: 5, asked: 2 });
-    expect(applyResult(f, 'wrong', T, 99)).toEqual({ status: 'failed', firstSeen: 5, asked: 2 });
+    const f = applyResult(undefined, 'wrong', false, T, 5);
+    expect(applyResult(f, 'close', false, T, 99)).toEqual({ status: 'failed', firstSeen: 5, asked: 2 });
+    expect(applyResult(f, 'wrong', false, T, 99)).toEqual({ status: 'failed', firstSeen: 5, asked: 2 });
   });
 
   it('未正解で正解 → トラックB、3日', () => {
@@ -60,7 +60,7 @@ describe('遷移', () => {
     let c: KanjiCard | undefined;
     const seen: [string, number, string][] = [];
     for (const g of steps) {
-      c = applyResult(c, g, T, NOW);
+      c = applyResult(c, g, false, T, NOW);
       seen.push([c.status, c.status === 'failed' ? 0 : c.interval, c.status === 'failed' ? '' : c.due]);
     }
     expect(seen).toEqual([
@@ -76,7 +76,7 @@ describe('遷移', () => {
     let c: KanjiCard = learningCard('B', 1);
     const intervals: number[] = [];
     for (let i = 0; i < 6; i++) {
-      c = applyResult(c, 'correct', T, NOW);
+      c = applyResult(c, 'correct', false, T, NOW);
       intervals.push(c.status === 'failed' ? -1 : c.interval);
       if (c.status === 'learning') expect(c.track).toBe('B');
     }
@@ -91,26 +91,66 @@ describe('遷移', () => {
       [learningCard('A', 14), 3], [learningCard('A', 60), 3],
     ];
     for (const [c, want] of cases) {
-      expect(applyResult(c, 'wrong', T, NOW)).toEqual(
+      expect(applyResult(c, 'wrong', false, T, NOW)).toEqual(
         { status: 'learning', track: 'B', interval: want, due: addDays(T, want), firstSeen: 1, asked: 4 });
     }
   });
 
   it('おしい は段階も日付も据え置き（出題回数だけ増える）', () => {
     const c = learningCard('A', 14, '2026-11-20');
-    expect(applyResult(c, 'close', T, NOW)).toEqual({ ...c, asked: 4 });
+    expect(applyResult(c, 'close', false, T, NOW)).toEqual({ ...c, asked: 4 });
     const g = gradCard(180, '2026-11-01');
-    expect(applyResult(g, 'close', T, NOW)).toEqual({ ...g, asked: 10 });
+    expect(applyResult(g, 'close', false, T, NOW)).toEqual({ ...g, asked: 10 });
   });
 
   it('卒業した字を間違えたら トラックBの7日', () => {
-    expect(applyResult(gradCard(365), 'wrong', T, NOW)).toEqual(
+    expect(applyResult(gradCard(365), 'wrong', false, T, NOW)).toEqual(
       { status: 'learning', track: 'B', interval: 7, due: '2026-12-02', firstSeen: 1, asked: 10 });
+  });
+
+  describe('回の中で一度でも できなかった（missed）', () => {
+    it('未出題: 間違えてから正解 → トラックAでなくトラックBの3日', () => {
+      expect(applyResult(undefined, 'correct', true, T, NOW)).toEqual(
+        { status: 'learning', track: 'B', interval: 3, due: '2026-11-28', firstSeen: NOW, asked: 1 });
+    });
+    it('未出題: もう1回も できなかった／おしい → 未正解', () => {
+      for (const g of ['close', 'wrong'] as const) {
+        expect(applyResult(undefined, g, true, T, NOW)).toEqual({ status: 'failed', firstSeen: NOW, asked: 1 });
+      }
+    });
+    it('未正解: 最終結果で決める（正解ならトラックBの3日）', () => {
+      const f: KanjiCard = { status: 'failed', firstSeen: 5, asked: 1 };
+      expect(applyResult(f, 'correct', true, T, NOW)).toMatchObject({ status: 'learning', track: 'B', interval: 3, firstSeen: 5, asked: 2 });
+      expect(applyResult(f, 'close', true, T, NOW)).toEqual({ status: 'failed', firstSeen: 5, asked: 2 });
+    });
+    it('正解済み: もう1回の結果にかかわらず戻す（7日以下 → 1日、14日以上 → 3日）', () => {
+      const cases: [KanjiCard, number][] = [
+        [learningCard('B', 1), 1], [learningCard('B', 7), 1], [learningCard('B', 14), 3], [learningCard('B', 60), 3],
+        [learningCard('A', 14), 3], [learningCard('A', 60), 3],
+      ];
+      for (const [c, want] of cases) {
+        for (const g of ['correct', 'close', 'wrong'] as const) {
+          expect(applyResult(c, g, true, T, NOW)).toEqual(
+            { status: 'learning', track: 'B', interval: want, due: addDays(T, want), firstSeen: 1, asked: 4 });
+        }
+      }
+    });
+    it('卒業: もう1回の結果にかかわらずトラックBの7日', () => {
+      for (const g of ['correct', 'close', 'wrong'] as const) {
+        expect(applyResult(gradCard(180), g, true, T, NOW)).toEqual(
+          { status: 'learning', track: 'B', interval: 7, due: '2026-12-02', firstSeen: 1, asked: 10 });
+      }
+    });
+    it('間違えなかったら従来どおり（正解済みは次の段、卒業は365日）', () => {
+      expect(applyResult(learningCard('B', 7), 'correct', false, T, NOW)).toMatchObject({ track: 'B', interval: 14 });
+      expect(applyResult(learningCard('A', 14), 'correct', false, T, NOW)).toMatchObject({ track: 'A', interval: 60 });
+      expect(applyResult(gradCard(180), 'correct', false, T, NOW)).toMatchObject({ status: 'graduated', interval: 365 });
+    });
   });
 
   it('次回日付は答えた日から数える（期限を過ぎて答えても）', () => {
     const c = learningCard('B', 3, '2026-11-01');
-    expect(applyResult(c, 'correct', T, NOW)).toMatchObject({ interval: 7, due: '2026-12-02' });
+    expect(applyResult(c, 'correct', false, T, NOW)).toMatchObject({ interval: 7, due: '2026-12-02' });
   });
 });
 
@@ -120,7 +160,7 @@ describe('単語の入れ替え', () => {
     expect(wordFor(e, undefined)).toBe('[やま]');
     let c: KanjiCard | undefined;
     const ws: string[] = [];
-    for (let i = 0; i < 4; i++) { c = applyResult(c, 'wrong', T, NOW); ws.push(wordFor(e, c)); }
+    for (let i = 0; i < 4; i++) { c = applyResult(c, 'wrong', false, T, NOW); ws.push(wordFor(e, c)); }
     expect(ws).toEqual(['か[ざん]', '[やま]のぼり', '[やま]', 'か[ざん]']);
   });
 });

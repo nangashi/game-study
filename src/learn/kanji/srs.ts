@@ -49,13 +49,17 @@ const graduated = (base: CardBase, interval: number, today: string): KanjiCard =
   ({ ...base, status: 'graduated', interval, due: addDays(today, interval) });
 
 // 1字の結果を受けて次の状態を返す（回の中で2回出た字は、最後の結果で1回だけ呼ぶ）。
+// missed: 回の中で一度でも「できなかった」か。正解済み・卒業の字は、もう1回で正解しても間違えた扱い。
+// 未出題の字は最終結果で決めるが、間違えてから正解した字はトラックAでなくトラックBの3日へ。
 // today: 答えた日（ローカル日）、now: 時刻（ms、はじめて出したときの firstSeen に入る）
-export function applyResult(card: KanjiCard | undefined, grade: SelfGrade, today: string, now: number): KanjiCard {
+export function applyResult(card: KanjiCard | undefined, grade: SelfGrade, missed: boolean, today: string, now: number): KanjiCard {
   if (!card) {
     const base = { firstSeen: now, asked: 1 };
-    return grade === 'correct' ? learning(base, 'A', LADDER.A[0], today) : { ...base, status: 'failed' };
+    if (grade !== 'correct') return { ...base, status: 'failed' };
+    return missed ? learning(base, 'B', 3, today) : learning(base, 'A', LADDER.A[0], today);
   }
   const base = { firstSeen: card.firstSeen, asked: card.asked + 1 };
+  if (missed && card.status !== 'failed') grade = 'wrong';
   switch (card.status) {
     case 'failed':
       return grade === 'correct' ? learning(base, 'B', 3, today) : { ...base, status: 'failed' };

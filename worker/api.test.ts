@@ -55,8 +55,8 @@ describe('PUT /api/family（サーバーでも合わせる）', () => {
   it('漢字のカードは字ごとに新しい方が残る', async () => {
     const e = env();
     const base = newChild('a', { name: 'たろう' }, 100);
-    const a = fam({ a: recordKanjiResult(recordKanjiResult(base, '一', 'correct', '2026-11-25', 1000), '二', 'wrong', '2026-11-25', 1001) });
-    const b = fam({ a: recordKanjiResult(base, '一', 'wrong', '2026-11-26', 2000) });
+    const a = fam({ a: recordKanjiResult(recordKanjiResult(base, '一', 'correct', false, '2026-11-25', 1000), '二', 'wrong', false, '2026-11-25', 1001) });
+    const b = fam({ a: recordKanjiResult(base, '一', 'wrong', false, '2026-11-26', 2000) });
     await handleApi(put(a), e, allow);
     const m = (await (await handleApi(put(b), e, allow)).json()) as FamilyRecords;
     expect(m.children.a.kanji['一']).toEqual(b.children.a.kanji['一']);
