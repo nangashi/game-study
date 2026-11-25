@@ -30,12 +30,18 @@ ChildRecord {
     testProgress: { value: TestProgress | null, at },
     lastStage: { value: ステージ id | null, at },
   },
+  kanji: { [字]: { value: KanjiCard, at } },          // 漢字の書き取りのカード。出題していない字は持たない
 }
+KanjiCard（src/learn/kanji/srs.ts）
+  = { status: 'failed', firstSeen, asked }                          // 出題したが一度も正解していない
+  | { status: 'learning', track: 'A'|'B', interval, due, firstSeen, asked }  // 正解済み。due は次回日付（ローカル日 YYYY-MM-DD）
+  | { status: 'graduated', interval: 180|365, due, firstSeen, asked }        // 卒業
 ```
 
 - `at` は更新時刻（ms）。後勝ちの判定に使う。
 - `bestTime` の 0 は「記録なし」（算数練習アプリでは null）。
 - 子どもを消すときは `removed: true` にして残す（合わせたときに戻ってこないように）。
+- 漢字の結果は `recordKanjiResult(子ども, 字, できた/おしい/できなかった, 今日, 今)` で入れる（状態の遷移は `applyResult`）。読み込みで形のおかしいカードは捨てる（出題していない字になる）。`kanji` がない古いデータは空として読む。
 - けいさんの更新は `src/learn/keisan/` の `mergeStageResult`・`playableAfterClear`・`applyTestResult` をそのまま使う（`startKeisanStage`・`finishKeisanStage`・`setTestProgress`・`finishTest`）。
 
 ## 合わせ方（mergeFamily）
@@ -52,6 +58,7 @@ ChildRecord {
 | createdAt | 小さい方 |
 | 設定（名前・アバター・許容度・音・消した印） | まとめて後勝ち |
 | testProgress、lastStage | それぞれ後勝ち |
+| 漢字のカード | 字ごとに後勝ち（片方にしかない字は残る） |
 
 後勝ちで時刻が同じときは、中身を文字列にして大きい方にする（どちらから合わせても同じ結果にするため）。
 

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../learn/keisan/__original__/harness';
 import { applyTestResult, mergeStageResult, stageByNum, type TestProgress } from '../learn/keisan';
 import {
-  activeChildren, addChild, emptyFamily, finishKeisanStage, finishTest, makeChildId, newChild, normalizeFamily,
+  activeChildren, addChild, emptyFamily, finishKeisanStage, finishTest, kanjiCards, makeChildId, newChild, normalizeFamily,
+  recordKanjiResult,
   recordUnitResult, removeChild, setTestProgress, startKeisanStage, updateChild,
 } from './model';
 import { RECORDS_KEY, clearRecords, loadRecords, saveRecords, type KeyValueStorage } from './storage';
@@ -16,6 +17,7 @@ describe('子ども', () => {
       settings: { value: { name: 'たろう', avatar: 'cat', tolerance: 'easy', sound: true, removed: false }, at: 100 },
       units: {},
       keisan: { stages: {}, playableThrough: 1, testDone: false, testProgress: { value: null, at: 0 }, lastStage: { value: null, at: 0 } },
+      kanji: {},
     });
   });
 
@@ -111,7 +113,43 @@ describe('読み込んだデータをそろえる', () => {
         playableThrough: 48, testDone: false,
         testProgress: { value: null, at: 3 }, lastStage: { value: null, at: 0 },
       },
+      kanji: {},
     });
+  });
+
+  it('漢字のカード: 形のおかしいカードは捨てる（出題していない字として扱う）', () => {
+    const ok = {
+      一: { value: { status: 'learning', track: 'A', interval: 14, due: '2026-12-09', firstSeen: 1, asked: 1 }, at: 10 },
+      二: { value: { status: 'failed', firstSeen: 2, asked: 2.7, extra: 1 }, at: 11 },
+      三: { value: { status: 'graduated', interval: 365, due: '2027-11-25', firstSeen: 3, asked: 8 }, at: 12 },
+    };
+    const bad = {
+      四: { value: { status: 'learning', track: 'A', interval: 3, due: '2026-12-09' }, at: 1 },   // A に 3日の段はない
+      五: { value: { status: 'learning', track: 'C', interval: 14, due: '2026-12-09' }, at: 1 },
+      六: { value: { status: 'graduated', interval: 60, due: '2026-12-09' }, at: 1 },
+      七: { value: { status: 'learning', track: 'B', interval: 1, due: '2026/12/09' }, at: 1 },
+      八: { value: { status: 'unknown' }, at: 1 },
+      九: null,
+    };
+    const fam = normalizeFamily({ version: 2, children: { a: { kanji: { ...ok, ...bad } } } });
+    expect(fam.children.a.kanji).toEqual({ ...ok, 二: { value: { status: 'failed', firstSeen: 2, asked: 2 }, at: 11 } });
+    // 漢字の欄がない古い形は空
+    expect(normalizeFamily({ version: 2, children: { a: {} } }).children.a.kanji).toEqual({});
+  });
+});
+
+describe('漢字の書き取り', () => {
+  it('結果を入れると、カードと更新時刻が入る。kanjiCards で buildSession に渡す形になる', () => {
+    let c = recordKanjiResult(child(), '山', 'wrong', '2026-11-25', 500);
+    expect(c.kanji['山']).toEqual({ value: { status: 'failed', firstSeen: 500, asked: 1 }, at: 500 });
+    c = recordKanjiResult(c, '山', 'correct', '2026-11-26', 900);
+    expect(c.kanji['山']).toEqual({
+      value: { status: 'learning', track: 'B', interval: 3, due: '2026-11-29', firstSeen: 500, asked: 2 }, at: 900,
+    });
+    expect(kanjiCards(c)).toEqual({ 山: c.kanji['山'].value });
+    // 保存・読み込みしても同じ
+    const fam = addChild(emptyFamily(), c);
+    expect(normalizeFamily(JSON.parse(JSON.stringify(fam)))).toEqual(fam);
   });
 });
 

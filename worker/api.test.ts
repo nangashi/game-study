@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  RECORDS_VERSION, emptyFamily, finishKeisanStage, newChild, recordUnitResult, resetFamily, updateSettings,
+  RECORDS_VERSION, emptyFamily, finishKeisanStage, newChild, recordKanjiResult, recordUnitResult, resetFamily, updateSettings,
   type FamilyRecords,
 } from '../src/records';
 import { stageByNum } from '../src/learn/keisan';
@@ -52,6 +52,21 @@ describe('GET /api/family', () => {
 });
 
 describe('PUT /api/family（サーバーでも合わせる）', () => {
+  it('漢字のカードは字ごとに新しい方が残る', async () => {
+    const e = env();
+    const base = newChild('a', { name: 'たろう' }, 100);
+    const a = fam({ a: recordKanjiResult(recordKanjiResult(base, '一', 'correct', '2026-11-25', 1000), '二', 'wrong', '2026-11-25', 1001) });
+    const b = fam({ a: recordKanjiResult(base, '一', 'wrong', '2026-11-26', 2000) });
+    await handleApi(put(a), e, allow);
+    const m = (await (await handleApi(put(b), e, allow)).json()) as FamilyRecords;
+    expect(m.children.a.kanji['一']).toEqual(b.children.a.kanji['一']);
+    expect(m.children.a.kanji['二']).toEqual(a.children.a.kanji['二']);
+    // 古い控え（A）をもう一度送っても変わらず、KV にも書かない
+    const puts = e.FAMILY.puts;
+    expect(await (await handleApi(put(a), e, allow)).json()).toEqual(m);
+    expect(e.FAMILY.puts).toBe(puts);
+  });
+
   it('はじめての保存はそのまま置き、合わせた結果を返す', async () => {
     const e = env();
     const data = fam({ a: newChild('a', { name: 'たろう' }, 100) });

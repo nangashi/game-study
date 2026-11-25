@@ -4,6 +4,7 @@ import {
   applyTestResult, clampPlayableThrough, mergeStageResult, playableAfterClear,
   type KeisanStage, type KeisanStageRecord, type TestProgress, type TestResult,
 } from '../learn/keisan';
+import { LADDER, GRADUATE_FIRST, GRADUATE_NEXT, applyResult, isDate, type KanjiCard, type SelfGrade } from '../learn/kanji/srs';
 import {
   RECORDS_VERSION, type ChildRecord, type ChildSettings, type FamilyRecords, type KeisanRecord, type UnitProgress,
 } from './types';
@@ -41,6 +42,7 @@ export function newChild(id: string, settings: Partial<ChildSettings>, now: numb
     settings: { value: { ...DEFAULT_SETTINGS, ...settings, removed: false }, at: now },
     units: {},
     keisan: emptyKeisan(),
+    kanji: {},
   };
 }
 
@@ -116,6 +118,18 @@ export function finishTest(c: ChildRecord, res: TestResult, now: number): ChildR
   });
 }
 
+// ---- 漢字の書き取り ----
+
+// 1字の結果を入れる（回の中で2回出た字は、最後の結果で1回だけ）。today: 答えた日（ローカル日 YYYY-MM-DD）
+export function recordKanjiResult(c: ChildRecord, kanji: string, grade: SelfGrade, today: string, now: number): ChildRecord {
+  const card = applyResult(c.kanji[kanji]?.value, grade, today, now);
+  return { ...c, kanji: { ...c.kanji, [kanji]: { value: card, at: now } } };
+}
+
+// 字 → カード（buildSession に渡す形）
+export const kanjiCards = (c: ChildRecord): Record<string, KanjiCard> =>
+  Object.fromEntries(Object.entries(c.kanji).map(([k, s]) => [k, s.value]));
+
 // ---- 読み込んだデータをそろえる ----
 // 形がおかしいところは空・初期値にする。知らない欄は捨てる
 
@@ -176,6 +190,21 @@ function normKeisan(v: unknown): KeisanRecord {
   };
 }
 
+// 形のおかしいカードは null（出題していない字として扱う）
+function normKanjiCard(v: unknown): KanjiCard | null {
+  if (!isObj(v)) return null;
+  const base = { firstSeen: num(v.firstSeen), asked: Math.max(0, Math.floor(num(v.asked))) };
+  if (v.status === 'failed') return { ...base, status: 'failed' };
+  if (!isDate(v.due) || typeof v.interval !== 'number') return null;
+  if (v.status === 'learning' && (v.track === 'A' || v.track === 'B') && LADDER[v.track].includes(v.interval)) {
+    return { ...base, status: 'learning', track: v.track, interval: v.interval, due: v.due };
+  }
+  if (v.status === 'graduated' && (v.interval === GRADUATE_FIRST || v.interval === GRADUATE_NEXT)) {
+    return { ...base, status: 'graduated', interval: v.interval, due: v.due };
+  }
+  return null;
+}
+
 function normChild(id: string, v: unknown): ChildRecord {
   const c = isObj(v) ? v : {};
   const units: Record<string, UnitProgress> = {};
@@ -191,7 +220,19 @@ function normChild(id: string, v: unknown): ChildRecord {
     settings: normStamped(c.settings, normSettings),
     units,
     keisan: normKeisan(c.keisan),
+    kanji: normKanji(c.kanji),
   };
+}
+
+function normKanji(v: unknown): Record<string, { value: KanjiCard; at: number }> {
+  const out: Record<string, { value: KanjiCard; at: number }> = {};
+  if (!isObj(v)) return out;
+  for (const [k, s] of Object.entries(v)) {
+    if (!isObj(s)) continue;
+    const card = normKanjiCard(s.value);
+    if (card) out[k] = { value: card, at: num(s.at) };
+  }
+  return out;
 }
 
 // 版がちがう・形がこわれているときは空のデータにする（旧形式からの移行はしない）

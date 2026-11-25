@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { mulberry32 } from '../learn/keisan/__original__/harness';
 import type { Rng } from '../learn/random';
 import { mergeFamily, mergeStamped } from './merge';
-import { emptyFamily, finishKeisanStage, newChild, normalizeFamily, recordUnitResult, resetFamily, updateSettings } from './model';
+import {
+  emptyFamily, finishKeisanStage, newChild, normalizeFamily, recordKanjiResult, recordUnitResult, resetFamily, updateSettings,
+} from './model';
 import { stageByNum } from '../learn/keisan';
 import type { ChildRecord, FamilyRecords, Stamped } from './types';
+import type { KanjiCard } from '../learn/kanji/srs';
 import { RECORDS_VERSION } from './types';
 
 // ---- ばらばらな記録を作る（同じ時刻・同じ値がよく重なるように、小さい範囲から選ぶ） ----
@@ -35,7 +38,18 @@ function randChild(r: Rng, id: string): ChildRecord {
       }),
       lastStage: stamped(r() < 0.3 ? null : pickOne(r, ['s1', 's2', 's5'])),
     },
+    kanji: Object.fromEntries(some(r, ['一', '二', '三']).map(k => [k, stamped(randCard(r))])),
   };
+}
+
+function randCard(r: Rng): KanjiCard {
+  const base = { firstSeen: int(r, 0, 2), asked: int(r, 1, 3) };
+  const due = pickOne(r, ['2026-11-20', '2026-12-01']);
+  switch (int(r, 0, 2)) {
+    case 0: return { ...base, status: 'failed' };
+    case 1: return { ...base, status: 'learning', track: 'B', interval: pickOne(r, [1, 3, 14]), due };
+    default: return { ...base, status: 'graduated', interval: 180, due };
+  }
 }
 
 function randFamily(r: Rng): FamilyRecords {
@@ -75,6 +89,7 @@ function expectAtLeast(m: FamilyRecords, a: FamilyRecords) {
     if (ka.testDone) expect(km.testDone).toBe(true);
     expect(km.testProgress.at).toBeGreaterThanOrEqual(ka.testProgress.at);
     expect(km.lastStage.at).toBeGreaterThanOrEqual(ka.lastStage.at);
+    for (const [k, xa] of Object.entries(ca.kanji)) expect(cm.kanji[k].at).toBeGreaterThanOrEqual(xa.at);
   }
 }
 
@@ -156,6 +171,32 @@ describe('mergeFamily の合わせ方', () => {
   it('片方の端末にしかいない子どもは、そのまま残る', () => {
     const other = { ...base, children: { b: newChild('b', { name: 'はなこ' }, 120) } };
     expect(Object.keys(mergeFamily(base, other).children).sort()).toEqual(['a', 'b']);
+  });
+
+  it('漢字のカードは字ごとに、あとから更新した方が勝つ（片方にしかない字は残る）', () => {
+    // 端末A: 一 を 11/25 に正解、二 を 11/26 に間違えた。端末B（同じ子）: 一 を 11/27 に間違えた、三 を正解
+    let a = base.children.a;
+    a = recordKanjiResult(a, '一', 'correct', '2026-11-25', 1000);
+    a = recordKanjiResult(a, '二', 'wrong', '2026-11-26', 2000);
+    let b = base.children.a;
+    b = recordKanjiResult(b, '一', 'wrong', '2026-11-27', 3000);
+    b = recordKanjiResult(b, '三', 'correct', '2026-11-27', 3100);
+    const m = mergeFamily({ ...base, children: { a } }, { ...base, children: { a: b } }).children.a;
+    expect(m.kanji['一']).toEqual(b.kanji['一']);
+    expect(m.kanji['二']).toEqual(a.kanji['二']);
+    expect(m.kanji['三']).toEqual(b.kanji['三']);
+    // あとで端末Aが 一 をまた進めれば、そちらが勝つ
+    const a2 = recordKanjiResult(m, '一', 'correct', '2026-12-01', 5000);
+    expect(mergeFamily({ ...base, children: { a: a2 } }, { ...base, children: { a: b } }).children.a.kanji['一'].value)
+      .toMatchObject({ status: 'learning', track: 'B', interval: 3 });
+  });
+
+  it('漢字のカードを持たない古い形の記録とも合わせられる', () => {
+    const a = recordKanjiResult(base.children.a, '一', 'correct', '2026-11-25', 1000);
+    const { kanji: _, ...old } = base.children.a;
+    const oldFam = normalizeFamily(JSON.parse(JSON.stringify({ ...base, children: { a: old } })));
+    expect(oldFam.children.a.kanji).toEqual({});
+    expect(mergeFamily(oldFam, { ...base, children: { a } }).children.a.kanji).toEqual(a.kanji);
   });
 
   it('mergeStamped: 同じ時刻なら中身で決まる（キーの並びによらない）', () => {

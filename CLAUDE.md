@@ -9,6 +9,7 @@
 - 算数「けいさん」の道（47ステージ）とちからだめしは `src/learn/keisan/`、画面は `src/ui/screens/keisan.ts`。仕様は [docs/03-keisan.md](docs/03-keisan.md)。
 - 算数「かず」の道（7単元: 100までの かず〜しょうすう）は `src/learn/kazu/`、画面は `src/ui/screens/kazu.ts`、図は `src/ui/kazu-figs.ts`。問題形式は「かず 問題形式モック」（Space）で承認された形式のまま。仕様は [docs/05-kazu.md](docs/05-kazu.md)。
 - 国語「ひらがなを かく」は行ごとの10単元（なぞる → みて かく）と、そのあとの「えを みて かく」5単元（見本なしで、絵と空欄つきの言葉から思い出して書く。「を」以外の45字）。データは `src/learn/hiragana.ts`、画面は `src/ui/screens/hira.ts`。
+- 国語「かんじ」書き取り（間隔反復）は作りかけ。単語データ（1026字）と間隔反復のロジックは `src/learn/kanji/`、カードの記録は `ChildRecord.kanji`。画面はまだない。設計は game-study-design の 07-kanji-srs.md。単語データは `node scripts/gen-kanji-words.mjs <kanji-data>` で作りなおす。
 - 記録は `src/records/`（保存キー `manabi:v2`）。Worker（`worker/`）の `/api/family` に家族で1つのデータを置き、起動時に取って合わせ、結果画面で送る（サーバーでも mergeFamily で合わせる）。全消しはリセット印 `resetAt`。仕様は [docs/04-records.md](docs/04-records.md)。
 - デプロイ: workers.dev の URL に Access のアプリをかける形（playland・cookbook と同じ）。KV・Access の値は `wrangler.jsonc` に入れ済み。main への push で CI が `wrangler deploy` する。
 - PWA の更新は `src/ui/pwa-update.ts`（起動時・前面復帰で `registration.update()`、新しい SW が制御を取ったら1回だけリロード、設定の「アプリを さいしんに する」）。入口・sw.js・manifest は `public/_headers` で `Cache-Control: no-cache`。
@@ -22,9 +23,9 @@
 - **けいさんは算数練習アプリと同じにする。** ステージの並び・出題ロジック（数値範囲・パターン・全角の演算子・10問の重複チェック）・星とクリア・ちからだめしを変えない。まなびランドの `src/learn/math.ts` で代用しない。変えるときはユーザーに確認し、docs/03-keisan.md も直す。
 - 回答フロー: 間違えたら正解を少し見せて次へ。再入力・ペナルティ・時間ランキングの改善は、決定済みのまま保留（今は入れない）。
 - 書き取りは `src/learn/handwriting/`（judge.ts + strokes.json）と writepad が土台。結果は星とクリアのみで、時間は競わない。
-- 記録は子どもごと（名前・アバター・書き取りの許容度・音）と単元ごと（星のベスト 0〜3・クリア、けいさんはベストタイムも）だけ。間隔反復のカード状態・連続日数・日次統計は持たない。
+- 記録は子どもごと（名前・アバター・書き取りの許容度・音）と単元ごと（星のベスト 0〜3・クリア、けいさんはベストタイムも）、それに漢字の書き取りのカード（字ごとの段階・次回日付）だけ。漢字以外の間隔反復・連続日数・日次統計は持たない。
 - 保存は端末のキャッシュ ＋ Worker + KV に家族で1つのデータ。認証は Cloudflare Access。
-- やらないこと: ゲーム・ごほうびの復活、間隔反復の自動再出題、親専用画面、兄弟の比較表示。
+- やらないこと: ゲーム・ごほうびの復活、漢字の書き取り以外での間隔反復の自動再出題、親専用画面、兄弟の比較表示。
 - 画像の作り方は [docs/02-asset-generation.md](docs/02-asset-generation.md)。手書き判定の検証は [docs/01-handwriting-feasibility.md](docs/01-handwriting-feasibility.md)。
 
 ## 書き方

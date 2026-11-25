@@ -1,5 +1,6 @@
 import type { Tolerance } from '../learn/handwriting/judge';
 import type { KeisanStageRecord, TestProgress } from '../learn/keisan';
+import type { KanjiCard } from '../learn/kanji/srs';
 
 // 新しい記録の形（docs/04-records.md）。家族で1つのデータに、子どもごとの記録が入る
 
@@ -38,6 +39,8 @@ export interface ChildRecord {
   settings: Stamped<ChildSettings>;
   units: Record<string, UnitProgress>; // 単元 id → 進み具合
   keisan: KeisanRecord;
+  // 漢字の書き取りのカード（字 → 状態と更新時刻）。出題していない字は持たない。合わせるときは字ごとに後勝ち
+  kanji: Record<string, Stamped<KanjiCard>>;
 }
 
 export interface FamilyRecords {
