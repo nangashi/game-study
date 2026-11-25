@@ -70,7 +70,28 @@ function startKakitori(): void {
   if (!items.length) return showRest(colorOf(c));
   const run = startRun(items);
   active = run;
+  preloadAnswerFont(items.map(it => it.kanji).join(''));
   playView(run, colorOf(c));
+}
+
+// 答えの字のフォント（Klee One 600）は字の範囲ごとに分かれていて、画面に出たときに初めて読み込まれる。
+// そのままだと「こたえを みる」で別のフォント → Klee One と切り替わるのが見えるので、回の字を最初に読んでおく
+const ANSWER_FONT = '600 1em "Klee One"';
+const answerFontReady = (k: string) => !document.fonts || document.fonts.check(ANSWER_FONT, k);
+function preloadAnswerFont(chars: string): void {
+  document.fonts?.load(ANSWER_FONT, chars).catch(() => {});
+}
+
+// 先読みが間に合っていない字（回線が遅いとき）は、読み終わるまで（長くても少し）答えを隠しておく
+const ANSWER_FONT_WAIT_MS = 3000;
+function showWhenFontReady(el: HTMLElement, k: string): void {
+  if (answerFontReady(k)) return;
+  el.style.visibility = 'hidden';
+  const show = () => { el.style.visibility = ''; };
+  Promise.race([
+    document.fonts.load(ANSWER_FONT, k),
+    new Promise(r => setTimeout(r, ANSWER_FONT_WAIT_MS)),
+  ]).then(show, show);
 }
 
 // 1字の結果を記録する（端末に保存。送るのは結果画面で）
@@ -136,9 +157,12 @@ function playView(run: KanjiRun, color: string): void {
   const reveal = (item: SessionItem) => {
     if (active !== run) return;
     mascot.innerHTML = mascotSVG(color, 'happy');
-    body.replaceChildren(
+    const shown = h('div', { class: 'kj-reveal' },
       h('div', { class: 'kj-answer', textContent: item.kanji }),
-      wordEl(item, 'kj-word-small', item.kanji),
+      wordEl(item, 'kj-word-small', item.kanji));
+    showWhenFontReady(shown, item.kanji);
+    body.replaceChildren(
+      shown,
       h('div', { class: 'kj-check', textContent: 'とめ・はね・はらいも あってた？' }));
     const grade = (g: SelfGrade, label: string, cls: string) => h('button', {
       class: `kj-grade ${cls}`, type: 'button', textContent: label,
